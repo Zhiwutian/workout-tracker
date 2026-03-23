@@ -67,6 +67,62 @@ export async function signUpDemo(displayName: string): Promise<{
 }
 
 /** Demo sign-in by unique display name. */
+/** True when this row was created via Continue as guest (`guest:<uuid>`). */
+export function isGuestAuthSubject(
+  authSubject: string | null | undefined,
+): boolean {
+  return Boolean(authSubject?.startsWith('guest:'));
+}
+
+export async function getAuthSubjectForUser(
+  userId: number,
+): Promise<string | null> {
+  const db = requireDb();
+  const [row] = await db
+    .select({ authSubject: users.authSubject })
+    .from(users)
+    .where(eq(users.userId, userId))
+    .limit(1);
+  return row?.authSubject ?? null;
+}
+
+/**
+ * Anonymous session: new user + profile, same JWT API as demo sign-up.
+ * Display name is unique (`Guest <uuid>`) to satisfy `profiles_display_name_unique`.
+ */
+export async function createGuestUser(): Promise<{
+  token: string;
+  userId: number;
+  authSubject: string;
+  displayName: string;
+}> {
+  const db = requireDb();
+  const id = randomUUID();
+  const authSubject = `guest:${id}`;
+  const displayName = `Guest ${id}`;
+
+  return await db.transaction(async (tx) => {
+    const [user] = await tx
+      .insert(users)
+      .values({ authSubject })
+      .returning({ userId: users.userId, authSubject: users.authSubject });
+
+    if (!user) throw new ClientError(500, 'failed to create user');
+
+    await tx.insert(profiles).values({
+      userId: user.userId,
+      displayName,
+    });
+
+    return {
+      token: signAccessToken(user.userId),
+      userId: user.userId,
+      authSubject: user.authSubject,
+      displayName,
+    };
+  });
+}
+
 export async function signInByDisplayName(displayName: string): Promise<{
   token: string;
   userId: number;

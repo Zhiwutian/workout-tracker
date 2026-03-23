@@ -16,7 +16,7 @@ At runtime, the browser loads static assets from the server and calls API routes
   - Uses React Router for route-level pages (`/`, `/about`).
   - Uses `react-hook-form` + `zod` for client-side form handling/validation.
   - Uses Context + reducer (`AppStateProvider`) for lean global UI state.
-  - Authenticated flows attach **`Authorization: Bearer`** (demo JWT); see `client/src/lib/workout-api.ts` and `features/auth/`.
+  - Authenticated flows send **`Authorization: Bearer`** when a demo/guest JWT is stored, and use **`fetch(..., { credentials: 'include' })`** so **OIDC** session cookies are sent; see `client/src/lib/workout-api.ts` and `client/src/features/auth/`.
   - Calls backend endpoints under `/api/*`.
 - **Express Server**
   - Serves API routes.
@@ -74,7 +74,8 @@ Example server paths:
 - `.nvmrc` and `package.json` engines pin local runtime expectations.
 - Server env values are managed in `server/.env`.
 - `DATABASE_URL` controls DB connectivity.
-- `TOKEN_SECRET` is required for auth middleware.
+- `TOKEN_SECRET` is required for JWT signing and (with short `SESSION_SECRET`) cookie signing.
+- Optional OIDC vars (`AUTH_OIDC_*`, `SESSION_*`) are documented in **`docs/configuration.md`**.
 - Environment variables are validated at startup in `server/config/env.ts`.
 
 ## Logging

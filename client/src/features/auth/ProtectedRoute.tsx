@@ -3,10 +3,10 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { token, me, loading } = useAuth();
+  const { me, loading } = useAuth();
   const location = useLocation();
 
-  if (loading && token) {
+  if (loading) {
     return (
       <p className="text-sm text-slate-600" role="status">
         Loading session…
@@ -14,7 +14,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!token || !me) {
+  if (!me) {
     return (
       <Navigate to="/sign-in" replace state={{ from: location.pathname }} />
     );

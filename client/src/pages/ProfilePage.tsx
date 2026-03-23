@@ -42,6 +42,13 @@ export function ProfilePage() {
       <p className="text-sm text-slate-600">
         <strong>{me?.displayName}</strong>
       </p>
+      {me?.isGuest ? (
+        <p className="text-sm text-amber-800">
+          You are in a <strong>guest</strong> session. Sign out and create a
+          named account on the sign-in page if you want to log in from another
+          device.
+        </p>
+      ) : null}
       <form
         className="max-w-sm space-y-4"
         onSubmit={(e) => void handleSubmit(e)}>

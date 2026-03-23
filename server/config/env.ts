@@ -18,6 +18,8 @@ function parseBooleanEnv(defaultValue: boolean): z.ZodType<boolean> {
   }, z.boolean().default(defaultValue));
 }
 
+const sessionSameSiteSchema = z.enum(['lax', 'strict', 'none']);
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
@@ -35,6 +37,37 @@ const envSchema = z.object({
   /** When DB_SSL is on, reject unauthorized certs (set false only for dev with self-signed). */
   DB_SSL_REJECT_UNAUTHORIZED: parseBooleanEnv(true),
   TOKEN_SECRET: z.string().min(1, 'TOKEN_SECRET is required'),
+  /** Demo JWT sign-up/sign-in + guest. Set false in production when OIDC is primary. */
+  AUTH_DEMO_ENABLED: parseBooleanEnv(true),
+  /** Enable OpenID Connect login (Auth0-compatible issuer). */
+  AUTH_OIDC_ENABLED: parseBooleanEnv(false),
+  /** Issuer URL, e.g. https://YOUR_TENANT.auth0.com/ */
+  AUTH_OIDC_ISSUER: z.string().optional().default(''),
+  AUTH_OIDC_CLIENT_ID: z.string().optional().default(''),
+  /** Optional; use with confidential clients (Auth0 “Regular Web Application”). */
+  AUTH_OIDC_CLIENT_SECRET: z.string().optional().default(''),
+  /**
+   * Must match an Allowed Callback URL in the IdP and reach this server (or Vite proxy).
+   * Dev example: http://localhost:5173/api/auth/oidc/callback
+   */
+  AUTH_OIDC_REDIRECT_URI: z.string().optional().default(''),
+  /** Browser path after successful OIDC (same origin as redirect URI). */
+  AUTH_POST_LOGIN_PATH: z.string().default('/'),
+  /** Secret for signing OIDC state + session cookies (required when AUTH_OIDC_ENABLED). */
+  SESSION_SECRET: z.string().optional().default(''),
+  AUTH_OIDC_LOGIN_STATE_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(60)
+    .max(3600)
+    .default(600),
+  SESSION_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(2592000)
+    .default(604800),
+  SESSION_COOKIE_SAME_SITE: sessionSameSiteSchema.default('lax'),
 });
 
 /** Format zod issues into a single startup error string. */
@@ -50,5 +83,54 @@ if (!parsed.success) {
   throw new Error(`Invalid environment configuration: ${formatted}`);
 }
 
+const data = parsed.data;
+
+if (data.AUTH_OIDC_ENABLED) {
+  const missing: string[] = [];
+  if (!data.AUTH_OIDC_ISSUER.trim()) missing.push('AUTH_OIDC_ISSUER');
+  if (!data.AUTH_OIDC_CLIENT_ID.trim()) missing.push('AUTH_OIDC_CLIENT_ID');
+  if (!data.AUTH_OIDC_REDIRECT_URI.trim())
+    missing.push('AUTH_OIDC_REDIRECT_URI');
+  if (missing.length > 0) {
+    throw new Error(`AUTH_OIDC_ENABLED requires: ${missing.join(', ')}`);
+  }
+  const effectiveSecret =
+    data.SESSION_SECRET.trim().length >= 16
+      ? data.SESSION_SECRET.trim()
+      : data.TOKEN_SECRET;
+  if (effectiveSecret.length < 16) {
+    throw new Error(
+      'AUTH_OIDC_ENABLED requires SESSION_SECRET (min 16 chars) or TOKEN_SECRET at least 16 chars for cookie signing',
+    );
+  }
+  const validateUrl = (label: string, value: string): void => {
+    try {
+      // URL constructor validates absolute URL shape.
+      // eslint-disable-next-line no-new -- intentional validation side effect
+      new URL(value);
+    } catch {
+      throw new Error(`${label} must be a valid absolute URL`);
+    }
+  };
+  validateUrl('AUTH_OIDC_ISSUER', data.AUTH_OIDC_ISSUER);
+  validateUrl('AUTH_OIDC_REDIRECT_URI', data.AUTH_OIDC_REDIRECT_URI);
+  if (
+    data.AUTH_POST_LOGIN_PATH &&
+    (!data.AUTH_POST_LOGIN_PATH.startsWith('/') ||
+      data.AUTH_POST_LOGIN_PATH.startsWith('//'))
+  ) {
+    throw new Error(
+      'AUTH_POST_LOGIN_PATH must be a relative path starting with /',
+    );
+  }
+}
+
+/** Secret for OIDC state + app session cookies (falls back to TOKEN_SECRET). */
+export function cookieSigningSecret(): string {
+  const s = data.SESSION_SECRET.trim();
+  if (s.length >= 16) return s;
+  return data.TOKEN_SECRET;
+}
+
 /** Validated, typed runtime environment values. */
-export const env = parsed.data;
+export const env = data;

@@ -22,6 +22,16 @@ describe('api routes', () => {
     process.env.TOKEN_SECRET = originalTokenSecret;
   });
 
+  it('returns auth options from /api/auth/options', async () => {
+    const res = await request(app).get('/api/auth/options').expect(200);
+    expect(res.body.data).toEqual(
+      expect.objectContaining({
+        oidc: false,
+        demo: true,
+      }),
+    );
+  });
+
   it('returns hello message from /api/hello', async () => {
     const res = await request(app).get('/api/hello').expect(200);
     expect(res.body.data).toEqual({ message: 'Hello, World!' });
@@ -54,6 +64,18 @@ describe('api routes', () => {
       expect.objectContaining({
         code: 'client_error',
         message: 'authentication required',
+      }),
+    );
+  });
+
+  it('returns 503 from POST /api/auth/guest when DATABASE_URL is missing', async () => {
+    delete process.env.DATABASE_URL;
+
+    const res = await request(app).post('/api/auth/guest').expect(503);
+    expect(res.body.error).toEqual(
+      expect.objectContaining({
+        code: 'client_error',
+        message: expect.stringContaining('database is not configured'),
       }),
     );
   });

@@ -62,7 +62,19 @@ export function WorkoutsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Workouts</h1>
           <p className="text-sm text-slate-600">
-            Signed in as <strong>{me?.displayName}</strong>
+            {me?.isGuest ? (
+              <>
+                Guest session — workouts save on this device until you sign out.{' '}
+                <Link className="text-indigo-600 underline" to="/sign-in">
+                  Create an account
+                </Link>{' '}
+                to sign in by name later.
+              </>
+            ) : (
+              <>
+                Signed in as <strong>{me?.displayName}</strong>
+              </>
+            )}
           </p>
         </div>
         <Button

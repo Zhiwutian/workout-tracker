@@ -6,9 +6,15 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ## [Unreleased]
 
+### Added
+
+- **OIDC / OAuth (Path A):** `AUTH_OIDC_*` and session env validation; `openid-client`; `GET /api/auth/oidc/login` (PKCE), `GET /api/auth/oidc/callback`, `POST /api/auth/logout`, `GET /api/auth/options`; signed cookies `wt_oidc_login` / `wt_session`; `sub` → `users.authSubject`; `authMiddleware` accepts **Bearer** then session cookie; client `credentials: 'include'`, sign-in page OIDC + gated demo, `auth_error` query handling. Docs: `docs/configuration.md`, `docs/deployment/README.md`, `docs/deployment/auth0-setup.md`, `docs/data-flow.md`, `docs/assumptions.md`, `docs/architecture.md`, `docs/testing.md`, `docs/security-notes.md`, `docs/styleguide/backend-patterns.md`, `docs/README.md`, `docs/decisions/README.md`; ADR 0001 and build plan §11 updated. `server/.env.example` extended; **`AGENTS.md`** links testing, security, and deployment guides.
+- **Continue as guest:** `POST /api/auth/guest` creates a server user with `authSubject` `guest:<uuid>` and returns a JWT; **`GET /api/me`** and **`PATCH /api/profile`** include **`isGuest`**. Sign-in page adds **Continue as guest**; nav and workouts/profile copy explain guest vs named accounts. Tests (MSW, API, optional Postgres IDOR, Playwright smoke).
+
 ### Fixed
 
 - **Postgres SSL:** `pg` pool no longer forces TLS. SSL is enabled only when **`DB_SSL=true`** or **`DATABASE_URL`** includes **`sslmode=require|verify-ca|verify-full`**, fixing **`db:seed`** / CI against local Postgres (e.g. GitHub Actions service) that does not support SSL.
+- **Drizzle migrations / CI:** `database/migrations/0003_bouncy_gwen_stacy.sql` plus `meta/0003_snapshot.json` and journal entry align Drizzle Kit snapshot format with `server/db/schema.ts` without dropping `profiles_display_name_unique` (no DDL beyond `SELECT 1`), satisfying the PR migration policy when the schema file changes.
 
 ### Added
 

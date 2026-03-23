@@ -4,9 +4,9 @@ Forward-looking plans for **workout-tracker** before or alongside implementation
 
 ## Index
 
-| Proposal                                                           | Summary                                                                                                                                        |
-| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`workout-tracker-build-plan.md`](./workout-tracker-build-plan.md) | Full-stack build plan: phases R0–R9, **agent/workspace workflow**, documentation map, deliverables, OIDC follow-up, test/security expectations |
+| Proposal                                                           | Summary                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`workout-tracker-build-plan.md`](./workout-tracker-build-plan.md) | Full-stack build plan: **Report 2 alignment**, Path A (**OIDC §11 checklist** + link to [**ADR 0001**](../decisions/0001-oidc-oauth-path-a.md)), R0–R9, report phase mapping, agent/workspace workflow, docs map, QA evidence, tests |
 
 ## When to add a proposal
 

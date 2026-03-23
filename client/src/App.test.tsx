@@ -32,13 +32,32 @@ describe('App', () => {
     const user = userEvent.setup();
     renderApp(['/sign-in']);
 
-    await user.type(screen.getByLabelText('Display name'), 'Test Lifter');
+    await user.type(
+      await screen.findByLabelText('Display name'),
+      'Test Lifter',
+    );
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(
       await screen.findByRole('heading', { name: 'Workouts' }),
     ).toBeInTheDocument();
     expect(await screen.findByText('Test Lifter')).toBeInTheDocument();
+  });
+
+  it('continues as guest and shows workouts (MSW)', async () => {
+    const user = userEvent.setup();
+    renderApp(['/sign-in']);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Continue as guest' }),
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'Workouts' }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Guest session — workouts save on this device/),
+    ).toBeInTheDocument();
   });
 
   it('renders about page route', async () => {

@@ -10,7 +10,9 @@ import {
 } from 'react';
 import { getStoredToken, setStoredToken } from '@/lib/auth-storage';
 import {
+  createGuestSession,
   type MeResponse,
+  postSessionLogout,
   readMe,
   signIn as apiSignIn,
   signUp as apiSignUp,
@@ -23,6 +25,7 @@ type AuthContextValue = {
   setSessionToken: (token: string | null) => void;
   signUp: (displayName: string) => Promise<void>;
   signIn: (displayName: string) => Promise<void>;
+  continueAsGuest: () => Promise<void>;
   signOut: () => void;
   refreshMe: () => Promise<void>;
 };
@@ -32,15 +35,10 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => getStoredToken());
   const [me, setMe] = useState<MeResponse | null>(null);
-  const [loading, setLoading] = useState(Boolean(getStoredToken()));
+  /** True until we finish probing session (Bearer and/or OIDC cookie). */
+  const [loading, setLoading] = useState(true);
 
   const refreshMe = useCallback(async () => {
-    const t = getStoredToken();
-    if (!t) {
-      setMe(null);
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     try {
       const profile = await readMe();
@@ -79,9 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [setSessionToken],
   );
 
+  const continueAsGuest = useCallback(async () => {
+    const { token: newToken } = await createGuestSession();
+    setSessionToken(newToken);
+  }, [setSessionToken]);
+
   const signOut = useCallback(() => {
-    setSessionToken(null);
-    setMe(null);
+    void postSessionLogout()
+      .catch(() => {
+        /* still clear local state */
+      })
+      .finally(() => {
+        setSessionToken(null);
+        setMe(null);
+      });
   }, [setSessionToken]);
 
   const value = useMemo(
@@ -92,10 +101,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSessionToken,
       signUp,
       signIn,
+      continueAsGuest,
       signOut,
       refreshMe,
     }),
-    [token, me, loading, setSessionToken, signUp, signIn, signOut, refreshMe],
+    [
+      token,
+      me,
+      loading,
+      setSessionToken,
+      signUp,
+      signIn,
+      continueAsGuest,
+      signOut,
+      refreshMe,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

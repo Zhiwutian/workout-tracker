@@ -2,24 +2,45 @@ import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '@server/config/env.js';
 import { ClientError } from './client-error.js';
+import { readAppSessionCookie } from './session-cookies.js';
 
 const secret = env.TOKEN_SECRET;
 
-/** Validate bearer token and attach decoded user to request context. */
+/**
+ * Accept Bearer JWT (demo / guest) or signed session cookie (OIDC).
+ */
 export function authMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ): void {
-  // The token will be in the Authorization header with the format `Bearer ${token}`
-  const token = req.get('authorization')?.split('Bearer ')[1];
-  if (!token) {
-    throw new ClientError(401, 'authentication required');
+  const authorization = req.get('authorization') ?? '';
+  const bearerMatch = authorization.match(/^Bearer\s+(.+)$/i);
+  const token = bearerMatch?.[1]?.trim();
+
+  if (token) {
+    try {
+      const payload = jwt.verify(token, secret) as { userId?: unknown };
+      if (typeof payload.userId !== 'number') {
+        throw new ClientError(401, 'invalid access token payload');
+      }
+      req.user = { userId: payload.userId };
+      next();
+      return;
+    } catch (err) {
+      if (err instanceof ClientError) {
+        throw err;
+      }
+      throw new ClientError(401, 'invalid access token');
+    }
   }
-  const payload = jwt.verify(token, secret) as { userId?: unknown };
-  if (typeof payload.userId !== 'number') {
-    throw new ClientError(401, 'invalid access token payload');
+
+  const session = readAppSessionCookie(req);
+  if (session && typeof session.userId === 'number') {
+    req.user = { userId: session.userId };
+    next();
+    return;
   }
-  req.user = { userId: payload.userId };
-  next();
+
+  throw new ClientError(401, 'authentication required');
 }

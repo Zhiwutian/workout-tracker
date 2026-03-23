@@ -11,6 +11,8 @@ export type MeResponse = {
   weightUnit: string;
   timezone: string | null;
   updatedAt: string;
+  /** Server user created via Continue as guest (`POST /api/auth/guest`). */
+  isGuest?: boolean;
 };
 
 export type Exercise = {
@@ -49,6 +51,11 @@ export type WeeklyVolumeResponse = {
   setCount: number;
 };
 
+export type AuthOptionsResponse = {
+  oidc: boolean;
+  demo: boolean;
+};
+
 async function fetchJson<T>(
   input: RequestInfo,
   init: RequestInit = {},
@@ -61,7 +68,11 @@ async function fetchJson<T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(input, { ...init, headers });
+  const response = await fetch(input, {
+    ...init,
+    headers,
+    credentials: 'include',
+  });
   if (!response.ok) {
     const errorBody = (await response
       .json()
@@ -78,6 +89,24 @@ export async function readHelloMessage(): Promise<string> {
   return helloData.message;
 }
 
+export async function readAuthOptions(): Promise<AuthOptionsResponse> {
+  return fetchJson<AuthOptionsResponse>('/api/auth/options');
+}
+
+export async function postSessionLogout(): Promise<void> {
+  const res = await fetch('/api/auth/logout', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    const body = (await res
+      .json()
+      .catch(() => null)) as ApiErrorEnvelope | null;
+    throw new Error(getApiErrorMessage(res.status, body));
+  }
+}
+
 export async function signUp(displayName: string): Promise<{ token: string }> {
   return fetchJson<{ token: string }>('/api/auth/sign-up', {
     method: 'POST',
@@ -89,6 +118,12 @@ export async function signIn(displayName: string): Promise<{ token: string }> {
   return fetchJson<{ token: string }>('/api/auth/sign-in', {
     method: 'POST',
     body: JSON.stringify({ displayName }),
+  });
+}
+
+export async function createGuestSession(): Promise<{ token: string }> {
+  return fetchJson<{ token: string }>('/api/auth/guest', {
+    method: 'POST',
   });
 }
 

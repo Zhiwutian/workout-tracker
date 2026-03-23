@@ -15,13 +15,13 @@
 
 - Use **`asyncHandler`** from `server/lib/async-handler.ts` so rejections reach **`next(err)`**.
 
-## Auth context (current: demo JWT)
+## Auth context (demo JWT + optional OIDC session)
 
-- **`authMiddleware`** (`server/lib/authorization-middleware.ts`) verifies `Authorization: Bearer`, sets **`req.user = { userId }`**.
-- **Sign-up / sign-in** routes are public; all workout, profile, exercise, and stats routes use **`authMiddleware`**.
+- **`authMiddleware`** (`server/lib/authorization-middleware.ts`) sets **`req.user = { userId }`** from **`Authorization: Bearer`** (demo / guest JWT) if present, else from the signed **`wt_session`** cookie when OIDC is used.
+- **Public auth routes:** demo sign-up/sign-in/guest (when enabled), **`GET /api/auth/options`**, **`GET /api/auth/oidc/login`**, **`GET /api/auth/oidc/callback`**, **`POST /api/auth/logout`**. Workout, profile, exercise, and stats routes use **`authMiddleware`**.
 - **Authorization (ownership)** is still required in every service for user-owned rows—see **`security-and-authz.md`**.
 
-When **OIDC** is added, keep the same rule: resolve a stable internal **`userId`** and attach it to `req.user`; do not branch business logic on display name or client-supplied ids.
+Resolve a stable internal **`userId`** for every authenticated request; do not branch business logic on display name or client-supplied ids.
 
 ## Database constraints and index parity
 

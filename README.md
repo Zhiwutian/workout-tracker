@@ -52,6 +52,7 @@ Outside devcontainers, this repo also includes `.nvmrc` and engine constraints i
    - Set `TOKEN_SECRET` in `server/.env`.
    - Set `CORS_ORIGIN` to your allowed frontend origin(s) (comma-separated exact origins, for example `http://localhost:5173,http://localhost:4173`).
    - Tune `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` (read), and `RATE_LIMIT_WRITE_MAX` (mutations) as needed.
+   - Optional **OIDC:** set `AUTH_OIDC_ENABLED=true` and fill `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`, `AUTH_OIDC_REDIRECT_URI`, and `SESSION_SECRET` (or a long `TOKEN_SECRET`); see **`docs/configuration.md`**.
    - Mirror non-secret env updates in `server/.env.example`.
 
 ### 4) Create your database
