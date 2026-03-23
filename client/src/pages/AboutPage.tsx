@@ -1,18 +1,27 @@
 import { SectionHeader } from '@/components/ui';
 
 /**
- * Render a simple About page to demonstrate route-level screens.
+ * Course / product context for the workout tracker reference app.
  */
 export function AboutPage() {
   return (
     <>
       <SectionHeader
-        title="About This Starter"
-        description="A full-stack TypeScript template with React, Express, PostgreSQL, and strong defaults."
+        title="Workout Tracker"
+        description="Educational full-stack app: workouts, sets, volume (reps × weight), weekly dashboard, and demo JWT auth (OIDC planned)."
       />
-      <p className="text-sm text-slate-700">
-        This route demonstrates how to organize page-level UI with React Router.
-      </p>
+      <ul className="mt-4 list-inside list-disc text-sm text-slate-700">
+        <li>
+          PostgreSQL + Drizzle schema for users, profiles, exercises, workouts,
+          sets.
+        </li>
+        <li>
+          API uses a consistent JSON envelope and Zod validation on the server.
+        </li>
+        <li>
+          Weekly stats use a UTC week window — see server docs for assumptions.
+        </li>
+      </ul>
     </>
   );
 }

@@ -6,7 +6,29 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ## [Unreleased]
 
+### Fixed
+
+- **Postgres SSL:** `pg` pool no longer forces TLS. SSL is enabled only when **`DB_SSL=true`** or **`DATABASE_URL`** includes **`sslmode=require|verify-ca|verify-full`**, fixing **`db:seed`** / CI against local Postgres (e.g. GitHub Actions service) that does not support SSL.
+
 ### Added
+
+- **CI / Husky parity with template:** **`/.github/workflows/audit-scheduled.yml`** (weekly **`pnpm audit --audit-level high`**). Root script **`pnpm run ci:local`** (lint → tsc → test → build). Husky **`pre-push`** runs **`ci:local`** so pushes match core GitHub quality gates. Docs policy treats **`CONTRIBUTING.md`**, **`AGENTS.md`**, and **`CHANGELOG.md`** as documentation updates. **`docs/development-workflow.md`** and PR template document CI, local parity, and E2E expectations.
+
+- **`CONTRIBUTING.md`** — PR checks, changelog and rules-registry discipline, optional parent-workspace scope; **`AGENTS.md`** expanded with workspace layout, copy-paste agent prompt, rule-precedence note, and link to contributing.
+- **Proposal / docs index:** `docs/proposals/workout-tracker-build-plan.md` updated (MVP checkboxes, agent/workspace workflow, doc map rows); `docs/README.md` and `docs/proposals/README.md` cross-link contributor entry points; **`README.md`** links **`CONTRIBUTING.md`**.
+
+- **Workout tracker domain (MVP):** Drizzle schema and migration for `users`, `profiles`, `exercise_types`, `workouts`, `workout_sets`; seed global exercises; JWT demo auth (sign-up / sign-in by display name); REST APIs for profile, exercises, workouts, sets, and weekly volume (`reps × weight`); React UI for sign-in, workout list, log sets, dashboard, and profile. **Removed** starter todo CRUD demo.
+- `docs/assumptions.md` for UTC weekly stats and auth placeholder notes.
+- `server/lib/volume.ts` plus unit tests for volume calculation.
+- **409** responses for duplicate **display name** on demo sign-up and profile update (`profiles_display_name_unique`); sign-up runs in a DB transaction so a failed profile insert does not leave an orphan user.
+- Server package renamed to `workout-tracker-server` (version aligned with root `0.1.0`).
+- **Docs:** `docs/styleguide/*` (patterns, UI, DB, observability) ported from the bible-support template and adapted for workout-tracker; new **`docs/styleguide/security-and-authz.md`**. **`docs/rules-registry.md`**, **`docs/rules-usage-guide.md`**, **`docs/configuration.md`**, **`docs/deployment/README.md`**. **`.cursor/rules/`** aligned with registry, including **`authz-data-ownership`** for multi-tenant safety. Root **`AGENTS.md`** for command summary.
+- **`docs/data-flow.md`** with auth/API/DB flow and mermaid diagrams. **Light PWA:** `manifest.webmanifest`, production-only **`sw.js`** (installability, no API caching), HTML meta + title.
+- **Drizzle:** **`database/migrations/meta/0002_snapshot.json`** (introspected final schema) for kit parity with migration **`0002_workout_domain`**.
+- **Security tests:** `server/routes/api-idor.test.ts` (cross-user **404** on workouts/sets) when **`TEST_DATABASE_URL`** is set; CI **quality** job adds **Postgres 16**, migrate/seed, and passes **`TEST_DATABASE_URL`** for **`pnpm run test`**.
+- **E2E:** `@playwright/test`, **`playwright.config.ts`**, **`e2e/smoke.spec.ts`**, **`pnpm run dev:e2e`** (Vite **127.0.0.1:5188**). CI runs **`pnpm exec playwright install chromium --with-deps`** then **`pnpm run test:e2e`**.
+- **PWA icons:** **`client/public/icon-192.png`**, **`icon-512.png`** via **`scripts/gen-pwa-icons.mjs`** (**sharp** in **`onlyBuiltDependencies`**). **`eslint-plugin-n`** added for ESLint standard config resolution.
+- **Proposal:** **`docs/proposals/workout-tracker-build-plan.md`** (rebuilt master plan: R0–R9, docs map, deliverables, OIDC follow-up) and **`docs/proposals/README.md`**.
 
 - Established backend layering with concrete examples:
   - `server/app.ts` for app composition

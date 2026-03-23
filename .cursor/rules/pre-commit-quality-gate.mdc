@@ -1,0 +1,45 @@
+---
+description: Pre-commit quality and docs gate
+alwaysApply: true
+---
+
+# Pre-commit quality gate
+
+Apply when preparing a change for **commit or PR readiness** (or when the user explicitly asks for a quality pass).
+
+**Out of scope:** brainstorming-only messages, pure Q&A, or “explain this file”—unless the user is about to commit those edits.
+
+**Related:** **`AGENTS.md`**; CI mirrors these commands—see **`docs/development-workflow.md`**. Does not replace **`secret-commit-approval-gate`** or **`auth-secrets-safety`**.
+
+## Planning mode
+
+- In planning mode, do not execute validation commands unless the user approves execution.
+- Defer this gate to execution mode after explicit approval to run checks.
+
+## Required checks
+
+- `pnpm run lint`
+- `pnpm run tsc`
+- `pnpm run test` (or `pnpm run test:changed` mid-session; full `test` before merge)
+- `pnpm run build` when frontend or server behavior changed
+
+## Documentation gate
+
+When app/config/workflow behavior changes, update:
+
+- `README.md` and/or relevant **`docs/*`** (including **`docs/styleguide/`** when patterns shift)
+- **`CHANGELOG.md`** under **`## [Unreleased]`**
+- **`docs/plans/*.md`** when a committed planning artifact is part of the change
+
+**Large PRs:** post-merge pass per **`docs/styleguide/frontend-patterns.md`** and **`docs/styleguide/backend-patterns.md`**.
+
+## Database gate
+
+If **`server/db/schema.ts`** or **`database/schema.sql`** changes:
+
+- Add migrations under **`database/migrations/`** and update **`database/migrations/meta/_journal.json`** (and snapshots if used)
+- Keep Drizzle and SQL mirror in parity
+
+## Deployment / auth safety
+
+For auth or deploy changes, update **`docs/configuration.md`** and **`docs/deployment/README.md`** (and add provider-specific docs when OIDC lands).

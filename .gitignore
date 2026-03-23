@@ -7,3 +7,9 @@ node_modules
 coverage
 client/coverage
 server/coverage
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

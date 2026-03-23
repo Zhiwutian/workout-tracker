@@ -16,7 +16,8 @@ At runtime, the browser loads static assets from the server and calls API routes
   - Uses React Router for route-level pages (`/`, `/about`).
   - Uses `react-hook-form` + `zod` for client-side form handling/validation.
   - Uses Context + reducer (`AppStateProvider`) for lean global UI state.
-  - Calls backend endpoints (for example `/api/hello`).
+  - Authenticated flows attach **`Authorization: Bearer`** (demo JWT); see `client/src/lib/workout-api.ts` and `features/auth/`.
+  - Calls backend endpoints under `/api/*`.
 - **Express Server**
   - Serves API routes.
   - Organizes handlers by `routes/`, `controllers/`, and `services/`.
@@ -36,11 +37,13 @@ At runtime, the browser loads static assets from the server and calls API routes
 5. Server returns JSON response.
 6. React updates UI state.
 
-Example server paths in this template:
+Example server paths:
 
-- `GET /api/health` -> `routes/api.ts` -> `controllers/health-controller.ts` -> `services/health-service.ts` -> `db/drizzle.ts`
-- `GET /api/ready` -> `routes/api.ts` -> `controllers/health-controller.ts` -> `services/health-service.ts` -> `db/drizzle.ts`
-- `GET /api/todos` -> `routes/api.ts` -> `controllers/todo-controller.ts` -> `services/todo-service.ts` -> `db/drizzle.ts` -> `db/schema.ts`
+- `GET /api/health` → `routes/api.ts` → `controllers/health-controller.ts` → `services/health-service.ts` → `db/drizzle.ts`
+- `GET /api/ready` → same stack as health (readiness includes DB).
+- `GET /api/workouts` → `authMiddleware` → `workout-controller` → `workout-service` → `db/schema.ts` (user-scoped rows).
+
+**Authorization:** every user-owned handler must enforce ownership using **`req.user.userId`** from `authMiddleware`—see **`docs/styleguide/security-and-authz.md`**.
 
 ## Error Handling
 
@@ -60,10 +63,10 @@ Example server paths in this template:
 
 - **Local component state (`useState`)**
   - For short-lived view state owned by one component.
-- **Context + reducer (global UI state)**
-  - For app-level UI state shared by multiple components (for example, todo list filters).
+- **Context (auth and app providers)**
+  - Auth session and shared providers (see `client/src/features/auth/`).
 - **Server state**
-  - Data loaded from `/api/*` remains request-driven through feature API modules and hooks (for example, `todo-api.ts` + `useTodos`).
+  - Data loaded from `/api/*` remains request-driven through feature API modules (for example `client/src/lib/workout-api.ts`).
 
 ## Environment and Configuration
 
@@ -83,4 +86,9 @@ Example server paths in this template:
 
 - `pnpm run build` builds the frontend bundle.
 - `pnpm run start` runs the server in production mode.
-- Deploy workflow pushes app code and runs startup on EC2.
+- Deploy workflow (if enabled) pushes app code per `docs/deployment/README.md` and `docs/development-workflow.md`.
+
+## Further reading
+
+- **`docs/styleguide/README.md`** — implementation patterns and security checklist pointers.
+- **`docs/data-flow.md`** — sequence-level flows for auth, workouts, and stats.

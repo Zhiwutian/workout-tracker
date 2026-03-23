@@ -1,0 +1,32 @@
+---
+description: Backend API layering and boundary guard
+globs: server/**/*.ts
+alwaysApply: false
+---
+
+# Backend API boundaries
+
+Apply when editing **`server/`** routes, controllers, services, or DB access.
+
+**Pair with:** **`api-contract-discipline`** for externally visible API shape changes.  
+**Pair with:** **`authz-data-ownership`** for user-owned resources.
+
+**Docs:** `docs/styleguide/backend-patterns.md`, `docs/styleguide/security-and-authz.md`.
+
+## Layering
+
+- Routes: registration + middleware only (`server/routes/api.ts`).
+- Controllers: request parsing (Zod), response mapping; use **`asyncHandler`** where applicable.
+- Services: business rules and DB access.
+- No business logic in route files.
+
+## Contracts
+
+- Keep **`sendSuccess` / `sendError`** envelope semantics.
+- Shared wire types live in **`shared/`** (e.g. `shared/api-contracts.ts`); extend as the API grows.
+- New behavior gets **route tests** (`server/routes/*.test.ts`).
+
+## Auth
+
+- Protected routes use **`authMiddleware`**; public auth entry points stay explicit (`/api/auth/sign-up`, `/api/auth/sign-in`).
+- Controllers must not skip ownership checks that belong in services.

@@ -1,0 +1,40 @@
+---
+description: Release readiness and deployment sanity checks
+alwaysApply: true
+---
+
+# Release readiness checks
+
+Apply when validating **deploy / release readiness** or **production cutover** (broader than day-to-day commits).
+
+**Overlap:** Same core commands as **`pre-commit-quality-gate`**; this rule adds deploy/auth/DB bootstrap sanity.
+
+## Planning mode
+
+- In planning mode, do not run release validation commands unless the user approves execution.
+
+## Required validation
+
+- `pnpm run lint`
+- `pnpm run tsc`
+- `pnpm run test`
+- `pnpm run build`
+
+## Deployment / auth sanity
+
+- Verify **`docs/configuration.md`** and **`docs/deployment/README.md`** match hosted env vars.
+- For **demo JWT**: strong **`TOKEN_SECRET`**, correct **`DATABASE_URL`**, **`CORS_ORIGIN`**.
+- When **OIDC** exists: verify login, callback, and authenticated profile/mechanism align with docs.
+
+## Hosted DB safety
+
+- Use **`db:migrate`** + **`db:seed`** (or equivalent) for new hosted environments.
+- Do not run destructive local-import flows against production databases.
+
+## Optional smoke
+
+- Add or run a deploy smoke script when URLs and env are available; document it in **`docs/development-workflow.md`**.
+
+## Supply chain (advisory)
+
+- Run **`pnpm audit --audit-level high`** before large dependency or auth changes; align with any scheduled workflow in **`.github/workflows/`**.

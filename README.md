@@ -1,6 +1,6 @@
-# full-stack-project
+# workout-tracker
 
-A full stack TypeScript template with React, Express, and PostgreSQL.
+Full-stack **workout tracker** (React, Express, PostgreSQL, Drizzle). Patterns and Cursor rules align with the **bible-support** monorepo template; see **`docs/styleguide/`**, **`AGENTS.md`**, and **`CONTRIBUTING.md`** (PR scope and optional parent workspace).
 
 ## Tech Stack
 
@@ -12,7 +12,7 @@ A full stack TypeScript template with React, Express, and PostgreSQL.
 - React Context + reducer (`client` global UI state)
 - Express 5 + PostgreSQL (`server`)
 - Helmet + CORS + rate limiting (`server` security basics)
-- TypeScript, ESLint, Prettier, Husky, lint-staged
+- TypeScript, ESLint, Prettier, Husky (**`pre-commit`** → lint-staged; **`pre-push`** → **`pnpm run ci:local`**)
 - Vitest + Testing Library + Supertest for testing
 - Zod env validation + Pino structured logging (`server`)
 
@@ -88,21 +88,35 @@ pnpm run dev
 
 Open the app and confirm the client can hit `/api/hello`.
 
-## Example API Endpoints
+## Documentation
+
+- **`docs/README.md`** — index of all project docs
+- **`docs/styleguide/`** — UI, frontend/backend patterns, **security & authz**, database parity
+- **`docs/rules-registry.md`** — Cursor rules under **`.cursor/rules/`**
+
+## Example API endpoints
 
 Responses use an API envelope:
 
 - Success: `{ "data": ..., "meta": { "requestId": "..." } }`
 - Error: `{ "error": { "code": "...", "message": "..." }, "meta": { "requestId": "..." } }`
-- Exception: `DELETE /api/todos/:todoId` returns `204 No Content` on success (no response body).
 
-- `GET /api/hello` - basic connectivity check
-- `GET /api/health` - API + database health report
-- `GET /api/ready` - readiness check (returns `503` if DB is unavailable/not configured)
-- `GET /api/todos` - list todos (Drizzle-backed)
-- `POST /api/todos` - create todo with `{ "task": "..." }`
-- `PATCH /api/todos/:todoId` - update completion with `{ "isCompleted": true|false }`
-- `DELETE /api/todos/:todoId` - remove todo
+Public:
+
+- `POST /api/auth/sign-up` — demo account by unique display name
+- `POST /api/auth/sign-in` — demo sign-in by display name
+
+Authenticated (`Authorization: Bearer`):
+
+- `GET /api/me`, `PATCH /api/profile`
+- `GET/POST /api/exercises`
+- `GET/POST /api/workouts`, `GET/PATCH/DELETE /api/workouts/:workoutId`
+- `POST .../workouts/:workoutId/sets`, `PATCH/DELETE /api/sets/:setId`
+- `GET /api/stats/weekly-volume?weekStart=YYYY-MM-DD`
+
+Health:
+
+- `GET /api/hello`, `GET /api/health`, `GET /api/ready`
 
 ## Scripts
 

@@ -16,6 +16,10 @@ export function authMiddleware(
   if (!token) {
     throw new ClientError(401, 'authentication required');
   }
-  req.user = jwt.verify(token, secret) as Request['user'];
+  const payload = jwt.verify(token, secret) as { userId?: unknown };
+  if (typeof payload.userId !== 'number') {
+    throw new ClientError(401, 'invalid access token payload');
+  }
+  req.user = { userId: payload.userId };
   next();
 }
