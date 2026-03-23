@@ -14,6 +14,9 @@ Do not commit real secrets.
 1. Install deps: `pnpm install` (postinstall copies **`server/.env.example`** → **`server/.env`** if missing).
 2. Edit **`server/.env`**:
    - **`DATABASE_URL`** — PostgreSQL connection string
+   - **`DB_SSL`** — set **`true`** for managed Postgres that requires TLS, or add **`sslmode=require`** (or **`verify-*`**) to the URL. Default is off so local Docker/CI Postgres (no TLS) works.
+   - **`DB_SSL_REJECT_UNAUTHORIZED`** — in production, whether to verify the server certificate (default **`true`** when SSL is on).
+   - **`PG_POOL_MAX`** — optional pool size cap (default **10**).
    - **`TOKEN_SECRET`** — strong secret for signing JWTs (demo auth)
    - **`CORS_ORIGIN`** — dev client origin (e.g. `http://localhost:5173`)
    - Rate limit tunables if needed (`RATE_LIMIT_*`)

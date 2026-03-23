@@ -1,6 +1,23 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+function parseBooleanEnv(defaultValue: boolean): z.ZodType<boolean> {
+  return z.preprocess((value) => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (['1', 'true', 't', 'yes', 'y', 'on'].includes(normalized)) {
+        return true;
+      }
+      if (['0', 'false', 'f', 'no', 'n', 'off', ''].includes(normalized)) {
+        return false;
+      }
+    }
+    if (value == null) return defaultValue;
+    return value;
+  }, z.boolean().default(defaultValue));
+}
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
@@ -11,6 +28,12 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(200),
   RATE_LIMIT_WRITE_MAX: z.coerce.number().int().positive().default(60),
   DATABASE_URL: z.string().optional().default(''),
+  /** Max connections in the shared `pg` pool (optional tuning for hosted Postgres limits). */
+  PG_POOL_MAX: z.coerce.number().int().positive().max(100).default(10),
+  /** Enable TLS for Postgres. Default false for local/CI; set true (or use sslmode in URL) for managed DBs. */
+  DB_SSL: parseBooleanEnv(false),
+  /** When DB_SSL is on, reject unauthorized certs (set false only for dev with self-signed). */
+  DB_SSL_REJECT_UNAUTHORIZED: parseBooleanEnv(true),
   TOKEN_SECRET: z.string().min(1, 'TOKEN_SECRET is required'),
 });
 

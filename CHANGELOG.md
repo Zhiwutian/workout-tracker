@@ -6,6 +6,10 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ## [Unreleased]
 
+### Fixed
+
+- **Postgres SSL:** `pg` pool no longer forces TLS. SSL is enabled only when **`DB_SSL=true`** or **`DATABASE_URL`** includes **`sslmode=require|verify-ca|verify-full`**, fixing **`db:seed`** / CI against local Postgres (e.g. GitHub Actions service) that does not support SSL.
+
 ### Added
 
 - **CI / Husky parity with template:** **`/.github/workflows/audit-scheduled.yml`** (weekly **`pnpm audit --audit-level high`**). Root script **`pnpm run ci:local`** (lint → tsc → test → build). Husky **`pre-push`** runs **`ci:local`** so pushes match core GitHub quality gates. Docs policy treats **`CONTRIBUTING.md`**, **`AGENTS.md`**, and **`CHANGELOG.md`** as documentation updates. **`docs/development-workflow.md`** and PR template document CI, local parity, and E2E expectations.
