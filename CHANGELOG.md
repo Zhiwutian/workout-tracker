@@ -14,6 +14,7 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 ### Fixed
 
 - **Postgres SSL:** `pg` pool no longer forces TLS. SSL is enabled only when **`DB_SSL=true`** or **`DATABASE_URL`** includes **`sslmode=require|verify-ca|verify-full`**, fixing **`db:seed`** / CI against local Postgres (e.g. GitHub Actions service) that does not support SSL.
+- **Drizzle migrations / CI:** `database/migrations/0003_bouncy_gwen_stacy.sql` plus `meta/0003_snapshot.json` and journal entry align Drizzle Kit snapshot format with `server/db/schema.ts` without dropping `profiles_display_name_unique` (no DDL beyond `SELECT 1`), satisfying the PR migration policy when the schema file changes.
 
 ### Added
 
