@@ -1,0 +1,23 @@
+---
+description: Enforce authenticated user identity and row ownership on server
+globs: server/**/*.ts
+alwaysApply: false
+---
+
+# Authorization and data ownership
+
+Apply when adding or editing **`server/`** routes, controllers, services, or queries that touch **user-owned data** (`workouts`, `workout_sets`, `profiles`, user-scoped `exercise_types`, etc.).
+
+**Source of truth:** `docs/styleguide/security-and-authz.md` (read it before new mutations).
+
+## Non-negotiables
+
+1. **Identity:** Use **`req.user.userId`** only after **`authMiddleware`** (`server/lib/authorization-middleware.ts`). Never trust **`userId`** from body, query, or untrusted headers.
+2. **Ownership:** Every read/update/delete of a tenant row must enforce **`resource.userId === req.user.userId`** (or an equivalent FK chain back to that user). Prefer queries that embed the user predicate so IDOR is structurally hard.
+3. **New endpoints:** Add tests for **401** (no token) and **cross-user** access (valid token, wrong owner).
+4. **Logging:** Do not log tokens or raw auth headers (`auth-secrets-safety`, `backend-observability-security.md`).
+
+## Pair with
+
+- **`backend-api-boundaries`** for layering.
+- **`api-contract-discipline`** when response shapes or status codes change.

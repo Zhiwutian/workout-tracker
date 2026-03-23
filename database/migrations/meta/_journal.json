@@ -15,6 +15,13 @@
       "when": 1772732852824,
       "tag": "0001_omniscient_smiling_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1742682000000,
+      "tag": "0002_workout_domain",
+      "breakpoints": true
     }
   ]
 }

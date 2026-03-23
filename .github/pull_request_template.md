@@ -14,7 +14,8 @@
 ## Documentation Quality Gates
 
 - [ ] I reviewed `README.md` for needed updates
-- [ ] I updated `/docs` files affected by this change
+- [ ] I updated `/docs` files affected by this change (including `docs/styleguide/` when patterns or validation change)
+- [ ] For new/changed **user-owned** APIs, I followed `docs/styleguide/security-and-authz.md` (ownership tests as needed)
 - [ ] If architecture changed, I updated `docs/architecture.md`
 - [ ] If project structure changed, I updated `docs/project-structure.md`
 - [ ] If workflow/scripts changed, I updated `docs/development-workflow.md`

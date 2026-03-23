@@ -1,0 +1,36 @@
+---
+description: Database migration safety checks
+globs: "{server/db/**/*.ts,database/**/*.sql,database/migrations/**/*}"
+alwaysApply: false
+---
+
+# Database migration safety
+
+Apply when editing **Drizzle schema, SQL mirror, migrations, or migration journal**.
+
+**CI:** If `.github/workflows/ci.yml` includes a migration policy, schema changes without migrations must fail that check.
+
+**Playbook:** `docs/development-workflow.md` and `docs/styleguide/database-patterns.md`.
+
+## Required updates
+
+If either changes:
+
+- `server/db/schema.ts`
+- `database/schema.sql`
+
+Then also update:
+
+- `database/migrations/*.sql`
+- `database/migrations/meta/*` (journal and snapshots when your workflow generates them)
+
+## Consistency
+
+- Keep Drizzle and **`database/schema.sql`** in parity.
+- Prefer additive, non-destructive migrations for hosted DBs.
+- If you use **`CHECK ... NOT VALID`**, ship a follow-up migration that **`VALIDATE CONSTRAINT`** once data is clean.
+
+## Verification
+
+- Run migrate/tests locally before commit for schema work.
+- For new indexes on hot paths, prefer **`EXPLAIN (ANALYZE, BUFFERS)`** on realistic data when practical.

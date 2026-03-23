@@ -18,17 +18,22 @@
   - SQL schema, seed data, and import script.
 - `docs/`
   - Project documentation and architecture notes.
+- `.cursor/rules/`
+  - Cursor agent rules (indexed in `docs/rules-registry.md`).
+- `AGENTS.md`
+  - Command summary for contributors and agents.
 
 ## Frontend (`client`)
 
 - `src/`
   - React application source.
   - `App.tsx` provides app shell layout and route definitions.
-  - `pages/` contains route-level screens (for example, `TodosPage`, `AboutPage`).
-  - `components/app/` contains app-level cross-cutting UI components/providers (error boundary, toasts, nav link button wrapper).
-  - `components/ui/` contains reusable Tailwind-based UI primitives (`Button`, `Input`, `Card`, `Badge`, `EmptyState`, `SectionHeader`) and a barrel export at `components/ui/index.ts`.
-  - `features/todos/` contains Todo-specific form schema/UI, API module (`todo-api.ts`), and data hook orchestration (`useTodos`).
-  - `state/` contains app-level Context + reducer state (`AppStateProvider` and hooks).
+  - `pages/` contains route-level screens (`WorkoutsPage`, `WorkoutDetailPage`, `DashboardPage`, `ProfilePage`, `SignInPage`, `AboutPage`).
+  - `components/app/` contains app-level cross-cutting UI (error boundary, toasts, nav link button wrapper).
+  - `components/ui/` contains reusable Tailwind-based UI primitives and a barrel export at `components/ui/index.ts`.
+  - `features/auth/` contains `AuthProvider`, `ProtectedRoute`, and auth context.
+  - `lib/workout-api.ts` (and related) centralizes authenticated API calls.
+  - `state/` contains optional global UI state (`AppStateProvider`); keep workout data request-driven from pages/features.
   - `lib/index.ts` exposes shared frontend utilities through a barrel export.
   - Recommended growth pattern:
     - `components/` for reusable UI pieces
@@ -68,9 +73,9 @@
   - Shared backend utilities and middleware (errors, auth, request typing, response envelopes).
 - `public/`
   - Server-hosted static files (uploads or other direct-served assets).
-- Current example path:
-  - `GET /api/health` -> route -> controller -> service -> Drizzle db client
-  - `GET /api/todos` -> route -> controller -> service -> Drizzle db client
+- Example paths:
+  - `GET /api/health` → route → controller → service → Drizzle
+  - `GET /api/workouts` → `authMiddleware` → `workout-controller` → `workout-service` → Drizzle (`userId` scoped)
 
 ## Data Layer (`database`)
 
@@ -85,3 +90,4 @@
 - API changes: add route + service in `server`.
 - DB changes: update `database/schema.sql` and corresponding server queries.
 - Cross-cutting behavior changes: update docs in this folder in the same PR.
+- Pattern or security convention changes: update **`docs/styleguide/`** (see **`docs/styleguide/security-and-authz.md`** for ownership rules).

@@ -51,25 +51,26 @@ File flow:
    - `ToastProvider`
    - `BrowserRouter`
    - `AppStateProvider` (Context + reducer)
-3. `client/src/App.tsx` renders app shell + route config.
-4. Route-level pages are lazy-loaded (`TodosPage`, `AboutPage`) with `Suspense`.
+3. `client/src/App.tsx` renders `AuthProvider`, app shell, and route config.
+4. Route-level pages are lazy-loaded (`WorkoutsPage`, `SignInPage`, etc.) with `Suspense`.
 
-## 4) Initial Route Render (`/`)
+## 4) Initial navigation (unauthenticated)
 
-For the default route:
+If there is no stored access token:
 
-1. `TodosPage` mounts.
-2. `useTodos()` runs its initial `useEffect`.
-3. `useTodos()` requests:
-   - `GET /api/hello`
-   - `GET /api/todos`
-4. Responses are parsed through `client/src/features/todos/todo-api.ts`.
-5. Page updates:
-   - header status message
-   - todo list
-   - counts/badges
+1. User opens `/` (workouts).
+2. `ProtectedRoute` detects missing auth and **redirects** to `/sign-in`.
+3. `SignInPage` offers demo sign-up / sign-in (display name).
 
-## Startup Sequence Diagram
+## 5) After sign-in (`/` workouts list)
+
+1. `AuthProvider` stores the JWT (see `client/src/lib/auth-storage.ts`).
+2. `WorkoutsPage` loads inside `ProtectedRoute`.
+3. The page requests **`GET /api/workouts`** with **`Authorization: Bearer <token>`** (via `client/src/lib/workout-api.ts`).
+4. Server: `authMiddleware` verifies JWT and sets **`req.user.userId`**; `workout-service` returns only that user’s workouts.
+5. UI renders the list.
+
+## Startup sequence diagram (authenticated list)
 
 ```mermaid
 sequenceDiagram
@@ -84,32 +85,31 @@ sequenceDiagram
     Dev->>Vite: pnpm run dev
     Vite-->>Browser: Serve app bundle
     Browser->>React: Mount main.tsx providers
-    React->>React: Resolve "/" route -> TodosPage
-    React->>API: GET /api/hello
-    API-->>React: { data: { message }, meta }
-    React->>API: GET /api/todos
-    API->>Drizzle: readTodos()
-    Drizzle->>DB: SELECT todos...
+    React->>React: Protected "/" -> WorkoutsPage (token present)
+    React->>API: GET /api/workouts + Bearer
+    API->>API: authMiddleware -> req.user.userId
+    API->>Drizzle: list workouts for userId
+    Drizzle->>DB: SELECT workouts...
     DB-->>Drizzle: rows
-    Drizzle-->>API: todo records
-    API-->>React: { data: todos[], meta }
-    React-->>Browser: Render server message + todo list
+    Drizzle-->>API: workouts
+    API-->>React: { data: workouts[], meta }
+    React-->>Browser: Render workout list
 ```
 
-## Error Path Diagram
+## Error path diagram
 
 ```mermaid
 sequenceDiagram
-    participant React as TodosPage / useTodos
+    participant React as WorkoutsPage / workout-api
     participant API as Express API
     participant Middleware as errorMiddleware
     participant Toast as ToastProvider
     participant Boundary as ErrorBoundary
 
-    React->>API: Request (for example GET /api/todos)
+    React->>API: Request (for example GET /api/workouts)
     API->>Middleware: Throw/forward error
     Middleware-->>React: { error: { code, message }, meta }
-    React->>React: todo-api maps envelope -> Error
+    React->>React: workout-api maps envelope -> Error
     React->>Toast: showToast("Request failed")
     Note over React,Toast: User sees non-blocking failure feedback
 
@@ -119,30 +119,20 @@ sequenceDiagram
     end
 ```
 
-## 5) Backend Request Path (example: `GET /api/todos`)
+## 6) Backend request path (example: `GET /api/workouts`)
 
-Request path:
+1. Express receives `GET /api/workouts`.
+2. Router (`server/routes/api.ts`) runs **`authMiddleware`** then `getWorkouts`.
+3. Controller reads **`req.user.userId`** and calls `workout-service`.
+4. Service queries Drizzle with a **user filter** (see **`docs/styleguide/security-and-authz.md`**).
+5. Response uses the standard envelope (`data` / `error` + `meta.requestId`).
 
-1. Express receives request under `/api/todos`
-2. Router (`server/routes/api.ts`) selects handler
-3. Controller (`server/controllers/todo-controller.ts`) invokes service
-4. Service (`server/services/todo-service.ts`) uses Drizzle client
-5. Drizzle queries PostgreSQL
-6. Controller returns standardized API envelope:
-   - success: `{ data, meta: { requestId } }`
-   - error: `{ error: { code, message, details? }, meta: { requestId } }`
+## 7) What happens on errors
 
-## 6) What Happens on Errors
+- **Server:** uncaught errors → `errorMiddleware` → envelope + status.
+- **Client:** API helpers throw; pages may show toasts; `ErrorBoundary` catches render crashes.
 
-- Server:
-  - All uncaught errors go through `errorMiddleware`
-  - Errors become normalized API envelopes with status codes
-- Client:
-  - API layer throws readable errors
-  - `TodosPage` shows toast notifications for failures
-  - `ErrorBoundary` catches render-time crashes and shows fallback UI
-
-## 7) Health vs Readiness
+## 8) Health vs Readiness
 
 - `GET /api/health`
   - Liveness-style endpoint
@@ -151,7 +141,7 @@ Request path:
   - Readiness-style endpoint
   - Returns `503` when DB is unavailable/not configured
 
-## 8) Quick Debug Checklist
+## 9) Quick debug checklist
 
 If app does not load data:
 
@@ -161,5 +151,6 @@ If app does not load data:
    - `http://localhost:8080/api/hello`
    - `http://localhost:8080/api/health`
    - `http://localhost:8080/api/ready`
-4. Verify `DATABASE_URL` and DB state.
-5. Use `pnpm run dev:fresh` if stale local processes are suspected.
+4. Verify `DATABASE_URL`, run **`pnpm run db:migrate`** / **`pnpm run db:seed`** if tables are empty.
+5. For authenticated UI, confirm sign-in returns a token and **`GET /api/workouts`** succeeds with `Authorization: Bearer ...`.
+6. Use `pnpm run dev:fresh` if stale local processes are suspected.

@@ -1,5 +1,6 @@
 import request from 'supertest';
 import { Express } from 'express';
+import jwt from 'jsonwebtoken';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 describe('api routes', () => {
@@ -45,10 +46,26 @@ describe('api routes', () => {
     expect(res.body.data.database).toBe('not_configured');
   });
 
-  it('returns 503 from /api/todos when DATABASE_URL is missing', async () => {
+  it('returns 401 from /api/workouts without bearer token', async () => {
     delete process.env.DATABASE_URL;
 
-    const res = await request(app).get('/api/todos').expect(503);
+    const res = await request(app).get('/api/workouts').expect(401);
+    expect(res.body.error).toEqual(
+      expect.objectContaining({
+        code: 'client_error',
+        message: 'authentication required',
+      }),
+    );
+  });
+
+  it('returns 503 from /api/workouts when DATABASE_URL is missing but token present', async () => {
+    delete process.env.DATABASE_URL;
+    const token = jwt.sign({ userId: 1 }, process.env.TOKEN_SECRET!);
+
+    const res = await request(app)
+      .get('/api/workouts')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(503);
     expect(res.body.error).toEqual(
       expect.objectContaining({
         code: 'client_error',

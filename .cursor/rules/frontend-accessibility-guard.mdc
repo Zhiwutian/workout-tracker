@@ -1,0 +1,27 @@
+---
+description: Frontend accessibility and UI consistency guard
+globs: "{client/src/**/*.{ts,tsx,css},docs/styleguide/**/*.md}"
+alwaysApply: false
+---
+
+# Frontend accessibility guard
+
+Apply when changing **UI components, styles, or interaction behavior** in the client.
+
+**Docs:** `docs/styleguide/ui-styleguide.md`, `docs/styleguide/frontend-patterns.md`.
+
+## Checks
+
+- Forms: associated labels, error text, and focus management after submit/errors.
+- Interactive elements: keyboard operability where applicable.
+- Contrast and text sizing remain readable on touched views.
+- Touch targets remain usable on small screens.
+
+## Style consistency
+
+- Prefer Tailwind utilities; avoid large one-off CSS unless tokenized in **`index.css`**.
+- Feature UI under **`client/src/features/*`**; keep pages as orchestrators when possible.
+
+## Pre-commit
+
+- Update styleguide or component docs when UX conventions change materially.

@@ -1,5 +1,2 @@
-insert into "todos" ("task", "isCompleted")
-values
-  ('Review template docs', false),
-  ('Create your first feature', false),
-  ('Ship your MVP', false);
+-- Optional manual SQL fixtures. Prefer `pnpm run db:seed` for global exercises.
+-- Example: insert into "exercise_types" ("userId", "name", "muscleGroup") values (null, 'Custom', 'core');

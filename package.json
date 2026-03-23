@@ -1,8 +1,8 @@
 {
-  "name": "full-stack-project-template",
-  "version": "2.0.0",
+  "name": "workout-tracker",
+  "version": "0.1.0",
   "private": true,
-  "description": "A full stack TypeScript solo project.",
+  "description": "Workout Tracker — educational full-stack app (React, Express, Postgres, Drizzle).",
   "packageManager": "pnpm@10.30.3",
   "engines": {
     "node": ">=22 <23",
@@ -22,6 +22,8 @@
     "dev:clean": "node scripts/dev-clean.mjs",
     "dev:fresh": "pnpm run dev:clean && pnpm run dev",
     "dev": "npm-run-all --parallel --print-label dev:client dev:server",
+    "dev:client:e2e": "pnpm -C client exec vite --host 127.0.0.1 --port 5188",
+    "dev:e2e": "npm-run-all --parallel --print-label dev:client:e2e dev:server",
     "install:env": "test -f server/.env || cp server/.env.example server/.env",
     "postinstall": "pnpm run install:env",
     "lint:client": "pnpm -C client lint",
@@ -37,6 +39,8 @@
     "test:coverage:server": "pnpm -C server test:coverage",
     "test:coverage": "npm-run-all --parallel --print-label test:coverage:client test:coverage:server",
     "test:changed": "node scripts/test-changed.mjs",
+    "test:e2e": "playwright test",
+    "pwa:icons": "node scripts/gen-pwa-icons.mjs",
     "psql": ". server/.env && psql $DATABASE_URL",
     "tsc:client": "pnpm -C client exec tsc --project .",
     "tsc:server": "pnpm -C server exec tsc --project .",
@@ -46,6 +50,7 @@
   },
   "devDependencies": {
     "@learningfuze/lfz-config": "^1.0.0",
+    "@playwright/test": "^1.58.2",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "eslint": "^8.57.1",
@@ -53,6 +58,7 @@
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-html": "^8.1.4",
     "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^16.6.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.6.0",
     "eslint-plugin-react": "^7.37.5",
@@ -62,6 +68,7 @@
     "markuplint": "^3.15.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.8.1",
+    "sharp": "^0.34.5",
     "stylelint": "^17.4.0",
     "stylelint-config-recommended": "^18.0.0",
     "stylelint-config-standard": "^40.0.0",
@@ -73,7 +80,8 @@
       "argon2",
       "es5-ext",
       "esbuild",
-      "msw"
+      "msw",
+      "sharp"
     ]
   }
 }

@@ -1,30 +1,15 @@
 import { createContext, Dispatch } from 'react';
 
-export type TodoFilter = 'all' | 'active' | 'completed';
+/** Reserved for future global UI state (themes, layout). */
+export type AppState = Record<string, never>;
 
-export type AppState = {
-  todoFilter: TodoFilter;
-};
+export type AppAction = { type: 'noop' };
 
-export type AppAction = {
-  type: 'todoFilter/set';
-  payload: TodoFilter;
-};
+export const initialState: AppState = {};
 
-export const initialState: AppState = {
-  todoFilter: 'all',
-};
-
-/**
- * Reducer for frontend app-level UI state.
- */
 export function appStateReducer(state: AppState, action: AppAction): AppState {
-  switch (action.type) {
-    case 'todoFilter/set':
-      return { ...state, todoFilter: action.payload };
-    default:
-      return state;
-  }
+  void action;
+  return state;
 }
 
 export const AppStateContext = createContext<AppState | null>(null);

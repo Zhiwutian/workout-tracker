@@ -19,43 +19,33 @@ function renderApp(initialEntries: string[] = ['/']) {
 }
 
 describe('App', () => {
-  it('renders server message and initial todos', async () => {
-    renderApp();
+  it('redirects to sign-in when visiting home unauthenticated', async () => {
+    renderApp(['/']);
 
     expect(
-      await screen.findByRole('heading', { name: 'Todo Starter' }),
+      await screen.findByRole('heading', { name: 'Workout Tracker' }),
     ).toBeInTheDocument();
-    expect(
-      await screen.findByText('Server says: Hello, World!'),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText('Wire up first feature'),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
   });
 
-  it('creates, toggles, and deletes a todo', async () => {
+  it('signs in and shows workouts list (MSW)', async () => {
     const user = userEvent.setup();
-    renderApp();
+    renderApp(['/sign-in']);
 
-    const taskInput = await screen.findByLabelText('New todo task');
-    await user.type(taskInput, 'Build todo feature');
-    await user.click(screen.getByRole('button', { name: 'Add Todo' }));
+    await user.type(screen.getByLabelText('Display name'), 'Test Lifter');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
-    expect(await screen.findByText('Build todo feature')).toBeInTheDocument();
-
-    const todoCheckbox = screen.getAllByRole('checkbox')[0];
-    await user.click(todoCheckbox);
-    expect(todoCheckbox).toBeChecked();
-
-    await user.click(screen.getAllByRole('button', { name: 'Delete' })[0]);
-    expect(screen.queryByText('Build todo feature')).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Workouts' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Test Lifter')).toBeInTheDocument();
   });
 
   it('renders about page route', async () => {
     renderApp(['/about']);
 
     expect(
-      await screen.findByRole('heading', { name: 'About This Starter' }),
+      await screen.findByRole('heading', { name: 'Workout Tracker' }),
     ).toBeInTheDocument();
   });
 });

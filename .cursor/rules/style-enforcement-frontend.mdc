@@ -1,0 +1,28 @@
+---
+description: Frontend styleguide enforcement
+globs: client/src/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Frontend style enforcement
+
+Apply **before generating or substantially editing** frontend UI code.
+
+**Pair with:** **`frontend-accessibility-guard`**.
+
+## Pre-generation steps
+
+1. Read **`docs/styleguide/ui-styleguide.md`** and skim **`docs/styleguide/frontend-patterns.md`**.
+2. Reuse existing UI primitives before inventing new patterns.
+3. Keep forms accessible (labels, errors, focus).
+
+## Implementation
+
+- Prefer Tailwind utilities in components.
+- Use **`client/src/index.css`** only for global resets and shared tokens.
+- Decompose large pages (hooks + presentation components) per **`frontend-patterns.md`**.
+- Add or extend **Vitest + RTL** coverage for non-trivial flows.
+
+## Docs
+
+- UI pattern changes should update **`docs/styleguide/`** in the same PR when behavior shifts.

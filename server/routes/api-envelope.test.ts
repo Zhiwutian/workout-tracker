@@ -1,20 +1,19 @@
 import request from 'supertest';
 import { Express } from 'express';
+import jwt from 'jsonwebtoken';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@server/services/todo-service.js', () => ({
-  readTodos: vi.fn(async () => [
+vi.mock('@server/services/workout-service.js', () => ({
+  listWorkouts: vi.fn(async () => [
     {
-      todoId: 1,
-      task: 'mocked todo',
-      isCompleted: false,
-      createdAt: new Date('2026-01-01T00:00:00.000Z'),
-      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      workoutId: 1,
+      userId: 1,
+      title: 'Leg day',
+      notes: null,
+      startedAt: new Date('2026-01-01T12:00:00.000Z'),
+      endedAt: null,
     },
   ]),
-  createTodo: vi.fn(),
-  updateTodo: vi.fn(),
-  removeTodo: vi.fn(),
 }));
 
 describe('api envelope', () => {
@@ -22,18 +21,23 @@ describe('api envelope', () => {
 
   beforeAll(async () => {
     process.env.TOKEN_SECRET = process.env.TOKEN_SECRET ?? 'test-token-secret';
+    process.env.DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://x';
     const { createApp } = await import('@server/app.js');
     app = createApp();
   });
 
-  it('returns success envelope for GET /api/todos', async () => {
-    const res = await request(app).get('/api/todos').expect(200);
+  it('returns success envelope for GET /api/workouts with auth', async () => {
+    const token = jwt.sign({ userId: 1 }, process.env.TOKEN_SECRET!);
+    const res = await request(app)
+      .get('/api/workouts')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
 
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data[0]).toEqual(
       expect.objectContaining({
-        todoId: 1,
-        task: 'mocked todo',
+        workoutId: 1,
+        title: 'Leg day',
       }),
     );
     expect(res.body.meta).toEqual(
@@ -41,8 +45,11 @@ describe('api envelope', () => {
     );
   });
 
-  it('returns validation error envelope for bad POST /api/todos payload', async () => {
-    const res = await request(app).post('/api/todos').send({}).expect(400);
+  it('returns validation error envelope for bad POST /api/auth/sign-up payload', async () => {
+    const res = await request(app)
+      .post('/api/auth/sign-up')
+      .send({})
+      .expect(400);
 
     expect(res.body.error).toEqual(
       expect.objectContaining({

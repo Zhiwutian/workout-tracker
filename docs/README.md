@@ -1,97 +1,76 @@
-# Documentation Index
+# Documentation index
 
-This folder contains maintainable project documentation for application structure, runtime behavior, and team workflow.
+Project documentation for **workout-tracker**: structure, runtime behavior, workflow, and implementation standards.
 
-## Documents
+## Core docs
 
-- `architecture.md`
-  - High-level architecture
-  - Request lifecycle
-  - Data flow and runtime boundaries
-- `project-structure.md`
-  - Directory ownership and responsibilities
-  - Where to add new code as the app grows
-- `development-workflow.md`
-  - Local setup and daily development loop
-  - CI and deployment lifecycle
-- `app-startup-walkthrough.md`
-  - Step-by-step startup timeline from `pnpm run dev` to first render/API calls
-  - Server bootstrap order, route handling path, and error flow
+- **`architecture.md`** — Architecture, request lifecycle, boundaries
+- **`project-structure.md`** — Directories and where to add code
+- **`development-workflow.md`** — Local setup, DB, CI, branching, **styleguide + Cursor rules** pointers
+- **`app-startup-walkthrough.md`** — From `pnpm run dev` to first UI/API calls
+- **`assumptions.md`** — UTC stats window, demo auth, volume definition
+- **`configuration.md`** — Env files, secrets boundaries, future OIDC notes
+- **`deployment/README.md`** — Hosted bootstrap and future OAuth deploy notes
+- **`data-flow.md`** — Auth, API, DB, and PWA notes (sequence diagrams)
 
-## Documentation Maintenance Rules
+## Styleguide (`docs/styleguide/`)
 
-- Update docs in the same pull request as behavior changes.
-- Keep this folder implementation-aware (actual paths, real scripts).
-- Prefer concise docs that explain "why" and "where", not line-by-line code.
-- If a script or workflow changes, update `README.md` and this folder together.
+Implementation standards aligned with the parent **bible-support** template, adapted for this app:
 
-## How To Update The Changelog
+- **`styleguide/README.md`** — Index of all styleguide files
+- **`styleguide/code-patterns.md`** — Cross-stack layering and checklists
+- **`styleguide/frontend-patterns.md`** — Client structure, state, API
+- **`styleguide/backend-patterns.md`** — Routes, controllers, services, JWT context
+- **`styleguide/security-and-authz.md`** — **Identity, ownership, IDOR prevention** (required reading for mutations)
+- **`styleguide/database-patterns.md`** — Migrations and schema workflow
+- **`styleguide/database-constraints.md`** — Zod ↔ DB parity for workout tables
+- **`styleguide/ui-styleguide.md`** — UI tokens and conventions
+- **`styleguide/backend-observability-security.md`** — Logging, rate limits, security checklist
 
-`CHANGELOG.md` lives at the project root and should be updated in every PR that changes behavior, architecture, tooling, or workflow.
+## Rules and agents
 
-- Add new entries under `## [Unreleased]` in the correct subsection:
-  - `Added`
-  - `Changed`
-  - `Fixed`
-  - `Removed`
-- Write concise, user-facing summaries of impact (what changed and why it matters).
-- Group related file changes into one bullet when possible.
-- When cutting a release, move `Unreleased` entries into a dated/versioned section and reset `Unreleased`.
+- **`rules-registry.md`** — Index of **`.cursor/rules/*.mdc`**
+- **`rules-usage-guide.md`** — How rules interact with CI and planning mode
+- **`AGENTS.md`** (repository root) — Contributor command summary for agents and humans
 
-## Test Changed Script Note
+## Proposals (`docs/proposals/`)
 
-For fast local feedback, run:
+- **`proposals/README.md`** — Index of forward-looking plans
+- **`proposals/workout-tracker-build-plan.md`** — Master build plan (phases, agent/workspace workflow, docs map, deliverables, OIDC follow-up)
+
+Contributor expectations and parent-workspace rules: **[`../CONTRIBUTING.md`](../CONTRIBUTING.md)** and **[`../AGENTS.md`](../AGENTS.md)**.
+
+## Templates
+
+- **`templates/feature-doc-template.md`** — Feature documentation scaffold
+
+## Maintenance
+
+- Update **`docs/`** and **`CHANGELOG.md`** in the same PR as behavior or workflow changes.
+- When adding APIs, update **`docs/styleguide/database-constraints.md`** if validation or DB rules change.
+
+## Changelog
+
+See root **`CHANGELOG.md`**. Add entries under **`## [Unreleased]`** (`Added` / `Changed` / `Fixed` / `Removed`).
+
+## Test changed script
 
 ```sh
 pnpm run test:changed
-```
-
-To override the diff base ref used by the script:
-
-```sh
 TEST_CHANGED_BASE=origin/main pnpm run test:changed
 ```
 
-## Comment Standards
+## Comment standards
 
-Use comments to improve maintainability for both humans and AI tools, not to restate obvious code.
+Use comments for maintainability, not to restate obvious code. JSDoc on exported functions and non-trivial helpers; inline comments for non-obvious control flow or safety. Update comments when behavior changes.
 
-- Add JSDoc-style comments to:
-  - exported functions
-  - non-trivial internal helpers
-  - modules with setup/behavioral side effects
-- Keep JSDoc concise and practical:
-  - one sentence for purpose
-  - include important behavior or constraints
-  - mention notable return/throw behavior when not obvious
-- Add inline comments only for complex logic:
-  - fallback behavior
-  - non-obvious control flow
-  - performance/safety decisions
-- Avoid noisy comments:
-  - do not explain basic language syntax
-  - do not duplicate variable names line-by-line
-- If code changes alter behavior, update related comments in the same PR.
+## Tailwind and imports
 
-## Tailwind UI Standards
+- Prefer Tailwind utilities in `client/src`; keep `index.css` minimal until shared tokens grow.
+- Prefer `@/` (client), `@server/` (server), `@shared/` (shared).
 
-- Prefer Tailwind utility classes for component-level styling in `client/src`.
-- Keep shared/global styles minimal in `client/src/index.css`.
-- If class lists become hard to scan, extract reusable UI components in `client/src/components/ui` instead of adding custom CSS files.
-- Use a consistent scale for spacing/colors/typography to keep the UI cohesive across features.
-- Prefer `@/` imports (for example, `@/components/ui`, `@/lib`) instead of deep relative paths.
+## Frontend state and forms
 
-## Import Alias Standards
-
-- In client code, prefer `@/` imports for `client/src/*` modules.
-- In server code, prefer `@server/` imports for `server/*` modules.
-- Use `@shared/` imports for contracts shared between client and server.
-- Keep same-folder imports relative (for example, `./logger.js`) when that is clearer.
-
-## Frontend State and Forms Guidance
-
-- Use `react-hook-form` + `zod` for form validation and submit handling.
-- Keep feature form schemas close to feature code (for example, `client/src/features/todos/`).
-- Use local `useState` for component-owned state that is not shared.
-- Use Context + reducer for lean global UI state used across multiple components.
-- Keep API-backed data request-driven in feature components/services unless a dedicated server-state library is introduced.
+- **react-hook-form** + **zod** for forms.
+- Keep feature schemas near features (e.g. `client/src/features/auth/`).
+- Context for auth; local state for page-owned UI; avoid unnecessary global stores.

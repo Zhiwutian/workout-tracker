@@ -1,3 +1,3 @@
-ALTER TABLE "todos" ALTER COLUMN "todoId" SET DATA TYPE serial;--> statement-breakpoint
-ALTER TABLE "todos" ALTER COLUMN "todoId" DROP IDENTITY;--> statement-breakpoint
-ALTER TABLE "todos" ALTER COLUMN "isCompleted" SET DATA TYPE boolean;
+ALTER TABLE "todos" ALTER COLUMN "isCompleted" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "todos" ALTER COLUMN "isCompleted" SET DATA TYPE boolean USING ("isCompleted" <> 0);--> statement-breakpoint
+ALTER TABLE "todos" ALTER COLUMN "isCompleted" SET DEFAULT false;

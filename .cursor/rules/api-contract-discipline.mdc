@@ -1,0 +1,32 @@
+---
+description: API contract + test + docs discipline
+globs: "{server/**/*.ts,shared/**/*.ts,client/src/test/handlers.ts,docs/**/*.md,README.md}"
+alwaysApply: false
+---
+
+# API contract discipline
+
+Apply when changing **request/response behavior, status codes, route semantics**, or **types in `shared/`** that clients rely on.
+
+**Also coordinate** DB/Zod parity when validation or constraints change—see **`docs/styleguide/database-constraints.md`**.
+
+**Related:** **`backend-api-boundaries`** (layering); client call sites should stay aligned with **`shared/`**.
+
+## Required pairing
+
+When API behavior changes, update together:
+
+- Route / controller / service implementation
+- Shared types in **`shared/`** when the wire shape crosses the boundary
+- Backend route tests (`server/routes/*.test.ts`)
+- **MSW** defaults in **`client/src/test/handlers.ts`** when tests mock those paths
+- Relevant **`docs/*`** and **`CHANGELOG.md`**
+
+## Consistency
+
+- Keep envelope semantics stable (`data` on success, `error` on failure).
+- Keep status codes intentional (401 auth, 404 not found, 409 conflicts, validation errors per existing middleware).
+
+## Pre-commit
+
+- API changes should land with tests and doc updates in the same PR.
