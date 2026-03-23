@@ -10,13 +10,17 @@
 6. Run `pnpm run dev` for client + server watchers.
    - If you hit stale port/process issues, run `pnpm run dev:fresh` instead.
 7. Make incremental changes.
-8. Before commit, run:
-   - `pnpm run lint`
-   - `pnpm run tsc`
-   - `pnpm run test`
-   - `pnpm run build`
-9. Optionally run `pnpm run test:coverage` to inspect coverage trends.
-10. For quick feedback during active work, run `pnpm run test:changed`.
+8. **Before commit:** staged files are linted/formatted via **Husky** (`pre-commit` → `lint-staged`).
+9. **Before push:** Husky runs **`pre-push`** → `pnpm run ci:local` (lint, typecheck, tests, client build) so the same core gates as CI run locally. Use `git push --no-verify` only when intentional.
+10. For an extra manual pass (or if hooks are skipped), run:
+
+- `pnpm run lint`
+- `pnpm run tsc`
+- `pnpm run test`
+- `pnpm run build`
+
+11. Optionally run `pnpm run test:coverage` to inspect coverage trends.
+12. For quick feedback during active work, run `pnpm run test:changed`.
 
 ## Database Workflow
 
@@ -37,18 +41,28 @@ pnpm run db:import
 
 ## CI Workflow
 
-PRs trigger `/.github/workflows/ci.yml`:
+Pull requests and manual runs trigger `/.github/workflows/ci.yml`:
 
 1. Install dependencies (`pnpm install --frozen-lockfile`)
 2. Policy checks:
-   - docs updates for app/config changes
+   - docs updates for app/config changes (counts updates to `README.md`, `docs/**`, `CONTRIBUTING.md`, `AGENTS.md`, or `CHANGELOG.md`)
    - DB migration updates for schema file changes
-3. Lint (`pnpm run lint`)
-4. Typecheck (`pnpm run tsc`)
-5. Test (`pnpm run test`)
-6. Build (`pnpm run build`)
+3. **Quality** job (Postgres 16 service): lint (`pnpm run lint`), typecheck (`pnpm run tsc`), migrate + seed test DB, test (`pnpm run test`), client build (`pnpm run build`), Playwright Chromium install, **`pnpm run test:e2e`**
 
 This catches most integration issues before merge.
+
+### CI parity (local vs GitHub)
+
+| CI step                    | Local command                                                                           |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| Lint                       | `pnpm run lint`                                                                         |
+| Typecheck                  | `pnpm run tsc`                                                                          |
+| Test                       | `pnpm run test` (set **`TEST_DATABASE_URL`** locally to include IDOR integration tests) |
+| Build                      | `pnpm run build`                                                                        |
+| E2E                        | `pnpm run test:e2e` (needs **`DATABASE_URL`**, migrate/seed, Playwright browser deps)   |
+| All core gates in one shot | `pnpm run ci:local` (also runs on **`git push`** via Husky **`pre-push`**)              |
+
+**Advisory:** `/.github/workflows/audit-scheduled.yml` runs weekly (and on demand) with **`pnpm audit --audit-level high`**; it does not block PR merges. Run the same command locally before large dependency upgrades.
 
 ## Deployment Workflow
 

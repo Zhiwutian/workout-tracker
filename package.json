@@ -45,6 +45,7 @@
     "tsc:client": "pnpm -C client exec tsc --project .",
     "tsc:server": "pnpm -C server exec tsc --project .",
     "tsc": "npm-run-all --continue-on-error tsc:*",
+    "ci:local": "npm-run-all -s lint tsc test build",
     "prepare": "husky",
     "deploy": "git push origin main:pub"
   },

@@ -2,7 +2,9 @@
 
 ## Pull requests
 
-- Run **`pnpm run lint`**, **`pnpm run tsc`**, **`pnpm run test`**, and **`pnpm run build`** before opening a PR when behavior or build output changed.
+- **Husky:** **`pre-commit`** runs **`lint-staged`** on staged files; **`pre-push`** runs **`pnpm run ci:local`** (lint, tsc, test, build). Core gates also run on GitHub for every PR.
+- Before opening a PR, ensure **`pnpm run test:e2e`** passes locally when you touch app flows or `e2e/` (CI runs E2E with Postgres; see **`docs/development-workflow.md`**).
+- When hooks are bypassed or for a manual pass, run **`pnpm run lint`**, **`pnpm run tsc`**, **`pnpm run test`**, and **`pnpm run build`**.
 - Update **`CHANGELOG.md`** under **`[Unreleased]`** for user-visible or workflow changes.
 - If you add or change **`.cursor/rules/*.mdc`**, update **`docs/rules-registry.md`** in the same PR.
 

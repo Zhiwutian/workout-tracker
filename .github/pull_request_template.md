@@ -9,7 +9,10 @@
 - [ ] `pnpm run tsc`
 - [ ] `pnpm run test`
 - [ ] `pnpm run build`
+- [ ] `pnpm run test:e2e` (or confirm CI E2E is green — needs local DB + Playwright deps if run here)
 - [ ] Manual smoke test performed (if applicable)
+
+**Note:** Husky **`pre-push`** runs **`pnpm run ci:local`** (lint, tsc, test, build). E2E runs in CI after migrate/seed; run locally when changing flows under `e2e/`.
 
 ## Documentation Quality Gates
 

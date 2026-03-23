@@ -8,6 +8,8 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Added
 
+- **CI / Husky parity with template:** **`/.github/workflows/audit-scheduled.yml`** (weekly **`pnpm audit --audit-level high`**). Root script **`pnpm run ci:local`** (lint → tsc → test → build). Husky **`pre-push`** runs **`ci:local`** so pushes match core GitHub quality gates. Docs policy treats **`CONTRIBUTING.md`**, **`AGENTS.md`**, and **`CHANGELOG.md`** as documentation updates. **`docs/development-workflow.md`** and PR template document CI, local parity, and E2E expectations.
+
 - **`CONTRIBUTING.md`** — PR checks, changelog and rules-registry discipline, optional parent-workspace scope; **`AGENTS.md`** expanded with workspace layout, copy-paste agent prompt, rule-precedence note, and link to contributing.
 - **Proposal / docs index:** `docs/proposals/workout-tracker-build-plan.md` updated (MVP checkboxes, agent/workspace workflow, doc map rows); `docs/README.md` and `docs/proposals/README.md` cross-link contributor entry points; **`README.md`** links **`CONTRIBUTING.md`**.
 

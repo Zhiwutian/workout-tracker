@@ -12,7 +12,7 @@ Full-stack **workout tracker** (React, Express, PostgreSQL, Drizzle). Patterns a
 - React Context + reducer (`client` global UI state)
 - Express 5 + PostgreSQL (`server`)
 - Helmet + CORS + rate limiting (`server` security basics)
-- TypeScript, ESLint, Prettier, Husky, lint-staged
+- TypeScript, ESLint, Prettier, Husky (**`pre-commit`** → lint-staged; **`pre-push`** → **`pnpm run ci:local`**)
 - Vitest + Testing Library + Supertest for testing
 - Zod env validation + Pino structured logging (`server`)
 

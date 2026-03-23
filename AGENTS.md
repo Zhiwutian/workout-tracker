@@ -54,13 +54,15 @@ Workspace may include bible-support (parent) and workout-tracker (nested). For t
 | `pnpm run pwa:icons`                       | Regenerate **`icon-192.png`** / **`icon-512.png`** (requires **sharp**)            |
 | `pnpm run test:changed`                    | Tests related to git diff                                                          |
 | `pnpm run build`                           | Production client build                                                            |
+| `pnpm run ci:local`                        | Lint → tsc → test → build (same core gates as CI; Husky **`pre-push`**)            |
 | `pnpm run db:migrate`                      | Apply Drizzle migrations                                                           |
 | `pnpm run db:seed`                         | Seed global exercises (idempotent)                                                 |
 | `pnpm psql`                                | `psql` using `DATABASE_URL` from `server/.env`                                     |
 
 ## Before commit / PR
 
-Run: **`pnpm run lint`**, **`pnpm run tsc`**, **`pnpm run test`**, and **`pnpm run build`** when behavior changed.
+- **`pre-commit`:** **`lint-staged`** on staged files (Husky).
+- **`pre-push`:** **`pnpm run ci:local`** (lint, tsc, test, build). PRs also run full **`.github/workflows/ci.yml`** including Postgres, IDOR tests, and E2E.
 
 ## Documentation
 
