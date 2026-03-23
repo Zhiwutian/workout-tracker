@@ -20,4 +20,22 @@ test.describe('workout tracker smoke', () => {
       timeout: 15_000,
     });
   });
+
+  test('continue as guest and land on workouts', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page).toHaveURL(/\/sign-in$/);
+
+    await page.getByRole('button', { name: 'Continue as guest' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText(/Guest session — workouts save/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Start workout' }).click();
+    await expect(page.getByRole('link', { name: 'Open' })).toBeVisible({
+      timeout: 15_000,
+    });
+  });
 });

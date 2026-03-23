@@ -158,4 +158,16 @@ describe.skipIf(!hasTestDb)('api IDOR (integration)', () => {
       .send({ reps: 99 })
       .expect(404);
   });
+
+  it('guest session: POST /api/auth/guest then GET /api/me has isGuest true', async () => {
+    const res = await request(app).post('/api/auth/guest').expect(201);
+    const token = res.body.data.token as string;
+    expect(token).toBeTruthy();
+    const me = await request(app)
+      .get('/api/me')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(me.body.data.isGuest).toBe(true);
+    expect(me.body.data.displayName).toMatch(/^Guest /);
+  });
 });

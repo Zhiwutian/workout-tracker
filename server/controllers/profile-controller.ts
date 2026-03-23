@@ -1,6 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { sendSuccess } from '@server/lib/http-response.js';
+import {
+  getAuthSubjectForUser,
+  isGuestAuthSubject,
+} from '@server/services/auth-service.js';
 import { updateProfileForUser } from '@server/services/profile-service.js';
 
 const patchSchema = z
@@ -24,12 +28,14 @@ export async function patchProfile(
     if (userId === undefined) throw new Error('auth middleware required');
     const body = patchSchema.parse(req.body);
     const updated = await updateProfileForUser(userId, body);
+    const authSubject = await getAuthSubjectForUser(userId);
     sendSuccess(res, {
       userId: updated.userId,
       displayName: updated.displayName,
       weightUnit: updated.weightUnit,
       timezone: updated.timezone,
       updatedAt: updated.updatedAt.toISOString(),
+      isGuest: isGuestAuthSubject(authSubject),
     });
   } catch (err) {
     next(err);

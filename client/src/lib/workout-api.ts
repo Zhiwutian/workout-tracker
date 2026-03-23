@@ -11,6 +11,8 @@ export type MeResponse = {
   weightUnit: string;
   timezone: string | null;
   updatedAt: string;
+  /** Server user created via Continue as guest (`POST /api/auth/guest`). */
+  isGuest?: boolean;
 };
 
 export type Exercise = {
@@ -89,6 +91,12 @@ export async function signIn(displayName: string): Promise<{ token: string }> {
   return fetchJson<{ token: string }>('/api/auth/sign-in', {
     method: 'POST',
     body: JSON.stringify({ displayName }),
+  });
+}
+
+export async function createGuestSession(): Promise<{ token: string }> {
+  return fetchJson<{ token: string }>('/api/auth/guest', {
+    method: 'POST',
   });
 }
 

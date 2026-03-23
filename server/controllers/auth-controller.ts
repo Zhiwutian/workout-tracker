@@ -2,6 +2,9 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { sendSuccess } from '@server/lib/http-response.js';
 import {
+  createGuestUser,
+  getAuthSubjectForUser,
+  isGuestAuthSubject,
   signInByDisplayName,
   signUpDemo,
 } from '@server/services/auth-service.js';
@@ -41,6 +44,20 @@ export async function postAuthSignIn(
   }
 }
 
+/** POST /api/auth/guest — no body; creates ephemeral server user + JWT */
+export async function postAuthGuest(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const result = await createGuestUser();
+    sendSuccess(res, result, 201);
+  } catch (err) {
+    next(err);
+  }
+}
+
 /** GET /api/me — requires auth middleware */
 export async function getMe(
   req: Request,
@@ -52,9 +69,11 @@ export async function getMe(
     if (userId === undefined) {
       throw new Error('auth middleware required');
     }
+    const authSubject = await getAuthSubjectForUser(userId);
+    const isGuest = isGuestAuthSubject(authSubject);
     const profile = await readProfileForUser(userId);
     if (!profile) {
-      sendSuccess(res, { userId, profile: null });
+      sendSuccess(res, { userId, profile: null, isGuest });
       return;
     }
     sendSuccess(res, {
@@ -63,6 +82,7 @@ export async function getMe(
       weightUnit: profile.weightUnit,
       timezone: profile.timezone,
       updatedAt: profile.updatedAt.toISOString(),
+      isGuest,
     });
   } catch (err) {
     next(err);

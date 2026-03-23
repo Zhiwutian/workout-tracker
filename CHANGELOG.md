@@ -6,6 +6,14 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ## [Unreleased]
 
+### Added
+
+- **Continue as guest:** `POST /api/auth/guest` creates a server user with `authSubject` `guest:<uuid>` and returns a JWT; **`GET /api/me`** and **`PATCH /api/profile`** include **`isGuest`**. Sign-in page adds **Continue as guest**; nav and workouts/profile copy explain guest vs named accounts. Tests (MSW, API, optional Postgres IDOR, Playwright smoke).
+
+### Changed
+
+- **Docs / Path A planning:** **`docs/decisions/README.md`**, **`docs/decisions/0001-oidc-oauth-path-a.md`** (context, decision, implementation checklist). **`docs/proposals/workout-tracker-build-plan.md`** — Path A (**OIDC** current priority), Report 2 alignment, report-phase mapping, §11 **OIDC checklist** (A–I) + ADR link; §7 doc map row for ADR. **`docs/README.md`** and **`docs/proposals/README.md`** link ADR 0001.
+
 ### Fixed
 
 - **Postgres SSL:** `pg` pool no longer forces TLS. SSL is enabled only when **`DB_SSL=true`** or **`DATABASE_URL`** includes **`sslmode=require|verify-ca|verify-full`**, fixing **`db:seed`** / CI against local Postgres (e.g. GitHub Actions service) that does not support SSL.

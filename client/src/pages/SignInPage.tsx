@@ -8,11 +8,28 @@ import { Link, useNavigate } from 'react-router-dom';
  * Demo auth: unique display name per account. Replace with OIDC when wired.
  */
 export function SignInPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, continueAsGuest } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState('');
   const [busy, setBusy] = useState(false);
+
+  async function runGuest(): Promise<void> {
+    setBusy(true);
+    try {
+      await continueAsGuest();
+      showToast({ title: 'Continuing as guest', variant: 'success' });
+      navigate('/', { replace: true });
+    } catch (err) {
+      showToast({
+        title: 'Could not start guest session',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        variant: 'error',
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function runAuth(mode: 'sign-in' | 'sign-up'): Promise<void> {
     const name = displayName.trim();
@@ -78,6 +95,21 @@ export function SignInPage() {
           </Button>
         </div>
       </form>
+      <div className="mt-6 border-t border-slate-200 pt-6">
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full justify-center border border-slate-200 bg-slate-50"
+          disabled={busy}
+          onClick={() => void runGuest()}>
+          Continue as guest
+        </Button>
+        <p className="mt-2 text-center text-xs text-slate-500">
+          Guest data is stored on the server for this browser until you sign out
+          or clear the site. Create an account to use a name you can sign in
+          with again.
+        </p>
+      </div>
       <p className="mt-4 text-center text-sm text-slate-500">
         <Link className="text-indigo-600 underline" to="/about">
           About

@@ -12,7 +12,7 @@ import {
 
 /**
  * Authenticated identity. `authSubject` maps 1:1 to OIDC `sub` when OAuth is wired;
- * demo sign-up uses subjects like `demo:<uuid>`.
+ * demo sign-up uses `demo:<uuid>`; guest sessions use `guest:<uuid>` (no IdP).
  */
 export const users = pgTable('users', {
   userId: serial('userId').primaryKey(),

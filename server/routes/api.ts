@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getMe,
+  postAuthGuest,
   postAuthSignIn,
   postAuthSignUp,
 } from '@server/controllers/auth-controller.js';
@@ -35,6 +36,7 @@ apiRouter.get('/ready', readReady);
 
 apiRouter.post('/auth/sign-up', postAuthSignUp);
 apiRouter.post('/auth/sign-in', postAuthSignIn);
+apiRouter.post('/auth/guest', postAuthGuest);
 
 apiRouter.get('/me', authMiddleware, getMe);
 apiRouter.patch('/profile', authMiddleware, patchProfile);

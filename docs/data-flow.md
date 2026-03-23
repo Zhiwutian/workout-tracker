@@ -23,6 +23,24 @@ sequenceDiagram
 - **Token:** signed with **`TOKEN_SECRET`**, payload `{ userId }` (see `server/lib/authorization-middleware.ts`).
 - **Conflicts:** duplicate display name → **409** (`profiles_display_name_unique`).
 
+### 1b. Continue as guest
+
+```mermaid
+sequenceDiagram
+  participant UI as SignInPage
+  participant API as POST /api/auth/guest
+  participant Auth as auth-service createGuestUser
+  participant DB as PostgreSQL
+
+  UI->>API: POST (no body)
+  API->>Auth: createGuestUser()
+  Auth->>DB: insert users (authSubject guest:uuid) + profiles (displayName Guest uuid)
+  DB-->>Auth: user row
+  Auth-->>API: JWT + userId + displayName
+  API-->>UI: 201 { token, ... }
+  UI->>UI: same storage as demo; GET /api/me returns isGuest: true
+```
+
 ## 2. Authenticated API calls
 
 ```mermaid

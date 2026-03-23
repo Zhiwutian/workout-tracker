@@ -41,6 +41,20 @@ describe('App', () => {
     expect(await screen.findByText('Test Lifter')).toBeInTheDocument();
   });
 
+  it('continues as guest and shows workouts (MSW)', async () => {
+    const user = userEvent.setup();
+    renderApp(['/sign-in']);
+
+    await user.click(screen.getByRole('button', { name: 'Continue as guest' }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'Workouts' }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Guest session — workouts save on this device/),
+    ).toBeInTheDocument();
+  });
+
   it('renders about page route', async () => {
     renderApp(['/about']);
 

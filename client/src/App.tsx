@@ -35,6 +35,11 @@ function AppNav() {
           <NavLinkButton to="/dashboard">Dashboard</NavLinkButton>
           <NavLinkButton to="/profile">Profile</NavLinkButton>
           <NavLinkButton to="/about">About</NavLinkButton>
+          {me.isGuest ? (
+            <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900">
+              Guest
+            </span>
+          ) : null}
           <button
             type="button"
             className="ml-auto rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"

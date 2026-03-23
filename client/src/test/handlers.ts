@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
 const MOCK_TOKEN = 'msw-test-access-token';
+const MOCK_GUEST_TOKEN = 'msw-guest-access-token';
 
 let mockWorkouts: {
   workoutId: number;
@@ -29,7 +30,9 @@ resetApiMockState();
 
 function requireAuth(request: Request): boolean {
   const auth = request.headers.get('authorization');
-  return auth === `Bearer ${MOCK_TOKEN}`;
+  return (
+    auth === `Bearer ${MOCK_TOKEN}` || auth === `Bearer ${MOCK_GUEST_TOKEN}`
+  );
 }
 
 export const handlers = [
@@ -45,6 +48,10 @@ export const handlers = [
     HttpResponse.json({ data: { token: MOCK_TOKEN } }, { status: 201 }),
   ),
 
+  http.post('/api/auth/guest', async () =>
+    HttpResponse.json({ data: { token: MOCK_GUEST_TOKEN } }, { status: 201 }),
+  ),
+
   http.get('/api/me', ({ request }) => {
     if (!requireAuth(request)) {
       return HttpResponse.json(
@@ -52,13 +59,18 @@ export const handlers = [
         { status: 401 },
       );
     }
+    const auth = request.headers.get('authorization');
+    const isGuest = auth === `Bearer ${MOCK_GUEST_TOKEN}`;
     return HttpResponse.json({
       data: {
         userId: 1,
-        displayName: 'Test Lifter',
+        displayName: isGuest
+          ? 'Guest 00000000-0000-4000-8000-000000000001'
+          : 'Test Lifter',
         weightUnit: 'lb',
         timezone: null,
         updatedAt: new Date().toISOString(),
+        isGuest,
       },
     });
   }),
@@ -194,6 +206,7 @@ export const handlers = [
         weightUnit: 'kg',
         timezone: null,
         updatedAt: new Date().toISOString(),
+        isGuest: false,
       },
     });
   }),

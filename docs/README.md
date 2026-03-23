@@ -33,10 +33,15 @@ Implementation standards aligned with the parent **bible-support** template, ada
 - **`rules-usage-guide.md`** — How rules interact with CI and planning mode
 - **`AGENTS.md`** (repository root) — Contributor command summary for agents and humans
 
+## Architecture decisions (`docs/decisions/`)
+
+- **`decisions/README.md`** — ADR index
+- **`decisions/0001-oidc-oauth-path-a.md`** — OIDC/OAuth (Path A): context, decision, and **implementation checklist**
+
 ## Proposals (`docs/proposals/`)
 
 - **`proposals/README.md`** — Index of forward-looking plans
-- **`proposals/workout-tracker-build-plan.md`** — Master build plan (phases, agent/workspace workflow, docs map, deliverables, OIDC follow-up)
+- **`proposals/workout-tracker-build-plan.md`** — Master build plan (phases, agent/workspace workflow, OIDC §11 checklist + ADR link, deliverables)
 
 Contributor expectations and parent-workspace rules: **[`../CONTRIBUTING.md`](../CONTRIBUTING.md)** and **[`../AGENTS.md`](../AGENTS.md)**.
 

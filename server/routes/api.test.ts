@@ -58,6 +58,18 @@ describe('api routes', () => {
     );
   });
 
+  it('returns 503 from POST /api/auth/guest when DATABASE_URL is missing', async () => {
+    delete process.env.DATABASE_URL;
+
+    const res = await request(app).post('/api/auth/guest').expect(503);
+    expect(res.body.error).toEqual(
+      expect.objectContaining({
+        code: 'client_error',
+        message: expect.stringContaining('database is not configured'),
+      }),
+    );
+  });
+
   it('returns 503 from /api/workouts when DATABASE_URL is missing but token present', async () => {
     delete process.env.DATABASE_URL;
     const token = jwt.sign({ userId: 1 }, process.env.TOKEN_SECRET!);

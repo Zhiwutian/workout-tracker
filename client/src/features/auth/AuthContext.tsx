@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { getStoredToken, setStoredToken } from '@/lib/auth-storage';
 import {
+  createGuestSession,
   type MeResponse,
   readMe,
   signIn as apiSignIn,
@@ -23,6 +24,7 @@ type AuthContextValue = {
   setSessionToken: (token: string | null) => void;
   signUp: (displayName: string) => Promise<void>;
   signIn: (displayName: string) => Promise<void>;
+  continueAsGuest: () => Promise<void>;
   signOut: () => void;
   refreshMe: () => Promise<void>;
 };
@@ -79,6 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [setSessionToken],
   );
 
+  const continueAsGuest = useCallback(async () => {
+    const { token: newToken } = await createGuestSession();
+    setSessionToken(newToken);
+  }, [setSessionToken]);
+
   const signOut = useCallback(() => {
     setSessionToken(null);
     setMe(null);
@@ -92,10 +99,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSessionToken,
       signUp,
       signIn,
+      continueAsGuest,
       signOut,
       refreshMe,
     }),
-    [token, me, loading, setSessionToken, signUp, signIn, signOut, refreshMe],
+    [
+      token,
+      me,
+      loading,
+      setSessionToken,
+      signUp,
+      signIn,
+      continueAsGuest,
+      signOut,
+      refreshMe,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
