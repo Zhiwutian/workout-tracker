@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import { env } from '@server/config/env.js';
+import { ClientError } from '@server/lib/client-error.js';
 import { sendSuccess } from '@server/lib/http-response.js';
 import {
   createGuestUser,
@@ -21,6 +23,12 @@ export async function postAuthSignUp(
   next: NextFunction,
 ): Promise<void> {
   try {
+    if (!env.AUTH_DEMO_ENABLED) {
+      throw new ClientError(
+        403,
+        'demo sign-up is disabled; use OpenID Connect',
+      );
+    }
     const body = displayNameSchema.parse(req.body);
     const result = await signUpDemo(body.displayName);
     sendSuccess(res, result, 201);
@@ -36,6 +44,12 @@ export async function postAuthSignIn(
   next: NextFunction,
 ): Promise<void> {
   try {
+    if (!env.AUTH_DEMO_ENABLED) {
+      throw new ClientError(
+        403,
+        'demo sign-in is disabled; use OpenID Connect',
+      );
+    }
     const body = displayNameSchema.parse(req.body);
     const result = await signInByDisplayName(body.displayName);
     sendSuccess(res, result);

@@ -11,6 +11,7 @@ beforeAll(() => {
 afterEach(() => {
   // Ensure each test starts from a clean DOM and clean API mock state.
   cleanup();
+  localStorage.clear();
   server.resetHandlers();
   resetApiMockState();
 });

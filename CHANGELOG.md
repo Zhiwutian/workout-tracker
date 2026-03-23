@@ -8,11 +8,8 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Added
 
+- **OIDC / OAuth (Path A):** `AUTH_OIDC_*` and session env validation; `openid-client`; `GET /api/auth/oidc/login` (PKCE), `GET /api/auth/oidc/callback`, `POST /api/auth/logout`, `GET /api/auth/options`; signed cookies `wt_oidc_login` / `wt_session`; `sub` → `users.authSubject`; `authMiddleware` accepts **Bearer** then session cookie; client `credentials: 'include'`, sign-in page OIDC + gated demo, `auth_error` query handling. Docs: `docs/configuration.md`, `docs/deployment/README.md`, `docs/deployment/auth0-setup.md`, `docs/data-flow.md`, `docs/assumptions.md`, `docs/architecture.md`, `docs/testing.md`, `docs/security-notes.md`, `docs/styleguide/backend-patterns.md`, `docs/README.md`, `docs/decisions/README.md`; ADR 0001 and build plan §11 updated. `server/.env.example` extended; **`AGENTS.md`** links testing, security, and deployment guides.
 - **Continue as guest:** `POST /api/auth/guest` creates a server user with `authSubject` `guest:<uuid>` and returns a JWT; **`GET /api/me`** and **`PATCH /api/profile`** include **`isGuest`**. Sign-in page adds **Continue as guest**; nav and workouts/profile copy explain guest vs named accounts. Tests (MSW, API, optional Postgres IDOR, Playwright smoke).
-
-### Changed
-
-- **Docs / Path A planning:** **`docs/decisions/README.md`**, **`docs/decisions/0001-oidc-oauth-path-a.md`** (context, decision, implementation checklist). **`docs/proposals/workout-tracker-build-plan.md`** — Path A (**OIDC** current priority), Report 2 alignment, report-phase mapping, §11 **OIDC checklist** (A–I) + ADR link; §7 doc map row for ADR. **`docs/README.md`** and **`docs/proposals/README.md`** link ADR 0001.
 
 ### Fixed
 

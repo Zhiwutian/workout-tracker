@@ -69,6 +69,9 @@ Workspace may include bible-support (parent) and workout-tracker (nested). For t
 - **Patterns & security:** `docs/styleguide/README.md` → especially **`docs/styleguide/security-and-authz.md`**
 - **Cursor rules index:** `docs/rules-registry.md`
 - **Env:** `docs/configuration.md`
+- **Testing (commands, E2E, OIDC manual staging):** `docs/testing.md`
+- **Security (cookies, CORS, callbacks, CSP/SW):** `docs/security-notes.md`
+- **Deployment & OIDC:** `docs/deployment/README.md` — Auth0 dashboard steps: **`docs/deployment/auth0-setup.md`**
 
 ## Cursor rules
 

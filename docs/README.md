@@ -8,10 +8,13 @@ Project documentation for **workout-tracker**: structure, runtime behavior, work
 - **`project-structure.md`** — Directories and where to add code
 - **`development-workflow.md`** — Local setup, DB, CI, branching, **styleguide + Cursor rules** pointers
 - **`app-startup-walkthrough.md`** — From `pnpm run dev` to first UI/API calls
-- **`assumptions.md`** — UTC stats window, demo auth, volume definition
-- **`configuration.md`** — Env files, secrets boundaries, future OIDC notes
-- **`deployment/README.md`** — Hosted bootstrap and future OAuth deploy notes
-- **`data-flow.md`** — Auth, API, DB, and PWA notes (sequence diagrams)
+- **`assumptions.md`** — UTC stats window, OIDC + demo + guest auth, volume definition
+- **`configuration.md`** — Env files, secrets boundaries, OIDC/session variables
+- **`deployment/README.md`** — Hosted bootstrap, OIDC / Auth0-style checklist
+- **`deployment/auth0-setup.md`** — Auth0 dashboard walkthrough (callbacks, secrets, local vs prod)
+- **`data-flow.md`** — Auth (OIDC, demo, guest), API, DB, and PWA notes (sequence diagrams)
+- **`testing.md`** — Test commands, IDOR env, OIDC manual staging, E2E notes
+- **`security-notes.md`** — Cookies, CORS, callbacks, CSP/SW pointers
 
 ## Styleguide (`docs/styleguide/`)
 

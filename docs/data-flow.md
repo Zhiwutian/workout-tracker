@@ -1,6 +1,37 @@
 # Data flow
 
-How data moves through **workout-tracker** for the common paths: demo auth, workouts, sets, and stats. For layering rules see **`architecture.md`**; for **authorization** see **`docs/styleguide/security-and-authz.md`**.
+How data moves through **workout-tracker** for the common paths: OIDC, demo auth, workouts, sets, and stats. For layering rules see **`architecture.md`**; for **authorization** see **`docs/styleguide/security-and-authz.md`**.
+
+## 0. OIDC sign-in (when `AUTH_OIDC_ENABLED=true`)
+
+```mermaid
+sequenceDiagram
+  participant UI as SignInPage
+  participant API as Express /api/auth/*
+  participant IdP as OpenID Provider
+  participant OIDC as oidc-service
+  participant DB as PostgreSQL
+
+  UI->>API: GET /api/auth/options
+  API-->>UI: { oidc: true, demoEnabled: ... }
+  UI->>UI: User clicks "Sign in with…"
+  UI->>API: GET /api/auth/oidc/login (navigate)
+  API->>API: PKCE + state → signed cookie wt_oidc_login
+  API-->>UI: 302 Location IdP /authorize
+  UI->>IdP: User authenticates
+  IdP-->>UI: 302 redirect to AUTH_OIDC_REDIRECT_URI?code&state
+  UI->>API: GET /api/auth/oidc/callback?code&state
+  API->>OIDC: exchange code, validate ID token (sub, iss, …)
+  OIDC->>DB: upsert users.authSubject = sub, profile
+  API->>API: Clear wt_oidc_login; set wt_session (JWT-signed cookie, userId)
+  API-->>UI: 302 AUTH_POST_LOGIN_PATH (e.g. /)
+  UI->>API: GET /api/me (credentials include)
+  API->>API: readAppSessionCookie → req.user.userId
+  API-->>UI: profile + me envelope
+```
+
+- **Logout:** **`POST /api/auth/logout`** clears **`wt_session`** (and related cookies).
+- **Failures:** Callback errors redirect to **`/sign-in?auth_error=…`** (message for UI toast).
 
 ## 1. Demo sign-up / sign-in
 
@@ -52,8 +83,8 @@ sequenceDiagram
   participant S as service
   participant DB as PostgreSQL
 
-  UI->>API: Authorization: Bearer + JSON body
-  API->>MW: verify JWT, set req.user.userId
+  UI->>API: Bearer JWT and/or Cookie: wt_session + JSON body
+  API->>MW: If Bearer valid → userId; else read session cookie → userId
   MW->>C: next()
   C->>S: pass userId + parsed params/body
   S->>DB: queries filtered by ownership (workouts.userId, etc.)
@@ -62,7 +93,9 @@ sequenceDiagram
   C-->>UI: envelope { data, meta }
 ```
 
+- **Order:** **`Authorization: Bearer`** is checked first (demo JWT / guest), then **`wt_session`** (OIDC).
 - **Rule:** `userId` for authorization is **only** from `req.user`, never from the client body for tenancy (see styleguide).
+- **Client:** `fetch` uses **`credentials: 'include'`** so httpOnly session cookies are sent on same-origin API calls.
 
 ## 3. Workout and sets
 
@@ -84,11 +117,12 @@ sequenceDiagram
 
 ## 6. Client persistence
 
-| Data                   | Where                               | Notes                                  |
-| ---------------------- | ----------------------------------- | -------------------------------------- |
-| Access token           | `localStorage` (via `auth-storage`) | Cleared on sign-out                    |
-| Current user summary   | `AuthContext`                       | From `GET /api/me` after token present |
-| Workout lists / detail | Component state + refetch           | No global server-state library yet     |
+| Data                   | Where                               | Notes                                                                 |
+| ---------------------- | ----------------------------------- | --------------------------------------------------------------------- |
+| Access token           | `localStorage` (via `auth-storage`) | Demo / guest JWT; cleared on sign-out                                 |
+| OIDC session           | httpOnly **`wt_session`** cookie    | Not readable from JS; sent with `credentials: 'include'`              |
+| Current user summary   | `AuthContext`                       | From **`GET /api/me`** (works with Bearer only, cookie only, or both) |
+| Workout lists / detail | Component state + refetch           | No global server-state library yet                                    |
 
 ## 7. PWA (light)
 
@@ -98,9 +132,10 @@ sequenceDiagram
 
 ## Related files
 
-| Concern             | Location                                                                    |
-| ------------------- | --------------------------------------------------------------------------- |
-| Routes + middleware | `server/routes/api.ts`                                                      |
-| JWT                 | `server/lib/authorization-middleware.ts`, `server/services/auth-service.ts` |
-| Client API          | `client/src/lib/workout-api.ts`                                             |
-| Auth UI             | `client/src/features/auth/*`                                                |
+| Concern             | Location                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Routes + middleware | `server/routes/api.ts`                                                                                       |
+| JWT + session auth  | `server/lib/authorization-middleware.ts`, `server/lib/session-cookies.ts`, `server/services/auth-service.ts` |
+| OIDC                | `server/services/oidc-service.ts`, `server/controllers/oidc-auth-controller.ts`                              |
+| Client API          | `client/src/lib/workout-api.ts`                                                                              |
+| Auth UI             | `client/src/features/auth/*`, `client/src/pages/SignInPage.tsx`                                              |

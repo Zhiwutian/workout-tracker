@@ -22,6 +22,16 @@ describe('api routes', () => {
     process.env.TOKEN_SECRET = originalTokenSecret;
   });
 
+  it('returns auth options from /api/auth/options', async () => {
+    const res = await request(app).get('/api/auth/options').expect(200);
+    expect(res.body.data).toEqual(
+      expect.objectContaining({
+        oidc: false,
+        demo: true,
+      }),
+    );
+  });
+
   it('returns hello message from /api/hello', async () => {
     const res = await request(app).get('/api/hello').expect(200);
     expect(res.body.data).toEqual({ message: 'Hello, World!' });

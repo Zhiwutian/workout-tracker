@@ -6,6 +6,12 @@ import {
   postAuthSignUp,
 } from '@server/controllers/auth-controller.js';
 import {
+  getAuthOptions,
+  getOidcCallback,
+  getOidcLogin,
+  postAuthLogout,
+} from '@server/controllers/oidc-auth-controller.js';
+import {
   getExercises,
   postExercise,
 } from '@server/controllers/exercise-controller.js';
@@ -33,6 +39,11 @@ const apiRouter = Router();
 apiRouter.get('/hello', readHello);
 apiRouter.get('/health', readHealth);
 apiRouter.get('/ready', readReady);
+
+apiRouter.get('/auth/options', getAuthOptions);
+apiRouter.get('/auth/oidc/login', getOidcLogin);
+apiRouter.get('/auth/oidc/callback', getOidcCallback);
+apiRouter.post('/auth/logout', postAuthLogout);
 
 apiRouter.post('/auth/sign-up', postAuthSignUp);
 apiRouter.post('/auth/sign-in', postAuthSignIn);

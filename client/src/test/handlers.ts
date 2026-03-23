@@ -40,6 +40,14 @@ export const handlers = [
     HttpResponse.json({ data: { message: 'Hello, World!' } }),
   ),
 
+  http.get('/api/auth/options', () =>
+    HttpResponse.json({ data: { oidc: false, demo: true } }),
+  ),
+
+  http.post('/api/auth/logout', () =>
+    HttpResponse.json({ data: { ok: true } }),
+  ),
+
   http.post('/api/auth/sign-in', async () =>
     HttpResponse.json({ data: { token: MOCK_TOKEN } }),
   ),
