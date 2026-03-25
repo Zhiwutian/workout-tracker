@@ -6,6 +6,11 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ## [Unreleased]
 
+### Changed
+
+- **`render.yaml`** — web service **`plan: starter`** (lighter cost than Pro for minimal traffic).
+- **`docs/deployment/neon-account-setup.md`** — expanded Neon + Render **`DATABASE_URL`** / **`CORS_ORIGIN`** walkthrough.
+
 ### Added
 
 - **Deploy (bible-support stack):** root **`render.yaml`**; Vercel + Render + Neon documented as **default** split layout; **`AUTH_FRONTEND_ORIGIN`** on the API so OIDC redirects return to the Vercel SPA (not the Render host). **`client/vercel.json`**, **`client/.env.example`**, **`api-base-url`**, **`smoke:deploy`**. Docs hub, **`vercel-render.md`**, **`auth0-setup.md`**, account setup guides, optional **`render-neon.md`** monolith path.
