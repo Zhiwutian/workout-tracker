@@ -54,6 +54,7 @@ Workspace may include bible-support (parent) and workout-tracker (nested). For t
 | `pnpm run pwa:icons`                       | Regenerate **`icon-192.png`** / **`icon-512.png`** (requires **sharp**)            |
 | `pnpm run test:changed`                    | Tests related to git diff                                                          |
 | `pnpm run build`                           | Production client build                                                            |
+| `DEPLOY_URL=… pnpm run smoke:deploy`       | Post-deploy smoke against **Render API** URL (split or monolith)                   |
 | `pnpm run ci:local`                        | Lint → tsc → test → build (same core gates as CI; Husky **`pre-push`**)            |
 | `pnpm run db:migrate`                      | Apply Drizzle migrations                                                           |
 | `pnpm run db:seed`                         | Seed global exercises (idempotent)                                                 |

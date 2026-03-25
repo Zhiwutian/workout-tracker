@@ -1,6 +1,7 @@
 import { Button, Input } from '@/components/ui';
 import { useToast } from '@/components/app/toast-context';
 import { useAuth } from '@/features/auth/AuthContext';
+import { apiHref } from '@/lib/api-base-url';
 import { readAuthOptions, type AuthOptionsResponse } from '@/lib/workout-api';
 import { cn } from '@/lib';
 import { FormEvent, useEffect, useState } from 'react';
@@ -47,7 +48,7 @@ export function SignInPage() {
     }
   }, [me, navigate]);
 
-  const oidcLoginHref = `${window.location.origin}/api/auth/oidc/login`;
+  const oidcLoginHref = apiHref('/api/auth/oidc/login');
 
   async function runGuest(): Promise<void> {
     setBusy(true);

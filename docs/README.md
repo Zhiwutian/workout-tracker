@@ -10,7 +10,10 @@ Project documentation for **workout-tracker**: structure, runtime behavior, work
 - **`app-startup-walkthrough.md`** — From `pnpm run dev` to first UI/API calls
 - **`assumptions.md`** — UTC stats window, OIDC + demo + guest auth, volume definition
 - **`configuration.md`** — Env files, secrets boundaries, OIDC/session variables
-- **`deployment/README.md`** — Hosted bootstrap, OIDC / Auth0-style checklist
+- **`deployment/README.md`** — Main hub: Vercel + Render + Neon (bible-support split), OIDC env
+- **`deployment/vercel-render.md`** — Split-host checklist (`VITE_API_BASE_URL`, cookies, CORS)
+- **`deployment/render-neon.md`** — Optional Render-only monolith
+- **`deployment/neon-account-setup.md`**, **`deployment/render-account-setup.md`**, **`deployment/vercel-account-setup.md`**
 - **`deployment/auth0-setup.md`** — Auth0 dashboard walkthrough (callbacks, secrets, local vs prod)
 - **`data-flow.md`** — Auth (OIDC, demo, guest), API, DB, and PWA notes (sequence diagrams)
 - **`testing.md`** — Test commands, IDOR env, OIDC manual staging, E2E notes

@@ -10,8 +10,9 @@ Cross-cutting auth, transport, and browser surface for **workout-tracker**. Deta
 
 ## Cookies, CSRF, and CORS
 
-- **Same-origin dev:** Vite proxies **`/api`** to the Express server; **`credentials: 'include'`** sends cookies to the same browser origin as the SPA.
-- **`SameSite`:** Default **`lax`** (**`SESSION_COOKIE_SAME_SITE`**). Use **`none`** only with **`Secure`** and a deliberate cross-site requirement.
+- **Same-origin dev:** Vite proxies **`/api`** to Express; **`credentials: 'include'`** sends cookies to the SPA origin.
+- **Vercel + Render (split):** SPA and API are different sites. Set **`SESSION_COOKIE_SAME_SITE=none`** on the API so **`wt_session`** is sent on credentialed **`fetch`** to Render. Set **`AUTH_FRONTEND_ORIGIN`** so OIDC redirects return users to the Vercel app, not the raw API host.
+- **`SameSite`:** Default **`lax`** for monolith / local. Use **`none`** only with **`Secure`** (production HTTPS) for intentional cross-site cookie use.
 - **CSRF:** OIDC uses the **state** parameter and a short-lived signed cookie for login state; mutations use **`Content-Type: application/json`** (not form posts), which reduces classic CSRF risk for API JSON. If you add cookie-auth to form posts or third-party embeds, revisit CSRF tokens.
 - **CORS:** **`CORS_ORIGIN`** must list exact allowed origins when credentials are used. Wildcard **`*`** is incompatible with credentialed responses.
 

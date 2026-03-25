@@ -29,22 +29,22 @@ Ship an educational **workout tracker** web app: users log **workouts** and **se
 
 Use this table to reconcile the plan with the repo; update the **Status** column as work lands.
 
-| Area                                                        | Status      | Notes                                                                                                                            |
-| ----------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Domain schema (users, profiles, exercises, workouts, sets)  | **Done**    | `server/db/schema.ts`, migrations through `0002`                                                                                 |
-| Demo JWT auth (display name)                                | **Done**    | Replace with OIDC for production narrative                                                                                       |
-| REST APIs + ownership checks                                | **Done**    | IDOR tests with `TEST_DATABASE_URL`                                                                                              |
-| React UI (sign-in, workouts, detail, dashboard, profile)    | **Done**    |                                                                                                                                  |
-| Seed global exercises                                       | **Done**    | `db:seed`                                                                                                                        |
-| Styleguide + Cursor rules + `AGENTS.md`                     | **Done**    | Ported/adapted from bible-support template                                                                                       |
-| `docs/data-flow.md`                                         | **Done**    |                                                                                                                                  |
-| Light PWA (manifest, icons, minimal SW)                     | **Done**    |                                                                                                                                  |
-| Drizzle `0002` snapshot                                     | **Done**    | `database/migrations/meta/0002_snapshot.json`                                                                                    |
-| Playwright smoke E2E                                        | **Done**    | `e2e/smoke.spec.ts`, CI                                                                                                          |
-| Agent / workspace workflow (`AGENTS.md`, `CONTRIBUTING.md`) | **Done**    | Optional parent workspace (e.g. bible-support at `/workspace`); app docs/rules/changelog stay under this repo only               |
-| OIDC / OAuth (Auth0-class IdP)                              | **Done**    | `AUTH_OIDC_*`, PKCE + callback, `wt_session` cookie, `GET /api/auth/options`; see §11 + ADR 0001                                 |
-| Full deployment runbooks (Auth0, split host)                | **Partial** | `docs/deployment/README.md`, **`docs/deployment/auth0-setup.md`**, `docs/security-notes.md`; live tenant values stay in IdP only |
-| Optional docs from original vision                          | **Partial** | See §7 documentation map                                                                                                         |
+| Area                                                        | Status      | Notes                                                                                                              |
+| ----------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| Domain schema (users, profiles, exercises, workouts, sets)  | **Done**    | `server/db/schema.ts`, migrations through `0002`                                                                   |
+| Demo JWT auth (display name)                                | **Done**    | Replace with OIDC for production narrative                                                                         |
+| REST APIs + ownership checks                                | **Done**    | IDOR tests with `TEST_DATABASE_URL`                                                                                |
+| React UI (sign-in, workouts, detail, dashboard, profile)    | **Done**    |                                                                                                                    |
+| Seed global exercises                                       | **Done**    | `db:seed`                                                                                                          |
+| Styleguide + Cursor rules + `AGENTS.md`                     | **Done**    | Ported/adapted from bible-support template                                                                         |
+| `docs/data-flow.md`                                         | **Done**    |                                                                                                                    |
+| Light PWA (manifest, icons, minimal SW)                     | **Done**    |                                                                                                                    |
+| Drizzle `0002` snapshot                                     | **Done**    | `database/migrations/meta/0002_snapshot.json`                                                                      |
+| Playwright smoke E2E                                        | **Done**    | `e2e/smoke.spec.ts`, CI                                                                                            |
+| Agent / workspace workflow (`AGENTS.md`, `CONTRIBUTING.md`) | **Done**    | Optional parent workspace (e.g. bible-support at `/workspace`); app docs/rules/changelog stay under this repo only |
+| OIDC / OAuth (Auth0-class IdP)                              | **Done**    | `AUTH_OIDC_*`, PKCE + callback, `wt_session` cookie, `GET /api/auth/options`; see §11 + ADR 0001                   |
+| Full deployment runbooks (Auth0, split host)                | **Partial** | Default docs: Vercel + Render + Neon; **`docs/deployment/README.md`**; IdP secrets operator-owned                  |
+| Optional docs from original vision                          | **Partial** | See §7 documentation map                                                                                           |
 
 ### Agent and workspace workflow (Cursor)
 

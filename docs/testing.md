@@ -38,4 +38,5 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 
 - **`docs/development-workflow.md`** — dev servers, E2E port **5188**, DB migrate/seed
 - **`docs/deployment/README.md`** — production smoke expectations
+- **`pnpm run smoke:deploy`** — set **`DEPLOY_URL`** to your **Render API** origin after deploy (split or monolith)
 - **`docs/deployment/auth0-setup.md`** — Auth0 callbacks and env for local OIDC runs

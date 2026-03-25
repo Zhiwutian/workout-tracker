@@ -66,14 +66,14 @@ This catches most integration issues before merge.
 
 ## Deployment Workflow
 
-- Deployment is branch-driven through pushes to `pub`.
-- Root deploy script:
+- **Neon + Render + Vercel (default, same as bible-support):** **`docs/deployment/README.md`**. Render Blueprint (**`render.yaml`**) for the API; Vercel project root **`client`** with **`VITE_API_BASE_URL`**; **`CORS_ORIGIN`** on Render = Vercel origin(s). Smoke: **`DEPLOY_URL=https://<render-api> pnpm run smoke:deploy`**. Monolith-only option: **`docs/deployment/render-neon.md`**.
+- **EC2 / legacy:** deployment is branch-driven through pushes to **`pub`**. Root script:
 
 ```sh
 pnpm run deploy
 ```
 
-This pushes `main` to `pub`, triggering `/.github/workflows/main.yml`.
+This pushes `main` to `pub`, triggering **`/.github/workflows/main.yml`**.
 
 ## Recommended Branching
 

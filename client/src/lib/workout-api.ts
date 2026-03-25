@@ -3,6 +3,7 @@ import {
   type ApiSuccessEnvelope,
 } from '@shared/api-contracts';
 import { getApiErrorMessage } from '@/lib';
+import { resolveApiInput } from './api-base-url';
 import { getStoredToken } from './auth-storage';
 
 export type MeResponse = {
@@ -68,7 +69,7 @@ async function fetchJson<T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(input, {
+  const response = await fetch(resolveApiInput(input), {
     ...init,
     headers,
     credentials: 'include',
@@ -94,7 +95,7 @@ export async function readAuthOptions(): Promise<AuthOptionsResponse> {
 }
 
 export async function postSessionLogout(): Promise<void> {
-  const res = await fetch('/api/auth/logout', {
+  const res = await fetch(resolveApiInput('/api/auth/logout'), {
     method: 'POST',
     credentials: 'include',
     headers: { Accept: 'application/json' },

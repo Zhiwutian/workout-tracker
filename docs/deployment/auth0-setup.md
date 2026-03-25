@@ -1,86 +1,92 @@
 # Auth0 setup (workout-tracker, Path A)
 
-Step-by-step for **Auth0** with this app’s **server-side authorization code exchange** + **PKCE** and **`/api/auth/oidc/callback`**. Auth0’s UI labels change occasionally; treat names below as approximate and match the intent.
+Step-by-step for **Auth0** with **server-side authorization code exchange** + **PKCE** and **`/api/auth/oidc/callback`**. The **recommended** deploy is **Vercel (SPA) + Render (API)** — same split as **bible-support**.
 
-**Env variable names:** see **`docs/configuration.md`**. **Security:** **`docs/security-notes.md`**.
+**Env names:** **`docs/configuration.md`**. **Cookies / CORS:** **`docs/security-notes.md`**, **`vercel-render.md`**.
 
 ## 1. Tenant and application
 
-1. Sign in to the [Auth0 Dashboard](https://manage.auth0.com/).
-2. **Applications → Create Application.**
-3. Name it (e.g. `workout-tracker`).
-4. Choose **Regular Web Applications** (not SPA-only SDK flow). The workout-tracker server exchanges the code with optional **Client Secret**.
+1. [Auth0 Dashboard](https://manage.auth0.com/).
+2. **Applications → Create Application** → name (e.g. `workout-tracker`).
+3. Type: **Regular Web Application** (code exchange on the server + optional Client Secret).
 
-## 2. Application settings (URLs)
+## 2. Application URLs by topology
 
-Set these on the **Settings** tab. Values must match how the **browser** reaches your app (same origin as the address bar after redirects).
+### Production — Vercel + Render (default)
 
-### Local development (Vite + API proxy)
+| Auth0 field               | Example                                                  |
+| ------------------------- | -------------------------------------------------------- |
+| **Allowed Callback URLs** | `https://<your-api>.onrender.com/api/auth/oidc/callback` |
+| **Allowed Logout URLs**   | `https://<your-app>.vercel.app/`                         |
+| **Allowed Web Origins**   | `https://<your-app>.vercel.app`                          |
 
-Typical setup: SPA at `http://localhost:5173`, API proxied so `/api` hits Express.
+**Render (API)** env:
 
-| Setting                   | Example value                                                             |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Allowed Callback URLs** | `http://localhost:5173/api/auth/oidc/callback`                            |
-| **Allowed Logout URLs**   | `http://localhost:5173/` (and `/sign-in` if you use it as a landing page) |
-| **Allowed Web Origins**   | `http://localhost:5173`                                                   |
+- **`AUTH_OIDC_REDIRECT_URI`** = same as callback URL above (API host).
+- **`AUTH_FRONTEND_ORIGIN`** = `https://<your-app>.vercel.app` (so users return to the SPA after login).
+- **`CORS_ORIGIN`** = `https://<your-app>.vercel.app` (comma-separate preview URLs if needed).
+- **`SESSION_COOKIE_SAME_SITE=none`** for cross-site session cookies.
 
-In **`server/.env`**, set:
+**Vercel:** **`VITE_API_BASE_URL=https://<your-api>.onrender.com`**
 
-- **`AUTH_OIDC_REDIRECT_URI=http://localhost:5173/api/auth/oidc/callback`**
-- **`CORS_ORIGIN=http://localhost:5173`**
+### Local — Vite + API proxy
 
-### Production (single origin: static + API on one host)
+SPA at `http://localhost:5173`, `/api` proxied to Express.
 
-If users open `https://app.example.com` and `/api` is served by the same host:
+| Setting                   | Example                                        |
+| ------------------------- | ---------------------------------------------- |
+| **Allowed Callback URLs** | `http://localhost:5173/api/auth/oidc/callback` |
+| **Allowed Logout URLs**   | `http://localhost:5173/`                       |
+| **Allowed Web Origins**   | `http://localhost:5173`                        |
 
-| Setting                   | Example value                                    |
-| ------------------------- | ------------------------------------------------ |
-| **Allowed Callback URLs** | `https://app.example.com/api/auth/oidc/callback` |
-| **Allowed Logout URLs**   | `https://app.example.com/`                       |
-| **Allowed Web Origins**   | `https://app.example.com`                        |
+**`server/.env`:** **`AUTH_OIDC_REDIRECT_URI`**, **`CORS_ORIGIN`**. Omit **`AUTH_FRONTEND_ORIGIN`**. **`SESSION_COOKIE_SAME_SITE=lax`** is fine.
 
-Set **`AUTH_OIDC_REDIRECT_URI`** to that callback URL exactly. Set **`CORS_ORIGIN`** to the same origin (or a comma-separated list if you have multiple allowed front-end origins).
+### Production — Render monolith only (optional)
 
-### Split client/API hosts
+App opened at `https://<name>.onrender.com` only:
 
-If the SPA origin differs from the API host, you must align **CORS**, **credentials**, cookie **`SameSite`**, and IdP **Allowed Web Origins** with your chosen topology. Prefer one browser origin that proxies `/api` unless you have a documented cross-site design; see **`docs/security-notes.md`**.
+| Setting                   | Example                                              |
+| ------------------------- | ---------------------------------------------------- |
+| **Allowed Callback URLs** | `https://<name>.onrender.com/api/auth/oidc/callback` |
+| **Allowed Logout URLs**   | `https://<name>.onrender.com/`                       |
+| **Allowed Web Origins**   | `https://<name>.onrender.com`                        |
+
+Omit **`AUTH_FRONTEND_ORIGIN`**. **`CORS_ORIGIN`** = same Render origin. See **`render-neon.md`**.
 
 ## 3. Credentials → environment
 
-On the same **Settings** page:
-
-1. **Domain** — use as issuer base with trailing slash in **`AUTH_OIDC_ISSUER`**, e.g. `https://YOUR_TENANT.auth0.com/` (or your custom domain, still as OIDC issuer URL).
+1. **Domain** → **`AUTH_OIDC_ISSUER`** with trailing slash (e.g. `https://YOUR_TENANT.auth0.com/`).
 2. **Client ID** → **`AUTH_OIDC_CLIENT_ID`**
-3. **Client Secret** → **`AUTH_OIDC_CLIENT_SECRET`** (server-only; never in `VITE_*` or client bundle)
-
-Enable OIDC and session-related vars (see **`server/.env.example`**):
+3. **Client Secret** → **`AUTH_OIDC_CLIENT_SECRET`** (server only)
 
 ```bash
 AUTH_OIDC_ENABLED=true
 AUTH_OIDC_ISSUER=https://YOUR_TENANT.auth0.com/
 AUTH_OIDC_CLIENT_ID=...
 AUTH_OIDC_CLIENT_SECRET=...
-AUTH_OIDC_REDIRECT_URI=http://localhost:5173/api/auth/oidc/callback
-SESSION_SECRET=...   # min 16 chars, or ensure TOKEN_SECRET is at least 16 chars
+AUTH_OIDC_REDIRECT_URI=<callback-on-api-host>
+# Split only:
+# AUTH_FRONTEND_ORIGIN=https://your-app.vercel.app
+# SESSION_COOKIE_SAME_SITE=none
+SESSION_SECRET=...   # min 16 chars, or TOKEN_SECRET >= 16
 ```
 
 ## 4. Save and test
 
 1. **Save Changes** in Auth0.
-2. Restart the API (`pnpm run dev`).
-3. Open the app → sign-in → **Sign in with…** (OIDC). Complete login; you should land on **`AUTH_POST_LOGIN_PATH`** (default `/`) and **`GET /api/me`** should succeed.
+2. Restart the API (Render redeploy or local server).
+3. From the **Vercel** (or local) URL → **Sign in with…** → after IdP, you should land on **`AUTH_POST_LOGIN_PATH`** on the **frontend** origin and **`GET /api/me`** should succeed.
 
 ## 5. Common failures
 
-| Symptom                                  | Things to check                                                                                                                  |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Callback error / “redirect_uri mismatch” | **Allowed Callback URLs** must **exactly** match **`AUTH_OIDC_REDIRECT_URI`** (scheme, host, port, path).                        |
-| CORS errors in browser                   | **`CORS_ORIGIN`** must include the SPA origin; do not use `*` with credentials.                                                  |
-| Cookie not sent / always logged out      | Same-site vs cross-origin; **`SESSION_COOKIE_SAME_SITE`**; HTTPS + **`Secure`** in production. See **`docs/security-notes.md`**. |
-| 403 on demo sign-up                      | **`AUTH_DEMO_ENABLED=false`** — expected when demo is disabled; use OIDC or guest.                                               |
+| Symptom                       | Check                                                                                         |
+| ----------------------------- | --------------------------------------------------------------------------------------------- |
+| **redirect_uri mismatch**     | Callback URL in Auth0 = **`AUTH_OIDC_REDIRECT_URI`** exactly (API host for split).            |
+| Stuck on API host after login | Set **`AUTH_FRONTEND_ORIGIN`** to the Vercel origin.                                          |
+| CORS errors                   | **`CORS_ORIGIN`** includes the Vercel origin.                                                 |
+| Session not sticking (split)  | **`SESSION_COOKIE_SAME_SITE=none`**, HTTPS, **`credentials: 'include'`** (already in client). |
 
 ## Related
 
-- **`docs/deployment/README.md`** — hosted bootstrap and smoke checklist
+- **`docs/deployment/README.md`** — full env checklist
 - **`docs/decisions/0001-oidc-oauth-path-a.md`** — ADR

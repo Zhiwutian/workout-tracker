@@ -42,6 +42,10 @@ function normalizeReturnTo(nextValue: string | undefined): string | undefined {
 }
 
 function postLoginRedirectBase(): string {
+  const fe = env.AUTH_FRONTEND_ORIGIN.trim();
+  if (fe) {
+    return new URL(fe).origin;
+  }
   return new URL(env.AUTH_OIDC_REDIRECT_URI).origin;
 }
 

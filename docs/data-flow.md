@@ -24,14 +24,15 @@ sequenceDiagram
   API->>OIDC: exchange code, validate ID token (sub, iss, …)
   OIDC->>DB: upsert users.authSubject = sub, profile
   API->>API: Clear wt_oidc_login; set wt_session (JWT-signed cookie, userId)
-  API-->>UI: 302 AUTH_POST_LOGIN_PATH (e.g. /)
-  UI->>API: GET /api/me (credentials include)
+  API-->>UI: 302 AUTH_FRONTEND_ORIGIN + AUTH_POST_LOGIN_PATH (split) or same origin
+  UI->>API: GET /api/me (credentials include, cross-origin if Vercel+Render)
   API->>API: readAppSessionCookie → req.user.userId
   API-->>UI: profile + me envelope
 ```
 
 - **Logout:** **`POST /api/auth/logout`** clears **`wt_session`** (and related cookies).
-- **Failures:** Callback errors redirect to **`/sign-in?auth_error=…`** (message for UI toast).
+- **Failures:** Callback errors redirect to **`/sign-in?auth_error=…`** on the **browser app** origin (**`AUTH_FRONTEND_ORIGIN`** when set, else redirect-URI origin).
+- **Split deploy:** **`AUTH_OIDC_REDIRECT_URI`** uses the **API** host; **`AUTH_FRONTEND_ORIGIN`** is the Vercel SPA origin. **`SESSION_COOKIE_SAME_SITE=none`** so **`wt_session`** is sent on API `fetch` from the SPA.
 
 ## 1. Demo sign-up / sign-in
 

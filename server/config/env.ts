@@ -51,7 +51,13 @@ const envSchema = z.object({
    * Dev example: http://localhost:5173/api/auth/oidc/callback
    */
   AUTH_OIDC_REDIRECT_URI: z.string().optional().default(''),
-  /** Browser path after successful OIDC (same origin as redirect URI). */
+  /**
+   * When the SPA is on a different origin than the API (e.g. Vercel + Render), set this to the
+   * browser app origin so post-OIDC redirects go to the frontend. Example: https://myapp.vercel.app
+   * Omit for same-origin (local Vite proxy or Render monolith); origin is then derived from AUTH_OIDC_REDIRECT_URI.
+   */
+  AUTH_FRONTEND_ORIGIN: z.string().optional().default(''),
+  /** Browser path after successful OIDC (appended to AUTH_FRONTEND_ORIGIN or redirect-URI origin). */
   AUTH_POST_LOGIN_PATH: z.string().default('/'),
   /** Secret for signing OIDC state + session cookies (required when AUTH_OIDC_ENABLED). */
   SESSION_SECRET: z.string().optional().default(''),
@@ -114,6 +120,10 @@ if (data.AUTH_OIDC_ENABLED) {
   };
   validateUrl('AUTH_OIDC_ISSUER', data.AUTH_OIDC_ISSUER);
   validateUrl('AUTH_OIDC_REDIRECT_URI', data.AUTH_OIDC_REDIRECT_URI);
+  const fe = data.AUTH_FRONTEND_ORIGIN.trim();
+  if (fe) {
+    validateUrl('AUTH_FRONTEND_ORIGIN', fe);
+  }
   if (
     data.AUTH_POST_LOGIN_PATH &&
     (!data.AUTH_POST_LOGIN_PATH.startsWith('/') ||

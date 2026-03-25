@@ -53,6 +53,7 @@ Outside devcontainers, this repo also includes `.nvmrc` and engine constraints i
    - Set `CORS_ORIGIN` to your allowed frontend origin(s) (comma-separated exact origins, for example `http://localhost:5173,http://localhost:4173`).
    - Tune `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` (read), and `RATE_LIMIT_WRITE_MAX` (mutations) as needed.
    - Optional **OIDC:** set `AUTH_OIDC_ENABLED=true` and fill `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`, `AUTH_OIDC_REDIRECT_URI`, and `SESSION_SECRET` (or a long `TOKEN_SECRET`); see **`docs/configuration.md`**.
+   - Optional **split frontend:** copy **`client/.env.example`** → **`client/.env.local`** and set **`VITE_API_BASE_URL`** when the API is not same-origin (see **`docs/deployment/vercel-render.md`**).
    - Mirror non-secret env updates in `server/.env.example`.
 
 ### 4) Create your database
@@ -137,6 +138,7 @@ Health:
 - `pnpm run db:seed` - inserts starter data if tables are empty
 - `pnpm run db:studio` - opens Drizzle Studio
 - `pnpm run psql` - opens `psql` using `DATABASE_URL`
+- `pnpm run smoke:deploy` - hits `DEPLOY_URL` health + public API checks (after hosted deploy)
 - `pnpm run deploy` - pushes `main` to `pub` for deployment workflow
 
 ## CI and Deployment
@@ -148,7 +150,9 @@ Health:
   - `tsc`
   - `test`
   - `build`
-- Deployment runs from `/.github/workflows/main.yml` on pushes to `pub`.
+- **Hosted deploy (same split layout as bible-support):** **Neon** + **Render** (API, **`render.yaml`** Blueprint) + **Vercel** (`client` with **`VITE_API_BASE_URL`**). Set Render **`CORS_ORIGIN`** to your Vercel URL(s). OIDC split-host env (e.g. **`AUTH_FRONTEND_ORIGIN`**, **`SESSION_COOKIE_SAME_SITE=none`**) is documented in **`docs/deployment/README.md`** and **`docs/deployment/auth0-setup.md`**. After deploy: `DEPLOY_URL=https://your-render-api pnpm run smoke:deploy` (API URL).
+- **Optional monolith:** serve SPA + API from Render only — **`docs/deployment/render-neon.md`**.
+- **Alternate:** **`/.github/workflows/main.yml`** on pushes to **`pub`** (EC2/rsync) if you use that path.
 
 ## Project Docs
 
