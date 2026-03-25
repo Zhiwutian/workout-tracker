@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { getStoredToken, setStoredToken } from '@/lib/auth-storage';
@@ -37,18 +38,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [me, setMe] = useState<MeResponse | null>(null);
   /** True until we finish probing session (Bearer and/or OIDC cookie). */
   const [loading, setLoading] = useState(true);
+  /**
+   * Ignore stale `readMe` results: the initial unauthenticated probe can return 401
+   * after guest login completes and would otherwise clear the new JWT from storage.
+   */
+  const refreshGeneration = useRef(0);
 
   const refreshMe = useCallback(async () => {
+    const gen = ++refreshGeneration.current;
     setLoading(true);
     try {
       const profile = await readMe();
+      if (gen !== refreshGeneration.current) return;
       setMe(profile);
     } catch {
+      if (gen !== refreshGeneration.current) return;
       setMe(null);
       setStoredToken(null);
       setToken(null);
     } finally {
-      setLoading(false);
+      if (gen === refreshGeneration.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
