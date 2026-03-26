@@ -20,6 +20,26 @@ function parseBooleanEnv(defaultValue: boolean): z.ZodType<boolean> {
 
 const sessionSameSiteSchema = z.enum(['lax', 'strict', 'none']);
 
+/** Strip accidental newlines/spaces from dashboard paste (Auth0 rejects redirect_uri with \\n). */
+function trimOidcEnvStrings(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const keys = [
+    'AUTH_OIDC_ISSUER',
+    'AUTH_OIDC_CLIENT_ID',
+    'AUTH_OIDC_CLIENT_SECRET',
+    'AUTH_OIDC_REDIRECT_URI',
+    'AUTH_FRONTEND_ORIGIN',
+    'SESSION_SECRET',
+  ] as const;
+  const out: NodeJS.ProcessEnv = { ...env };
+  for (const k of keys) {
+    const v = out[k];
+    if (typeof v === 'string') {
+      out[k] = v.trim();
+    }
+  }
+  return out;
+}
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
@@ -83,7 +103,7 @@ function formatEnvIssues(issues: z.ZodIssue[]): string {
     .join('; ');
 }
 
-const parsed = envSchema.safeParse(process.env);
+const parsed = envSchema.safeParse(trimOidcEnvStrings(process.env));
 if (!parsed.success) {
   const formatted = formatEnvIssues(parsed.error.issues);
   throw new Error(`Invalid environment configuration: ${formatted}`);

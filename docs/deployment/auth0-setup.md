@@ -4,6 +4,38 @@ Step-by-step for **Auth0** with **server-side authorization code exchange** + **
 
 **Env names:** **`docs/configuration.md`**. **Cookies / CORS:** **`docs/security-notes.md`**, **`vercel-render.md`**.
 
+## 0. Ordered checklist — Vercel + Render already live
+
+Use your real hosts (examples: API `https://workout-tracker-app-xxxx.onrender.com`, SPA `https://workout-tracker-client-xxxx.vercel.app`).
+
+1. **Auth0 → Applications → Create** → **Regular Web Application**.
+2. **Auth0 → Settings → URLs** (exact strings, no trailing slash on origins):
+   - **Allowed Callback URLs:** `https://<render-api>.onrender.com/api/auth/oidc/callback`
+   - **Allowed Logout URLs:** `https://<vercel-app>.vercel.app/`
+   - **Allowed Web Origins:** `https://<vercel-app>.vercel.app`
+3. **Render → Environment** — add or update (then **Save** + **deploy**):
+   - `AUTH_OIDC_ENABLED=true`
+   - `AUTH_OIDC_ISSUER=https://<tenant>.auth0.com/` (trailing slash; use Auth0 **Domain**)
+   - `AUTH_OIDC_CLIENT_ID=...`
+   - `AUTH_OIDC_CLIENT_SECRET=...`
+   - `AUTH_OIDC_REDIRECT_URI=https://<render-api>.onrender.com/api/auth/oidc/callback` (must match Auth0 callback **exactly**)
+   - `AUTH_FRONTEND_ORIGIN=https://<vercel-app>.vercel.app`
+   - `AUTH_POST_LOGIN_PATH=/`
+   - `SESSION_SECRET=<at least 16 random chars>` (or ensure existing `TOKEN_SECRET` is ≥ 16 chars)
+   - `SESSION_COOKIE_SAME_SITE=none`
+   - `CORS_ORIGIN=https://<vercel-app>.vercel.app` (same as before; add comma + preview URLs if needed)
+   - Optional: `AUTH_DEMO_ENABLED=false` when OIDC is primary ( **`POST /api/auth/guest`** stays available unless you change code).
+4. **Vercel** — confirm `VITE_API_BASE_URL=https://<render-api>.onrender.com` (no trailing slash); redeploy if you change it.
+5. **Test:** open Vercel **/sign-in** → **Sign in with…** → Auth0 → you should land on Vercel home with session; **`GET /api/me`** should work.
+
+**Issuer check:**
+
+```sh
+curl -sS "https://<tenant>.auth0.com/.well-known/openid-configuration" | head -c 200
+```
+
+Expect JSON, not 404.
+
 ## 1. Tenant and application
 
 1. [Auth0 Dashboard](https://manage.auth0.com/).
@@ -79,12 +111,12 @@ SESSION_SECRET=...   # min 16 chars, or TOKEN_SECRET >= 16
 
 ## 5. Common failures
 
-| Symptom                       | Check                                                                                         |
-| ----------------------------- | --------------------------------------------------------------------------------------------- |
-| **redirect_uri mismatch**     | Callback URL in Auth0 = **`AUTH_OIDC_REDIRECT_URI`** exactly (API host for split).            |
-| Stuck on API host after login | Set **`AUTH_FRONTEND_ORIGIN`** to the Vercel origin.                                          |
-| CORS errors                   | **`CORS_ORIGIN`** includes the Vercel origin.                                                 |
-| Session not sticking (split)  | **`SESSION_COOKIE_SAME_SITE=none`**, HTTPS, **`credentials: 'include'`** (already in client). |
+| Symptom                                 | Check                                                                                                                                                                   |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **redirect_uri mismatch** / “not valid” | Callback in Auth0 = **`AUTH_OIDC_REDIRECT_URI`** exactly. **No newline** after the URL in Render or Auth0 (paste errors add `\n`; Auth0 shows it in the error message). |
+| Stuck on API host after login           | Set **`AUTH_FRONTEND_ORIGIN`** to the Vercel origin.                                                                                                                    |
+| CORS errors                             | **`CORS_ORIGIN`** includes the Vercel origin.                                                                                                                           |
+| Session not sticking (split)            | **`SESSION_COOKIE_SAME_SITE=none`**, HTTPS, **`credentials: 'include'`** (already in client).                                                                           |
 
 ## Related
 

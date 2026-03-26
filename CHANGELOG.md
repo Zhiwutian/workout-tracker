@@ -8,6 +8,8 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Changed
 
+- **`server/config/env.ts`** — trim OIDC-related env strings at load so pasted **`AUTH_OIDC_REDIRECT_URI`** cannot include trailing newlines (Auth0 **redirect_uri** errors).
+- **`docs/deployment/auth0-setup.md`** — §0 ordered checklist for OIDC when Vercel + Render are already deployed; troubleshooting row for newline in callback URL.
 - **`client/src/features/auth/AuthContext.tsx`** — ignore stale **`readMe`** results so a slow initial **401** cannot clear storage after guest (or other) login completes (fixes split-deploy / slow-network race).
 - **`render.yaml`** — web service **`plan: starter`** (lighter cost than Pro for minimal traffic).
 - **`docs/deployment/neon-account-setup.md`** — expanded Neon + Render **`DATABASE_URL`** / **`CORS_ORIGIN`** walkthrough.
