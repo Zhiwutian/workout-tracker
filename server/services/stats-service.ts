@@ -1,4 +1,5 @@
 import { and, eq, gte, lt, sql } from 'drizzle-orm';
+import { DateTime, Info } from 'luxon';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { workoutSets, workouts } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
@@ -35,6 +36,44 @@ export function parseUtcWeekStart(isoDate: string): Date {
 
 export function addUtcDays(d: Date, days: number): Date {
   return new Date(d.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Resolve [startUtc, endUtc) for weekly volume.
+ * - **No timezone / UTC / Etc/UTC:** `weekStart` is **UTC** midnight (legacy behavior).
+ * - **IANA timezone:** `weekStart` is **YYYY-MM-DD** at **00:00 local** in that zone; window is **7 days**
+ *   (same as Monday→next Monday when the client sends the Monday date).
+ */
+export function resolveWeeklyVolumeWindow(
+  weekStartYmd: string,
+  timeZone: string | undefined,
+): { startUtc: Date; endUtc: Date; zoneUsed: 'utc' | string } {
+  const trimmed = timeZone?.trim();
+  if (!trimmed || trimmed === 'UTC' || trimmed === 'Etc/UTC') {
+    const start = parseUtcWeekStart(weekStartYmd);
+    return {
+      startUtc: start,
+      endUtc: addUtcDays(start, 7),
+      zoneUsed: 'utc',
+    };
+  }
+
+  if (!Info.isValidIANAZone(trimmed)) {
+    throw new ClientError(400, 'invalid timezone');
+  }
+
+  const start = DateTime.fromFormat(weekStartYmd.trim(), 'yyyy-MM-dd', {
+    zone: trimmed,
+  }).startOf('day');
+  if (!start.isValid) {
+    throw new ClientError(400, 'invalid weekStart for timezone');
+  }
+  const end = start.plus({ weeks: 1 });
+  return {
+    startUtc: start.toUTC().toJSDate(),
+    endUtc: end.toUTC().toJSDate(),
+    zoneUsed: trimmed,
+  };
 }
 
 /** Sum of (reps × weight) for all sets on workouts started in [weekStart, weekEnd). */

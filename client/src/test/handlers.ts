@@ -189,15 +189,22 @@ export const handlers = [
     }
     const url = new URL(request.url);
     const weekStart = url.searchParams.get('weekStart') ?? '2026-01-05';
-    return HttpResponse.json({
-      data: {
-        weekStart,
-        weekStartUtc: `${weekStart}T00:00:00.000Z`,
-        weekEndUtc: `${weekStart}T00:00:00.000Z`,
-        totalVolume: 1200,
-        setCount: 3,
-      },
-    });
+    const timezone = url.searchParams.get('timezone');
+    const startMs = new Date(`${weekStart}T00:00:00.000Z`).getTime();
+    const weekEndUtc = new Date(
+      startMs + 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const data: Record<string, unknown> = {
+      weekStart,
+      weekStartUtc: `${weekStart}T00:00:00.000Z`,
+      weekEndUtc,
+      totalVolume: 1200,
+      setCount: 3,
+    };
+    if (timezone) {
+      data.timezone = timezone;
+    }
+    return HttpResponse.json({ data });
   }),
 
   http.patch('/api/profile', async ({ request }) => {

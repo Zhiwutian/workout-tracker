@@ -107,8 +107,8 @@ sequenceDiagram
 
 ## 4. Weekly volume stats
 
-- **`GET /api/stats/weekly-volume?weekStart=YYYY-MM-DD`**
-- **Window:** UTC `[weekStart, weekStart + 7d)` on **`workouts.startedAt`** (see **`docs/assumptions.md`**).
+- **`GET /api/stats/weekly-volume?weekStart=YYYY-MM-DD`** — optional **`timezone=IANA`**
+- **Window:** If **`timezone`** is omitted or UTC, **`weekStart`** is UTC midnight and the window is **`[weekStart, weekStart + 7d)`** in UTC. If **`timezone`** is a non-UTC IANA zone, **`weekStart`** is local start-of-day in that zone and the window is seven local days, evaluated on **`workouts.startedAt`** (see **`docs/assumptions.md`**).
 - **Metric:** sum over sets on those workouts: **reps × weight** (`server/lib/volume.ts`).
 
 ## 5. Exercises

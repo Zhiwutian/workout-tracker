@@ -73,8 +73,8 @@ Functional MVP is **Done**. **Path A:** **OIDC/OAuth** is the production login p
 - [x] List and create **workouts**; open detail; end session optional.
 - [x] Log **sets** (exercise, reps, weight); edit/delete sets.
 - [x] List exercises (global + user custom); create custom exercise with service-level de-dupe rules.
-- [x] **Weekly volume** chart/table: sum `reps × weight` over UTC week window documented in `docs/assumptions.md`.
-- [x] **Profile:** display name, weight unit (lb/kg), optional timezone (stored for future stats localization).
+- [x] **Weekly volume** chart/table: sum `reps × weight` over the week window documented in `docs/assumptions.md` (profile timezone when set; UTC otherwise).
+- [x] **Profile:** display name, weight unit (lb/kg), optional timezone (used for dashboard week window when set).
 
 ---
 
@@ -254,7 +254,7 @@ Numbered items are **in scope** for “done enough to defend in report.” Adjus
 ## 13. Open questions
 
 - **Exercise model:** strict uniqueness per user vs catalog-only globals (current: service-enforced custom names).
-- **Timezone for stats:** profile `timezone` stored; dashboard UTC-only until product says otherwise.
+- **Timezone for stats:** profile **`timezone`** drives the dashboard week window together with **`GET /api/stats/weekly-volume?timezone=`** (see **`docs/assumptions.md`**).
 - **Single repo vs sibling:** keep proposal copy in sync if `workout-tracker` is cloned standalone.
 
 ---
@@ -278,7 +278,7 @@ Ship **one vertical slice per branch/PR**. Order agreed for **A**:
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | 1   | **Workout history UX** — list filters (week/month/all, local calendar), status (all/active/completed), sort, empty states, resume when active workout is off-list | **Done** — `GET /api/workouts` query params; `WorkoutsPage` UI                                  |
 | 2   | **Export** — CSV of workouts/sets for a date range                                                                                                                | **Done** — `GET /api/export/workout-sets.csv`; **Download CSV** on `WorkoutsPage` (date preset) |
-| 3   | **Timezone-aware** dashboard week (profile timezone)                                                                                                              | Todo                                                                                            |
+| 3   | **Timezone-aware** dashboard week (profile timezone)                                                                                                              | **Done** — `resolveWeeklyVolumeWindow` + optional `timezone` query; dashboard uses profile zone |
 | 4   | **Exercise library** — edit/rename/archive custom, recents                                                                                                        | Todo                                                                                            |
 | 5   | **Richer set logging** — notes, RPE, copy last set                                                                                                                | Todo                                                                                            |
 

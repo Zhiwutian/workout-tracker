@@ -52,7 +52,7 @@ Access only through a **workout** owned by the current user.
 
 ## Stats query
 
-- **`GET /api/stats/weekly-volume`**: `weekStart` query must match `YYYY-MM-DD` (UTC week semantics—see `docs/assumptions.md`).
+- **`GET /api/stats/weekly-volume`**: `weekStart` query must match `YYYY-MM-DD`; optional `timezone` (IANA) selects local week semantics—see `docs/assumptions.md`.
 
 ## When to add an index
 

@@ -28,7 +28,7 @@ Recorded **2026-03-27** with Postgres at **`DATABASE_URL`**, **`pnpm run db:migr
 | `pnpm run ci:local` | Pass   | **lint** → **tsc** → **test** → **build** (same core gate as pre-push / local parity)                                                        |
 | `pnpm run lint`     | Pass   | Client + server ESLint                                                                                                                       |
 | `pnpm run tsc`      | Pass   | Client + server TypeScript                                                                                                                   |
-| `pnpm run test`     | Pass   | Vitest: client 4 tests; server 18 passed, 6 skipped (IDOR suite without **`TEST_DATABASE_URL`**)                                             |
+| `pnpm run test`     | Pass   | Vitest: client 11 tests; server 28 passed, 6 skipped (IDOR suite without **`TEST_DATABASE_URL`**)                                            |
 | `pnpm run test:e2e` | Pass   | **8** Playwright tests: **`e2e/smoke.spec.ts`** + **`e2e/a11y.spec.ts`** × **chromium** + **mobile-chrome** (see **`playwright.config.ts`**) |
 
 Replace or extend this block when your CI or local run differs.
