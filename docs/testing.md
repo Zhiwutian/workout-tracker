@@ -34,6 +34,7 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 ## E2E (Playwright)
 
 - **`GET /api/workouts`** — optional query: **`from`**, **`to`** (ISO 8601), **`status`** (`all` \| `active` \| `completed`), **`sort`** (`startedAt_desc` \| `startedAt_asc`). Used by the workouts list filters.
+- **`GET /api/export/workout-sets.csv`** — authenticated CSV download of sets joined with workout + exercise; optional **`from`** / **`to`** filter on **workout `startedAt`** (same idea as list). **`Content-Disposition: attachment`**.
 - **`e2e/smoke.spec.ts`** — happy path with demo or guest auth as configured for **`pnpm run dev:e2e`** (asserts visible heading via **`data-testid="workouts-page-heading"`**).
 - **`e2e/a11y.spec.ts`** — axe scan (critical/serious) on sign-in + guest workouts; keyboard focus check on **Continue as guest**.
 - **Projects:** Default **Chromium** + **Mobile Chrome** (viewport). Set **`PW_FULL_BROWSERS=1`** to add Firefox + WebKit (install host deps first: `pnpm exec playwright install-deps` on Linux).

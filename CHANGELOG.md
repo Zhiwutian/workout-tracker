@@ -19,6 +19,7 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Added
 
+- **CSV export (slice 2):** **`GET /api/export/workout-sets.csv`** (optional **`from`/`to`** on workout start time); **`downloadWorkoutSetsCsv`** in **`workout-api`**; **Download CSV** on **`WorkoutsPage`** aligned with date range preset; **`server/services/export-service`**, **`csv`** / **`csv-build`** helpers and tests.
 - **Workout history (slice 1):** **`GET /api/workouts`** query filters (`from`, `to`, `status`, `sort`); **`WorkoutsPage`** presets (all time / this week / this month, local calendar), status and sort controls, **`EmptyState`** when filters match nothing, **Resume** banner when an active workout exists but is hidden by filters; **`client/src/lib/date-range-presets.ts`** + unit tests. E2E uses **`workouts-page-heading`** test id for stable assertions.
 - **E2E accessibility:** **`e2e/a11y.spec.ts`** (axe critical/serious + keyboard focus on guest); **`@axe-core/playwright`**; Playwright projects **chromium** + **mobile-chrome**, optional **`PW_FULL_BROWSERS=1`** for Firefox/WebKit when host deps installed. **`docs/course-qa-evidence.md`** and **`docs/testing.md`** updated with verification notes.
 - **Course report (Phase 4 docs):** **`docs/course-qa-evidence.md`**, **`docs/troubleshooting.md`**, **`docs/demo-script.md`**; **`docs/testing.md`** — optional **§11.F/G** notes; **`README.md`** / **`docs/README.md`** links.

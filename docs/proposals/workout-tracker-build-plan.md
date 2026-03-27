@@ -274,13 +274,13 @@ Numbered items are **in scope** for “done enough to defend in report.” Adjus
 
 Ship **one vertical slice per branch/PR**. Order agreed for **A**:
 
-| #   | Slice                                                                                                                                                             | Status                                                         |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| 1   | **Workout history UX** — list filters (week/month/all, local calendar), status (all/active/completed), sort, empty states, resume when active workout is off-list | **Done** — `GET /api/workouts` query params; `WorkoutsPage` UI |
-| 2   | **Export** — CSV of workouts/sets for a date range                                                                                                                | Todo                                                           |
-| 3   | **Timezone-aware** dashboard week (profile timezone)                                                                                                              | Todo                                                           |
-| 4   | **Exercise library** — edit/rename/archive custom, recents                                                                                                        | Todo                                                           |
-| 5   | **Richer set logging** — notes, RPE, copy last set                                                                                                                | Todo                                                           |
+| #   | Slice                                                                                                                                                             | Status                                                                                          |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 1   | **Workout history UX** — list filters (week/month/all, local calendar), status (all/active/completed), sort, empty states, resume when active workout is off-list | **Done** — `GET /api/workouts` query params; `WorkoutsPage` UI                                  |
+| 2   | **Export** — CSV of workouts/sets for a date range                                                                                                                | **Done** — `GET /api/export/workout-sets.csv`; **Download CSV** on `WorkoutsPage` (date preset) |
+| 3   | **Timezone-aware** dashboard week (profile timezone)                                                                                                              | Todo                                                                                            |
+| 4   | **Exercise library** — edit/rename/archive custom, recents                                                                                                        | Todo                                                                                            |
+| 5   | **Richer set logging** — notes, RPE, copy last set                                                                                                                | Todo                                                                                            |
 
 ---
 

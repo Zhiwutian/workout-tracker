@@ -22,6 +22,7 @@ import {
 import { readHello } from '@server/controllers/hello-controller.js';
 import { patchProfile } from '@server/controllers/profile-controller.js';
 import { getWeeklyVolume } from '@server/controllers/stats-controller.js';
+import { getExportWorkoutSetsCsv } from '@server/controllers/export-controller.js';
 import {
   getWorkout,
   getWorkouts,
@@ -54,6 +55,12 @@ apiRouter.patch('/profile', authMiddleware, patchProfile);
 
 apiRouter.get('/exercises', authMiddleware, getExercises);
 apiRouter.post('/exercises', authMiddleware, postExercise);
+
+apiRouter.get(
+  '/export/workout-sets.csv',
+  authMiddleware,
+  getExportWorkoutSetsCsv,
+);
 
 apiRouter.get('/workouts', authMiddleware, getWorkouts);
 apiRouter.post('/workouts', authMiddleware, postWorkout);

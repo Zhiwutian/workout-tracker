@@ -170,6 +170,65 @@ export async function readWorkouts(
   return fetchJson<WorkoutSummary[]>(`/api/workouts${suffix}`);
 }
 
+/** Download CSV of sets (workout `startedAt` in optional date range). */
+export async function downloadWorkoutSetsCsv(params?: {
+  from?: string;
+  to?: string;
+}): Promise<void> {
+  const qs = new URLSearchParams();
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+
+  const token = getStoredToken();
+  const headers = new Headers();
+  headers.set('Accept', 'text/csv, application/json');
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  const response = await fetch(
+    resolveApiInput(`/api/export/workout-sets.csv${suffix}`),
+    {
+      credentials: 'include',
+      headers,
+    },
+  );
+
+  if (!response.ok) {
+    const contentType = response.headers.get('Content-Type') ?? '';
+    if (contentType.includes('application/json')) {
+      const errorBody = (await response
+        .json()
+        .catch(() => null)) as ApiErrorEnvelope | null;
+      throw new Error(getApiErrorMessage(response.status, errorBody));
+    }
+    throw new Error(`Export failed (${response.status})`);
+  }
+
+  const blob = await response.blob();
+  const cd = response.headers.get('Content-Disposition');
+  let filename = `workout-sets-${new Date().toISOString().slice(0, 10)}.csv`;
+  const m =
+    /filename\*=UTF-8''([^;\s]+)|filename="([^"]+)"/i.exec(cd ?? '') ?? [];
+  const raw = m[1] ?? m[2];
+  if (raw) {
+    try {
+      filename = decodeURIComponent(raw);
+    } catch {
+      filename = raw;
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function createWorkout(input?: {
   title?: string | null;
   notes?: string | null;

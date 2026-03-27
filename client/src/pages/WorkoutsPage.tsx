@@ -8,6 +8,7 @@ import {
 } from '@/lib/date-range-presets';
 import {
   createWorkout,
+  downloadWorkoutSetsCsv,
   readWorkouts,
   type ReadWorkoutsParams,
   type WorkoutSummary,
@@ -41,6 +42,7 @@ export function WorkoutsPage() {
   const [activeSessions, setActiveSessions] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const [rangePreset, setRangePreset] = useState<RangePreset>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -90,6 +92,23 @@ export function WorkoutsPage() {
       });
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleExportCsv(): Promise<void> {
+    setExporting(true);
+    try {
+      const range = rangePresetToIsoRange(rangePreset);
+      await downloadWorkoutSetsCsv(range);
+      showToast({ title: 'CSV downloaded', variant: 'success' });
+    } catch (err) {
+      showToast({
+        title: 'Could not export CSV',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'error',
+      });
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -204,7 +223,22 @@ export function WorkoutsPage() {
             <option value="startedAt_asc">Oldest first</option>
           </select>
         </div>
+        <div className="ml-auto flex min-w-[9rem] flex-col gap-1">
+          <span className="text-xs font-medium text-slate-600">Export</span>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={exporting || loading}
+            onClick={() => void handleExportCsv()}
+            aria-label="Download workout sets as CSV for the date range above">
+            {exporting ? 'Exporting…' : 'Download CSV'}
+          </Button>
+        </div>
       </div>
+      <p className="text-xs text-slate-500">
+        CSV includes every set for workouts that <strong>started</strong> in the
+        selected date range (independent of status filters).
+      </p>
 
       {loading && <p className="text-sm text-slate-600">Loading…</p>}
       {!loading && workouts.length === 0 && (
