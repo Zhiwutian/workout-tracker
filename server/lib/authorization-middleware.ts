@@ -21,17 +21,13 @@ export function authMiddleware(
   if (token) {
     try {
       const payload = jwt.verify(token, secret) as { userId?: unknown };
-      if (typeof payload.userId !== 'number') {
-        throw new ClientError(401, 'invalid access token payload');
+      if (typeof payload.userId === 'number') {
+        req.user = { userId: payload.userId };
+        next();
+        return;
       }
-      req.user = { userId: payload.userId };
-      next();
-      return;
-    } catch (err) {
-      if (err instanceof ClientError) {
-        throw err;
-      }
-      throw new ClientError(401, 'invalid access token');
+    } catch {
+      /* Expired/malformed demo/guest JWT — still allow OIDC session cookie below. */
     }
   }
 

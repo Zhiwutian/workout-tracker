@@ -14,7 +14,7 @@ const oidcButtonClass =
  * Sign-in: OpenID Connect (when enabled), demo JWT, or guest.
  */
 export function SignInPage() {
-  const { signIn, signUp, continueAsGuest, me } = useAuth();
+  const { signIn, signUp, continueAsGuest, me, setSessionToken } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -116,7 +116,10 @@ export function SignInPage() {
 
       {showOidc ? (
         <div className="mt-6 space-y-2">
-          <a className={cn(oidcButtonClass)} href={oidcLoginHref}>
+          <a
+            className={cn(oidcButtonClass)}
+            href={oidcLoginHref}
+            onClick={() => setSessionToken(null)}>
             Sign in with OpenID Connect
           </a>
           <p className="text-center text-xs text-slate-500">
