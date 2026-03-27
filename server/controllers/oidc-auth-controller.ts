@@ -22,6 +22,7 @@ import {
   exchangeOidcAuthorizationCode,
   upsertUserFromOidcProfile,
 } from '@server/services/oidc-service.js';
+import { agentDebugLog } from '@server/lib/agent-debug-log.js';
 
 const loginQuerySchema = z.object({
   next: z.string().optional(),
@@ -78,6 +79,20 @@ export async function getOidcLogin(
 ): Promise<void> {
   try {
     assertOidcConfigured();
+    // #region agent log
+    {
+      const c = req.get('cookie') ?? '';
+      agentDebugLog({
+        hypothesisId: 'H5',
+        location: 'oidc-auth-controller.ts:getOidcLogin',
+        message: 'oidc_login_start',
+        data: {
+          hasCookieHeader: c.length > 0,
+          hasWtOidcLoginCookieName: c.includes('wt_oidc_login='),
+        },
+      });
+    }
+    // #endregion
     const q = loginQuerySchema.parse(req.query);
     const returnTo = normalizeReturnTo(q.next);
     const state = randomState();
@@ -124,6 +139,19 @@ export async function getOidcCallback(
     const query = callbackQuerySchema.parse(req.query);
     const loginState = readOidcLoginStateCookie(req);
     if (!loginState) {
+      // #region agent log
+      agentDebugLog({
+        hypothesisId: 'H2',
+        location: 'oidc-auth-controller.ts:getOidcCallback',
+        message: 'oidc_callback_missing_login_state_cookie',
+        data: {
+          hasCookieHeader: Boolean((req.get('cookie') ?? '').length),
+          hasWtOidcLoginCookieName: (req.get('cookie') ?? '').includes(
+            'wt_oidc_login=',
+          ),
+        },
+      });
+      // #endregion
       redirectWithAuthError(
         res,
         'sign-in session expired; please start sign-in again',
@@ -145,11 +173,37 @@ export async function getOidcCallback(
     setAppSessionCookie(res, userId);
     clearOidcLoginStateCookie(res);
 
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: 'H1',
+      location: 'oidc-auth-controller.ts:getOidcCallback',
+      message: 'oidc_callback_success_session_cookie_set',
+      data: {
+        sessionSameSite: env.SESSION_COOKIE_SAME_SITE,
+        sessionSecureCookie: env.NODE_ENV === 'production',
+        nodeEnv: env.NODE_ENV,
+        hasAuthFrontendOrigin: Boolean(env.AUTH_FRONTEND_ORIGIN.trim()),
+        userIdPresent: typeof userId === 'number',
+      },
+    });
+    // #endregion
+
     const origin = postLoginRedirectBase();
     const path = loginState.returnTo ?? env.AUTH_POST_LOGIN_PATH;
     res.redirect(302, `${origin}${path}`);
   } catch (err) {
     clearOidcLoginStateCookie(res);
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: 'H2',
+      location: 'oidc-auth-controller.ts:getOidcCallback',
+      message: 'oidc_callback_caught_error',
+      data: {
+        isZod: err instanceof z.ZodError,
+        isClientError: err instanceof ClientError,
+      },
+    });
+    // #endregion
     if (err instanceof z.ZodError) {
       redirectWithAuthError(res, 'invalid callback from identity provider');
       return;
