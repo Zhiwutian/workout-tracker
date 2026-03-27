@@ -26,4 +26,20 @@ describe('isPgUniqueViolation', () => {
       ),
     ).toBe(false);
   });
+
+  it('detects 23505 on Drizzle-wrapped error (cause chain)', () => {
+    const inner = {
+      code: '23505',
+      constraint: 'users_authSubject_unique',
+    };
+    const wrapped = {
+      name: 'DrizzleQueryError',
+      message: 'duplicate key',
+      cause: inner,
+    };
+    expect(isPgUniqueViolation(wrapped, 'users_authSubject_unique')).toBe(true);
+    expect(isPgUniqueViolation(wrapped, 'profiles_display_name_unique')).toBe(
+      false,
+    );
+  });
 });

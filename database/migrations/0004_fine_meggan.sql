@@ -1,0 +1,1 @@
+DROP INDEX "profiles_display_name_unique";

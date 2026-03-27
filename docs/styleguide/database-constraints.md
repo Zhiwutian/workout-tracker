@@ -4,13 +4,13 @@ Cross-reference for **Postgres**, **Drizzle** (`server/db/schema.ts`), **Zod** (
 
 ## `profiles`
 
-| Field / rule  | Zod / service                    | DB                                            |
-| ------------- | -------------------------------- | --------------------------------------------- |
-| `displayName` | trim, 1–120 chars; unique in app | `UNIQUE` index `profiles_display_name_unique` |
-| `weightUnit`  | `lb` \| `kg` in profile patch    | `text` default `lb`                           |
-| `timezone`    | optional string, max 64          | nullable `text`                               |
+| Field / rule  | Zod / service                                                           | DB                               |
+| ------------- | ----------------------------------------------------------------------- | -------------------------------- |
+| `displayName` | trim, 1–120 chars; **not** globally unique (OIDC users may share names) | no unique index on `displayName` |
+| `weightUnit`  | `lb` \| `kg` in profile patch                                           | `text` default `lb`              |
+| `timezone`    | optional string, max 64                                                 | nullable `text`                  |
 
-Conflicts return **409** (`display name already taken`) from auth sign-up and profile update.
+**Demo** sign-up (`authSubject` `demo:*`) rejects a display name if **another demo account** already uses it (**409**). Profile PATCH does not enforce global uniqueness.
 
 ## `exercise_types`
 

@@ -2,7 +2,6 @@ import { eq, sql } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { profiles } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
-import { isPgUniqueViolation } from '@server/lib/pg-errors.js';
 
 function requireDb(): DbClient {
   const db = getDrizzleDb();
@@ -56,25 +55,18 @@ export async function updateProfileForUser(
   if (patch.weightUnit !== undefined) updates.weightUnit = patch.weightUnit;
   if (patch.timezone !== undefined) updates.timezone = patch.timezone;
 
-  try {
-    const [row] = await db
-      .update(profiles)
-      .set(updates)
-      .where(eq(profiles.userId, userId))
-      .returning({
-        userId: profiles.userId,
-        displayName: profiles.displayName,
-        weightUnit: profiles.weightUnit,
-        timezone: profiles.timezone,
-        updatedAt: profiles.updatedAt,
-      });
+  const [row] = await db
+    .update(profiles)
+    .set(updates)
+    .where(eq(profiles.userId, userId))
+    .returning({
+      userId: profiles.userId,
+      displayName: profiles.displayName,
+      weightUnit: profiles.weightUnit,
+      timezone: profiles.timezone,
+      updatedAt: profiles.updatedAt,
+    });
 
-    if (!row) throw new ClientError(404, 'profile not found');
-    return row;
-  } catch (err) {
-    if (isPgUniqueViolation(err, 'profiles_display_name_unique')) {
-      throw new ClientError(409, 'display name already taken');
-    }
-    throw err;
-  }
+  if (!row) throw new ClientError(404, 'profile not found');
+  return row;
 }

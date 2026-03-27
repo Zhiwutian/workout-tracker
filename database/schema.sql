@@ -20,8 +20,6 @@ create table "profiles" (
   "updatedAt" timestamptz not null default now()
 );
 
-create unique index "profiles_display_name_unique" on "profiles" ("displayName");
-
 create table "exercise_types" (
   "exerciseTypeId" serial primary key,
   "userId" integer references "users" ("userId") on delete cascade,

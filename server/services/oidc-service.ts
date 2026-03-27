@@ -131,65 +131,43 @@ export async function upsertUserFromOidcProfile(input: {
     .limit(1);
   if (existing) return existing.userId;
 
-  let displayName = defaultDisplayName(
+  const displayName = defaultDisplayName(
     input.displayName,
     input.email,
     input.sub,
   );
 
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    try {
-      return await db.transaction(async (tx) => {
-        const [user] = await tx
-          .insert(users)
-          .values({ authSubject: input.sub })
-          .returning({ userId: users.userId });
-        if (!user) throw new ClientError(500, 'failed to create user');
-        await tx.insert(profiles).values({
-          userId: user.userId,
-          displayName,
-        });
-        return user.userId;
+  try {
+    return await db.transaction(async (tx) => {
+      const [user] = await tx
+        .insert(users)
+        .values({ authSubject: input.sub })
+        .returning({ userId: users.userId });
+      if (!user) throw new ClientError(500, 'failed to create user');
+      await tx.insert(profiles).values({
+        userId: user.userId,
+        displayName,
       });
-    } catch (err) {
-      if (isPgUniqueViolation(err, 'profiles_display_name_unique')) {
-        const suffix = ` ${Math.random().toString(36).slice(2, 8)}`;
-        displayName = `${defaultDisplayName(input.displayName, input.email, input.sub).slice(0, 110)}${suffix}`;
-        logger.warn(
-          { err, displayName },
-          'oidc profile display name collision; retrying',
+      return user.userId;
+    });
+  } catch (err) {
+    /**
+     * Concurrent first-time sign-ins for the same IdP `sub` can both pass the initial
+     * SELECT and race on INSERT — second transaction hits `users_authSubject_unique`.
+     */
+    if (isPgUniqueViolation(err, 'users_authSubject_unique')) {
+      const [concurrent] = await db
+        .select({ userId: users.userId })
+        .from(users)
+        .where(eq(users.authSubject, input.sub))
+        .limit(1);
+      if (concurrent) {
+        logger.info(
+          'concurrent OIDC signup lost user insert race; using existing user row',
         );
-        continue;
+        return concurrent.userId;
       }
-      /**
-       * Concurrent first-time sign-ins for the same IdP `sub` can both pass the initial
-       * SELECT and race on INSERT — second transaction hits `users_authSubject_unique`.
-       * Recover by loading the row the winner created (same as returning-user path).
-       */
-      if (isPgUniqueViolation(err, 'users_authSubject_unique')) {
-        const [concurrent] = await db
-          .select({ userId: users.userId })
-          .from(users)
-          .where(eq(users.authSubject, input.sub))
-          .limit(1);
-        if (concurrent) {
-          logger.info(
-            'concurrent OIDC signup lost user insert race; using existing user row',
-          );
-          return concurrent.userId;
-        }
-      }
-      if (isPgUniqueViolation(err)) {
-        logger.error(
-          {
-            constraint: (err as { constraint?: string }).constraint,
-            code: (err as { code?: string }).code,
-          },
-          'oidc upsert unexpected unique violation',
-        );
-      }
-      throw err;
     }
+    throw err;
   }
-  throw new ClientError(500, 'could not allocate unique display name');
 }

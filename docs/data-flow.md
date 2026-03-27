@@ -53,7 +53,7 @@ sequenceDiagram
 ```
 
 - **Token:** signed with **`TOKEN_SECRET`**, payload `{ userId }` (see `server/lib/authorization-middleware.ts`).
-- **Conflicts:** duplicate display name → **409** (`profiles_display_name_unique`).
+- **Conflicts:** duplicate **demo** display name (another `demo:*` account) → **409**; OIDC profiles may reuse the same display name.
 
 ### 1b. Continue as guest
 

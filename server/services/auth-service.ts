@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import jwt from 'jsonwebtoken';
-import { eq } from 'drizzle-orm';
+import { and, eq, like } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { profiles, users } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
-import { isPgUniqueViolation } from '@server/lib/pg-errors.js';
 import { env } from '@server/config/env.js';
 
 function requireDb(): DbClient {
@@ -37,33 +36,38 @@ export async function signUpDemo(displayName: string): Promise<{
   const authSubject = `demo:${randomUUID()}`;
   const trimmed = displayName.trim();
 
-  try {
-    return await db.transaction(async (tx) => {
-      const [user] = await tx
-        .insert(users)
-        .values({ authSubject })
-        .returning({ userId: users.userId, authSubject: users.authSubject });
-
-      if (!user) throw new ClientError(500, 'failed to create user');
-
-      await tx.insert(profiles).values({
-        userId: user.userId,
-        displayName: trimmed,
-      });
-
-      return {
-        token: signAccessToken(user.userId),
-        userId: user.userId,
-        authSubject: user.authSubject,
-        displayName: trimmed,
-      };
-    });
-  } catch (err) {
-    if (isPgUniqueViolation(err, 'profiles_display_name_unique')) {
-      throw new ClientError(409, 'display name already taken');
-    }
-    throw err;
+  const [dupDemo] = await db
+    .select({ userId: profiles.userId })
+    .from(profiles)
+    .innerJoin(users, eq(profiles.userId, users.userId))
+    .where(
+      and(eq(profiles.displayName, trimmed), like(users.authSubject, 'demo:%')),
+    )
+    .limit(1);
+  if (dupDemo) {
+    throw new ClientError(409, 'display name already taken');
   }
+
+  return await db.transaction(async (tx) => {
+    const [user] = await tx
+      .insert(users)
+      .values({ authSubject })
+      .returning({ userId: users.userId, authSubject: users.authSubject });
+
+    if (!user) throw new ClientError(500, 'failed to create user');
+
+    await tx.insert(profiles).values({
+      userId: user.userId,
+      displayName: trimmed,
+    });
+
+    return {
+      token: signAccessToken(user.userId),
+      userId: user.userId,
+      authSubject: user.authSubject,
+      displayName: trimmed,
+    };
+  });
 }
 
 /** Demo sign-in by unique display name. */
@@ -88,7 +92,7 @@ export async function getAuthSubjectForUser(
 
 /**
  * Anonymous session: new user + profile, same JWT API as demo sign-up.
- * Display name is unique (`Guest <uuid>`) to satisfy `profiles_display_name_unique`.
+ * Display name includes a UUID so guest rows are easy to distinguish.
  */
 export async function createGuestUser(): Promise<{
   token: string;
@@ -138,7 +142,12 @@ export async function signInByDisplayName(displayName: string): Promise<{
     })
     .from(profiles)
     .innerJoin(users, eq(profiles.userId, users.userId))
-    .where(eq(profiles.displayName, displayName.trim()))
+    .where(
+      and(
+        eq(profiles.displayName, displayName.trim()),
+        like(users.authSubject, 'demo:%'),
+      ),
+    )
     .limit(1);
 
   const found = row[0];

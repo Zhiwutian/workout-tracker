@@ -5,7 +5,6 @@ import {
   serial,
   text,
   timestamp,
-  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 // Note: exercise_types intentionally has no DB unique on (userId,name) because PostgreSQL
 // treats NULL userId oddly in composite uniques; enforce custom names in the service layer.
@@ -22,26 +21,23 @@ export const users = pgTable('users', {
     .defaultNow(),
 });
 
-/** One profile row per user (preferences + display name). */
-export const profiles = pgTable(
-  'profiles',
-  {
-    profileId: serial('profileId').primaryKey(),
-    userId: integer('userId')
-      .notNull()
-      .references(() => users.userId, { onDelete: 'cascade' })
-      .unique(),
-    displayName: text('displayName').notNull(),
-    weightUnit: text('weightUnit').notNull().default('lb'),
-    timezone: text('timezone'),
-    updatedAt: timestamp('updatedAt', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    uniqueIndex('profiles_display_name_unique').on(table.displayName),
-  ],
-);
+/**
+ * One profile row per user (preferences + display name).
+ * `displayName` is not globally unique (multiple OIDC users may share the same name).
+ */
+export const profiles = pgTable('profiles', {
+  profileId: serial('profileId').primaryKey(),
+  userId: integer('userId')
+    .notNull()
+    .references(() => users.userId, { onDelete: 'cascade' })
+    .unique(),
+  displayName: text('displayName').notNull(),
+  weightUnit: text('weightUnit').notNull().default('lb'),
+  timezone: text('timezone'),
+  updatedAt: timestamp('updatedAt', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 /**
  * Exercises: `userId` null = global catalog (seeded); non-null = user-defined custom.
