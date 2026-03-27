@@ -8,7 +8,7 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Changed
 
-- **`docs/proposals/workout-tracker-build-plan.md`** — status and §3/§6/§7/§14 synced with shipped MVP, OIDC, Phase 4 QA, E2E+a11y, migrations through **0004**; §14 next actions point at optional polish and product backlog; **§15** post-MVP slice backlog (slice 1 workout history **Done**).
+- **`docs/proposals/workout-tracker-build-plan.md`** — status and §3/§6/§7/§14 synced with shipped MVP, OIDC, Phase 4 QA, E2E+a11y, migrations through **0004**; §14 next actions point at optional polish and product backlog; **§15** post-MVP slice backlog (slices 1–3 **Done**: history, CSV export, timezone weekly volume).
 - **`docs/course-qa-evidence.md`**, **`docs/testing.md`**, **`docs/README.md`** — document **all tests passing** (**`pnpm run ci:local`** + **`pnpm run test:e2e`**); §4 OIDC **Pass** (production Auth0 / split-host); **Tester(s):** Brett Albright; cross-browser §3 optional Firefox/WebKit; sign-off updated.
 - **`docs/deployment/README.md`** — expanded **Verify** into API smoke, browser checklist (guest → workout → set), optional demo/OIDC, and troubleshooting pointer.
 - **`server/config/env.ts`** — trim OIDC-related env strings at load so pasted **`AUTH_OIDC_REDIRECT_URI`** cannot include trailing newlines (Auth0 **redirect_uri** errors).
@@ -19,6 +19,7 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Added
 
+- **Timezone-aware weekly volume (slice 3):** optional **`timezone`** query on **`GET /api/stats/weekly-volume`**; **`resolveWeeklyVolumeWindow`** in **`stats-service`** (Luxon); dashboard uses profile **`timezone`** and **`mondayWeekStartISOInZone`**; tests in **`stats-service.test.ts`** and **`week.test.ts`**.
 - **CSV export (slice 2):** **`GET /api/export/workout-sets.csv`** (optional **`from`/`to`** on workout start time); **`downloadWorkoutSetsCsv`** in **`workout-api`**; **Download CSV** on **`WorkoutsPage`** aligned with date range preset; **`server/services/export-service`**, **`csv`** / **`csv-build`** helpers and tests.
 - **Workout history (slice 1):** **`GET /api/workouts`** query filters (`from`, `to`, `status`, `sort`); **`WorkoutsPage`** presets (all time / this week / this month, local calendar), status and sort controls, **`EmptyState`** when filters match nothing, **Resume** banner when an active workout exists but is hidden by filters; **`client/src/lib/date-range-presets.ts`** + unit tests. E2E uses **`workouts-page-heading`** test id for stable assertions.
 - **E2E accessibility:** **`e2e/a11y.spec.ts`** (axe critical/serious + keyboard focus on guest); **`@axe-core/playwright`**; Playwright projects **chromium** + **mobile-chrome**, optional **`PW_FULL_BROWSERS=1`** for Firefox/WebKit when host deps installed. **`docs/course-qa-evidence.md`** and **`docs/testing.md`** updated with verification notes.

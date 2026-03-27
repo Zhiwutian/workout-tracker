@@ -117,7 +117,7 @@ Authenticated (`Authorization: Bearer`):
 - `GET/POST /api/exercises`
 - `GET/POST /api/workouts`, `GET/PATCH/DELETE /api/workouts/:workoutId`
 - `POST .../workouts/:workoutId/sets`, `PATCH/DELETE /api/sets/:setId`
-- `GET /api/stats/weekly-volume?weekStart=YYYY-MM-DD`
+- `GET /api/stats/weekly-volume?weekStart=YYYY-MM-DD` — optional `timezone` (IANA) for non-UTC week windows
 
 Health:
 

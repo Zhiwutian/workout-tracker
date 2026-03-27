@@ -1,10 +1,13 @@
 # Assumptions
 
-## Weekly dashboard (UTC)
+## Weekly dashboard (timezone-aware)
 
-`GET /api/stats/weekly-volume?weekStart=YYYY-MM-DD` treats `weekStart` as **UTC midnight** and aggregates volume for sets on workouts whose `startedAt` falls in **[weekStart, weekStart + 7 days)**.
+`GET /api/stats/weekly-volume?weekStart=YYYY-MM-DD` supports an optional **`timezone`** query parameter (IANA name, e.g. `America/Los_Angeles`).
 
-The client dashboard defaults to the **UTC Monday** of the current week. User profile `timezone` is stored for future use but does not yet shift this window.
+- **Without `timezone`**, or with **`UTC`** / **`Etc/UTC`**: `weekStart` is **UTC midnight** (legacy). Volume includes sets on workouts whose **`startedAt`** falls in **[weekStart UTC, weekStart UTC + 7 days)**.
+- **With another IANA zone**: `weekStart` is that **calendar date at 00:00 local** in that zone; the window is **7 days** in that zone, converted to UTC for the DB query. The JSON response may include **`timezone`** when a non-UTC zone was used.
+
+The dashboard uses **profile `timezone`** when set (otherwise **UTC**), computes the **ISO Monday** of the current week in that zone, and passes **`weekStart`** + **`timezone`** to the API so the server window matches the user’s local week.
 
 ## Auth
 

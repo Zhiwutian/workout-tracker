@@ -50,6 +50,8 @@ export type WeeklyVolumeResponse = {
   weekEndUtc: string;
   totalVolume: number;
   setCount: number;
+  /** Present when `timezone` was sent (non-UTC IANA interpretation). */
+  timezone?: string;
 };
 
 export type AuthOptionsResponse = {
@@ -263,8 +265,13 @@ export async function addSet(
 
 export async function readWeeklyVolume(
   weekStart: string,
+  timezone?: string | null,
 ): Promise<WeeklyVolumeResponse> {
   const q = new URLSearchParams({ weekStart });
+  const tz = timezone?.trim();
+  if (tz && tz !== 'UTC' && tz !== 'Etc/UTC') {
+    q.set('timezone', tz);
+  }
   return fetchJson<WeeklyVolumeResponse>(
     `/api/stats/weekly-volume?${q.toString()}`,
   );
