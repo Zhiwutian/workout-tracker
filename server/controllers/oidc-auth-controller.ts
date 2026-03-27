@@ -16,6 +16,7 @@ import {
   setAppSessionCookie,
   setOidcLoginStateCookie,
 } from '@server/lib/session-cookies.js';
+import { signAccessToken } from '@server/services/auth-service.js';
 import {
   assertOidcConfigured,
   buildOidcAuthorizationRedirect,
@@ -145,9 +146,18 @@ export async function getOidcCallback(
     setAppSessionCookie(res, userId);
     clearOidcLoginStateCookie(res);
 
-    const origin = postLoginRedirectBase();
+    const base = postLoginRedirectBase();
     const path = loginState.returnTo ?? env.AUTH_POST_LOGIN_PATH;
-    res.redirect(302, `${origin}${path}`);
+    const url = new URL(path, base);
+    /**
+     * Split deploy (e.g. Vercel + Render): credentialed cross-origin fetch often does not
+     * send the API `wt_session` cookie (browser third-party cookie rules). Hand off a
+     * Bearer JWT in the URL fragment (not sent to servers) so the SPA can store it.
+     */
+    if (env.AUTH_FRONTEND_ORIGIN.trim()) {
+      url.hash = `oidc_token=${encodeURIComponent(signAccessToken(userId))}`;
+    }
+    res.redirect(302, url.toString());
   } catch (err) {
     clearOidcLoginStateCookie(res);
     if (err instanceof z.ZodError) {

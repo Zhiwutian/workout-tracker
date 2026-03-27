@@ -61,6 +61,8 @@ Expect JSON, not 404.
 
 **Vercel:** **`VITE_API_BASE_URL=https://<your-api>.onrender.com`**
 
+**Browsers and `wt_session`:** Even with **`SameSite=None`**, many browsers **do not** attach the API host’s session cookie to **cross-origin** `fetch` calls with `credentials: 'include'` from the Vercel origin to Render. When **`AUTH_FRONTEND_ORIGIN`** is set, the API appends **`#oidc_token=<JWT>`** to the post-login redirect; the SPA reads the fragment **before** React mounts, stores it as the same **Bearer** used for demo/guest, and **`GET /api/me`** authenticates without relying on a cross-site cookie.
+
 ### Local — Vite + API proxy
 
 SPA at `http://localhost:5173`, `/api` proxied to Express.
@@ -111,12 +113,12 @@ SESSION_SECRET=...   # min 16 chars, or TOKEN_SECRET >= 16
 
 ## 5. Common failures
 
-| Symptom                                 | Check                                                                                                                                                                   |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **redirect_uri mismatch** / “not valid” | Callback in Auth0 = **`AUTH_OIDC_REDIRECT_URI`** exactly. **No newline** after the URL in Render or Auth0 (paste errors add `\n`; Auth0 shows it in the error message). |
-| Stuck on API host after login           | Set **`AUTH_FRONTEND_ORIGIN`** to the Vercel origin.                                                                                                                    |
-| CORS errors                             | **`CORS_ORIGIN`** includes the Vercel origin.                                                                                                                           |
-| Session not sticking (split)            | **`SESSION_COOKIE_SAME_SITE=none`**, HTTPS, **`credentials: 'include'`** (already in client).                                                                           |
+| Symptom                                 | Check                                                                                                                                                                                                                                   |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **redirect_uri mismatch** / “not valid” | Callback in Auth0 = **`AUTH_OIDC_REDIRECT_URI`** exactly. **No newline** after the URL in Render or Auth0 (paste errors add `\n`; Auth0 shows it in the error message).                                                                 |
+| Stuck on API host after login           | Set **`AUTH_FRONTEND_ORIGIN`** to the Vercel origin.                                                                                                                                                                                    |
+| CORS errors                             | **`CORS_ORIGIN`** includes the Vercel origin.                                                                                                                                                                                           |
+| Session not sticking (split)            | **`SESSION_COOKIE_SAME_SITE=none`**, HTTPS, **`credentials: 'include'`** (already in client). With **`AUTH_FRONTEND_ORIGIN`** set, the app also uses **`#oidc_token=`** so the SPA can auth when the browser blocks cross-site cookies. |
 
 ## Related
 
