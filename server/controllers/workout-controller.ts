@@ -10,6 +10,7 @@ import {
   deleteWorkoutForUser,
   getWorkoutForUser,
   listWorkouts,
+  type ListWorkoutsFilters,
   updateSetForUser,
   updateWorkoutForUser,
 } from '@server/services/workout-service.js';
@@ -39,6 +40,13 @@ const postSetBody = z.object({
   weight: z.coerce.number().min(0).max(99999),
   notes: z.string().trim().max(2000).nullable().optional(),
   setIndex: z.coerce.number().int().min(0).max(9999).optional(),
+});
+
+const listWorkoutsQuery = z.object({
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  status: z.enum(['all', 'active', 'completed']).default('all'),
+  sort: z.enum(['startedAt_desc', 'startedAt_asc']).default('startedAt_desc'),
 });
 
 const patchSetBody = z
@@ -110,7 +118,7 @@ function serializeSet(s: {
   };
 }
 
-/** GET /api/workouts */
+/** GET /api/workouts — optional query: `from`, `to` (ISO), `status`, `sort` */
 export async function getWorkouts(
   req: Request,
   res: Response,
@@ -119,7 +127,14 @@ export async function getWorkouts(
   try {
     const userId = req.user?.userId;
     if (userId === undefined) throw new Error('auth middleware required');
-    const rows = await listWorkouts(userId);
+    const q = listWorkoutsQuery.parse(req.query);
+    const filters: ListWorkoutsFilters = {
+      status: q.status,
+      sort: q.sort,
+    };
+    if (q.from) filters.from = new Date(q.from);
+    if (q.to) filters.to = new Date(q.to);
+    const rows = await listWorkouts(userId, filters);
     sendSuccess(res, rows.map(serializeWorkout));
   } catch (err) {
     next(err);

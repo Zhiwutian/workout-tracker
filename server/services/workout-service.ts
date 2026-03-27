@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { workoutSets, workouts } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
@@ -34,13 +34,45 @@ export type SetRecord = {
   createdAt: Date;
 };
 
-export async function listWorkouts(userId: number): Promise<WorkoutRecord[]> {
+/** Optional filters for GET /api/workouts (date range uses `startedAt`). */
+export type ListWorkoutsFilters = {
+  from?: Date;
+  to?: Date;
+  status?: 'all' | 'active' | 'completed';
+  sort?: 'startedAt_desc' | 'startedAt_asc';
+};
+
+export async function listWorkouts(
+  userId: number,
+  filters: ListWorkoutsFilters = {},
+): Promise<WorkoutRecord[]> {
   const db = requireDb();
+  const status = filters.status ?? 'all';
+  const sort = filters.sort ?? 'startedAt_desc';
+
+  const conditions = [eq(workouts.userId, userId)];
+  if (filters.from) {
+    conditions.push(gte(workouts.startedAt, filters.from));
+  }
+  if (filters.to) {
+    conditions.push(lte(workouts.startedAt, filters.to));
+  }
+  if (status === 'active') {
+    conditions.push(isNull(workouts.endedAt));
+  } else if (status === 'completed') {
+    conditions.push(isNotNull(workouts.endedAt));
+  }
+
+  const order =
+    sort === 'startedAt_asc'
+      ? asc(workouts.startedAt)
+      : desc(workouts.startedAt);
+
   return db
     .select()
     .from(workouts)
-    .where(eq(workouts.userId, userId))
-    .orderBy(desc(workouts.startedAt));
+    .where(and(...conditions))
+    .orderBy(order);
 }
 
 export async function createWorkout(

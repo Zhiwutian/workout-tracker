@@ -28,7 +28,7 @@ test.describe('accessibility sampling (axe)', () => {
     await expect(guest).toBeFocused();
 
     await guest.click();
-    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible({
+    await expect(page.getByTestId('workouts-page-heading')).toBeVisible({
       timeout: 30_000,
     });
 

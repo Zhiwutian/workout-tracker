@@ -68,6 +68,20 @@ describe('api routes', () => {
     );
   });
 
+  it('returns 401 from /api/export/workout-sets.csv without bearer token', async () => {
+    delete process.env.DATABASE_URL;
+
+    const res = await request(app)
+      .get('/api/export/workout-sets.csv')
+      .expect(401);
+    expect(res.body.error).toEqual(
+      expect.objectContaining({
+        code: 'client_error',
+        message: 'authentication required',
+      }),
+    );
+  });
+
   it('returns 503 from POST /api/auth/guest when DATABASE_URL is missing', async () => {
     delete process.env.DATABASE_URL;
 

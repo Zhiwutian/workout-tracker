@@ -1,6 +1,6 @@
 # Proposal: Workout Tracker — full-stack build plan
 
-**Status:** proposal (living document)  
+**Status:** proposal (living document) — **MVP, Path A (OIDC), and Report Phase 4 QA evidence are complete in-repo**; remaining items are optional polish or new product scope.  
 **Audience:** course team, future maintainers, Cursor agents  
 **Related app:** this repository (`workout-tracker`)  
 **Template seed:** LFZ full-stack template (aligned with **bible-support** patterns where noted)
@@ -17,7 +17,7 @@ Ship an educational **workout tracker** web app: users log **workouts** and **se
 
 **Volume wording:** The report defines **Volume = Sets × Reps × Weight**. The implementation uses **Σ (reps × weight)** per logged set over the dashboard window — numerically the same when each set is stored as its own row (see **`docs/assumptions.md`**). Use that sentence in course documentation if graders want formula traceability.
 
-**Report Phase 4 (QA, ~Mar 30–Apr 10):** Plan time for **WCAG 2.1** sampling (keyboard + screen reader), **UAT** on **three-tap logging**, cross-browser/device checks, and final **security** review on the real host (e.g. Render). Capture outcomes in-repo (see §7 — `docs/testing.md` and/or a short QA evidence note) so Part 3 §§3–5 claims stay verifiable.
+**Report Phase 4 (QA, ~Mar 30–Apr 10):** **Completed** — outcomes recorded in **`docs/course-qa-evidence.md`** (automated **axe** + Playwright **chromium** / **mobile-chrome**, UAT notes, hosted OIDC/security rows) with pointers in **`docs/testing.md`**.
 
 ## 2. Non-goals (for initial milestones)
 
@@ -29,22 +29,22 @@ Ship an educational **workout tracker** web app: users log **workouts** and **se
 
 Use this table to reconcile the plan with the repo; update the **Status** column as work lands.
 
-| Area                                                        | Status      | Notes                                                                                                               |
-| ----------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- |
-| Domain schema (users, profiles, exercises, workouts, sets)  | **Done**    | `server/db/schema.ts`, migrations through `0002`                                                                    |
-| Demo JWT auth (display name)                                | **Done**    | Replace with OIDC for production narrative                                                                          |
-| REST APIs + ownership checks                                | **Done**    | IDOR tests with `TEST_DATABASE_URL`                                                                                 |
-| React UI (sign-in, workouts, detail, dashboard, profile)    | **Done**    |                                                                                                                     |
-| Seed global exercises                                       | **Done**    | `db:seed`                                                                                                           |
-| Styleguide + Cursor rules + `AGENTS.md`                     | **Done**    | Ported/adapted from bible-support template                                                                          |
-| `docs/data-flow.md`                                         | **Done**    |                                                                                                                     |
-| Light PWA (manifest, icons, minimal SW)                     | **Done**    |                                                                                                                     |
-| Drizzle `0002` snapshot                                     | **Done**    | `database/migrations/meta/0002_snapshot.json`                                                                       |
-| Playwright smoke E2E                                        | **Done**    | `e2e/smoke.spec.ts`, CI                                                                                             |
-| Agent / workspace workflow (`AGENTS.md`, `CONTRIBUTING.md`) | **Done**    | Optional parent workspace (e.g. bible-support at `/workspace`); app docs/rules/changelog stay under this repo only  |
-| OIDC / OAuth (Auth0-class IdP)                              | **Done**    | `AUTH_OIDC_*`, PKCE + callback, session + split-host handoff; `GET /api/auth/options`; see §11 + ADR 0001           |
-| Full deployment runbooks (Auth0, split host)                | **Done**    | **`docs/deployment/README.md`**, **`auth0-setup.md`**, **`vercel-render.md`**; production verified on Vercel+Render |
-| Optional docs from original vision                          | **Partial** | See §7 documentation map                                                                                            |
+| Area                                                        | Status      | Notes                                                                                                                                                    |
+| ----------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain schema (users, profiles, exercises, workouts, sets)  | **Done**    | `server/db/schema.ts`; migrations through **`0004`** (see `database/migrations/`)                                                                        |
+| Demo JWT auth (display name)                                | **Done**    | Gated by **`AUTH_DEMO_ENABLED`**; OIDC is primary for production narrative                                                                               |
+| REST APIs + ownership checks                                | **Done**    | IDOR tests with `TEST_DATABASE_URL`                                                                                                                      |
+| React UI (sign-in, workouts, detail, dashboard, profile)    | **Done**    |                                                                                                                                                          |
+| Seed global exercises                                       | **Done**    | `db:seed`                                                                                                                                                |
+| Styleguide + Cursor rules + `AGENTS.md`                     | **Done**    | Ported/adapted from bible-support template                                                                                                               |
+| `docs/data-flow.md`                                         | **Done**    |                                                                                                                                                          |
+| Light PWA (manifest, icons, minimal SW)                     | **Done**    |                                                                                                                                                          |
+| Drizzle migration snapshots                                 | **Done**    | Under `database/migrations/meta/` (journal tracks applied migrations)                                                                                    |
+| Playwright E2E                                              | **Done**    | `e2e/smoke.spec.ts` + `e2e/a11y.spec.ts` (axe + keyboard sample); **chromium** + **mobile-chrome**; optional **`PW_FULL_BROWSERS=1`** for Firefox/WebKit |
+| Agent / workspace workflow (`AGENTS.md`, `CONTRIBUTING.md`) | **Done**    | Optional parent workspace (e.g. bible-support at `/workspace`); app docs/rules/changelog stay under this repo only                                       |
+| OIDC / OAuth (Auth0-class IdP)                              | **Done**    | `AUTH_OIDC_*`, PKCE + callback, session + split-host handoff; `GET /api/auth/options`; see §11 + ADR 0001                                                |
+| Full deployment runbooks (Auth0, split host)                | **Done**    | **`docs/deployment/README.md`**, **`auth0-setup.md`**, **`vercel-render.md`**; production verified on Vercel+Render                                      |
+| Optional docs from original vision                          | **Partial** | See §7 — remaining: **`docs/pwa.md`**, **`docs/build/*`**, **`docs/learning-path.md`** (optional)                                                        |
 
 ### Agent and workspace workflow (Cursor)
 
@@ -67,7 +67,7 @@ Some contributors open a **parent** folder (for example the bible-support devcon
 
 ## 5. Product scope (MVP acceptance)
 
-Functional MVP is **Done** with **demo JWT**. **Path A:** replace the primary login path with **OIDC/OAuth** for course/report alignment; until then, treat the checkbox below as **partial** for grading narrative.
+Functional MVP is **Done**. **Path A:** **OIDC/OAuth** is the production login path when configured; **demo JWT** remains for local/dev when **`AUTH_DEMO_ENABLED=true`**.
 
 - [x] Sign up / sign in via **OAuth/OIDC** (IdP-backed) with unique identity per user when **`AUTH_OIDC_ENABLED=true`** and IdP is configured. _(Demo JWT remains for local / gated use.)_
 - [x] List and create **workouts**; open detail; end session optional.
@@ -102,7 +102,7 @@ Phases are **ordering guidance**, not rigid sprints. Several may already be sati
 | **Phase 1** — Environment & foundation (DB, accessibility baseline, CI)        | Largely **Done** in repo; ensure **hosted Postgres** (e.g. Render) steps match `docs/deployment/README.md`. |
 | **Phase 2** — Auth (UC-1), profile (UC-2), security audit                      | **Done** for **Path A** (OIDC + profile); optional: more automated callback tests (§11.F).                  |
 | **Phase 3** — Workout/set CRUD (UC-3/4), dashboard volume                      | Largely **Done** (**R5–R7**).                                                                               |
-| **Phase 4** — QA: WCAG, UAT (three-tap), cross-browser/device, security/stress | **Process + evidence** — not a single PR; schedule and log outcomes (§7, §8 item 12).                       |
+| **Phase 4** — QA: WCAG, UAT (three-tap), cross-browser/device, security/stress | **Done** — logged in **`docs/course-qa-evidence.md`** (§8 item 12).                                         |
 
 ---
 
@@ -128,7 +128,7 @@ Mark **Done** / **Todo** in your tracker; paths are relative to `workout-tracker
 | `docs/testing.md`                          | **Done** — commands, IDOR env, OIDC manual staging, optional §11.F/G notes, CI notes              |
 | `docs/pwa.md`                              | **Todo** optional: extract from `data-flow` + `development-workflow`                              |
 | `docs/security-notes.md`                   | **Done** — cookies, CORS, callback URLs, CSP/SW pointers                                          |
-| `docs/course-qa-evidence.md`               | **Template ready** — Phase 4 checklist; fill during QA window (see §8 item 12)                    |
+| `docs/course-qa-evidence.md`               | **Done** — Phase 4 checklist filled (§0 **ci:local** + **test:e2e**, §§1–5, production OIDC row)  |
 | `docs/decisions/0001-oidc-oauth-path-a.md` | **Implemented** (code); ADR indexes **`docs/decisions/README.md`**                                |
 | `docs/build/*`                             | **Todo** optional: reproducible build / deploy steps                                              |
 | `docs/learning-path.md`                    | **Todo** optional: student onboarding                                                             |
@@ -261,11 +261,26 @@ Numbered items are **in scope** for “done enough to defend in report.” Adjus
 
 ## 14. Next actions
 
-1. ~~**Implement OIDC/OAuth (Path A)**~~ — **Done** for hosted split deploy; keep §11.F/G (optional tests/E2E) if the rubric asks for more automation.
-2. **Report Phase 4** — run WCAG sampling, three-tap UAT, cross-browser checks, hosted security review; record outcomes in **`docs/course-qa-evidence.md`** (and pointer in **`docs/testing.md`** if you prefer a single index).
-3. **§8 deliverables** — **Done** in-repo: **`docs/troubleshooting.md`**, **`docs/demo-script.md`**, **`docs/course-qa-evidence.md`** (fill during QA); confirm **Playwright** smoke in CI for your branch.
-4. Keep §3 **Current state** and §7 rows accurate as work lands.
-5. On scope change: edit this file + `CHANGELOG.md` + optional ADR under `docs/decisions/`.
+1. ~~**Implement OIDC/OAuth (Path A)**~~ — **Done** for hosted split deploy.
+2. ~~**Report Phase 4 QA evidence**~~ — **Done** in **`docs/course-qa-evidence.md`**; **`docs/testing.md`** indexes verification.
+3. **Optional (rubric / polish):** §11.F (mocked callback integration tests) and §11.G (Playwright + real IdP in CI) if you want extra automation beyond the manual checklist.
+4. **Optional docs:** `docs/pwa.md`, `docs/build/*`, `docs/learning-path.md` (§7) if you want a dedicated PWA or onboarding doc.
+5. **Product / next version:** new features (e.g. programs, history, notifications, export) are **out of current MVP** — add a short **§15 backlog** or a separate proposal when you pick a theme; otherwise keep shipping small PRs and update §3 + `CHANGELOG`.
+6. Keep §3 **Current state** and §7 rows accurate as work lands; on scope change: edit this file + **`CHANGELOG.md`** + optional ADR under **`docs/decisions/`**.
+
+---
+
+## 15. Post-MVP feature backlog (slice order A)
+
+Ship **one vertical slice per branch/PR**. Order agreed for **A**:
+
+| #   | Slice                                                                                                                                                             | Status                                                                                          |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 1   | **Workout history UX** — list filters (week/month/all, local calendar), status (all/active/completed), sort, empty states, resume when active workout is off-list | **Done** — `GET /api/workouts` query params; `WorkoutsPage` UI                                  |
+| 2   | **Export** — CSV of workouts/sets for a date range                                                                                                                | **Done** — `GET /api/export/workout-sets.csv`; **Download CSV** on `WorkoutsPage` (date preset) |
+| 3   | **Timezone-aware** dashboard week (profile timezone)                                                                                                              | Todo                                                                                            |
+| 4   | **Exercise library** — edit/rename/archive custom, recents                                                                                                        | Todo                                                                                            |
+| 5   | **Richer set logging** — notes, RPE, copy last set                                                                                                                | Todo                                                                                            |
 
 ---
 
