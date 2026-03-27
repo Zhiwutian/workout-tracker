@@ -8,6 +8,7 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Changed
 
+- **`docs/deployment/README.md`** — expanded **Verify** into API smoke, browser checklist (guest → workout → set), optional demo/OIDC, and troubleshooting pointer.
 - **`server/config/env.ts`** — trim OIDC-related env strings at load so pasted **`AUTH_OIDC_REDIRECT_URI`** cannot include trailing newlines (Auth0 **redirect_uri** errors).
 - **`docs/deployment/auth0-setup.md`** — §0 ordered checklist for OIDC when Vercel + Render are already deployed; troubleshooting row for newline in callback URL.
 - **`client/src/features/auth/AuthContext.tsx`** — ignore stale **`readMe`** results so a slow initial **401** cannot clear storage after guest (or other) login completes (fixes split-deploy / slow-network race).
@@ -16,6 +17,8 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Added
 
+- **E2E accessibility:** **`e2e/a11y.spec.ts`** (axe critical/serious + keyboard focus on guest); **`@axe-core/playwright`**; Playwright projects **chromium** + **mobile-chrome**, optional **`PW_FULL_BROWSERS=1`** for Firefox/WebKit when host deps installed. **`docs/course-qa-evidence.md`** and **`docs/testing.md`** updated with verification notes.
+- **Course report (Phase 4 docs):** **`docs/course-qa-evidence.md`**, **`docs/troubleshooting.md`**, **`docs/demo-script.md`**; **`docs/testing.md`** — optional **§11.F/G** notes; **`README.md`** / **`docs/README.md`** links.
 - **Deploy (bible-support stack):** root **`render.yaml`**; Vercel + Render + Neon documented as **default** split layout; **`AUTH_FRONTEND_ORIGIN`** on the API so OIDC redirects return to the Vercel SPA (not the Render host). **`client/vercel.json`**, **`client/.env.example`**, **`api-base-url`**, **`smoke:deploy`**. Docs hub, **`vercel-render.md`**, **`auth0-setup.md`**, account setup guides, optional **`render-neon.md`** monolith path.
 - **OIDC / OAuth (Path A):** `AUTH_OIDC_*` and session env validation; `openid-client`; `GET /api/auth/oidc/login` (PKCE), `GET /api/auth/oidc/callback`, `POST /api/auth/logout`, `GET /api/auth/options`; signed cookies `wt_oidc_login` / `wt_session`; `sub` → `users.authSubject`; `authMiddleware` accepts **Bearer** then session cookie; client `credentials: 'include'`, sign-in page OIDC + gated demo, `auth_error` query handling. Docs: `docs/configuration.md`, `docs/deployment/README.md`, `docs/deployment/auth0-setup.md`, `docs/data-flow.md`, `docs/assumptions.md`, `docs/architecture.md`, `docs/testing.md`, `docs/security-notes.md`, `docs/styleguide/backend-patterns.md`, `docs/README.md`, `docs/decisions/README.md`; ADR 0001 and build plan §11 updated. `server/.env.example` extended; **`AGENTS.md`** links testing, security, and deployment guides.
 - **Continue as guest:** `POST /api/auth/guest` creates a server user with `authSubject` `guest:<uuid>` and returns a JWT; **`GET /api/me`** and **`PATCH /api/profile`** include **`isGuest`**. Sign-in page adds **Continue as guest**; nav and workouts/profile copy explain guest vs named accounts. Tests (MSW, API, optional Postgres IDOR, Playwright smoke).

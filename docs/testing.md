@@ -32,10 +32,26 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 ## E2E (Playwright)
 
 - **`e2e/smoke.spec.ts`** — happy path with demo or guest auth as configured for **`pnpm run dev:e2e`**.
+- **`e2e/a11y.spec.ts`** — axe scan (critical/serious) on sign-in + guest workouts; keyboard focus check on **Continue as guest**.
+- **Projects:** Default **Chromium** + **Mobile Chrome** (viewport). Set **`PW_FULL_BROWSERS=1`** to add Firefox + WebKit (install host deps first: `pnpm exec playwright install-deps` on Linux).
 - **OIDC in CI:** Only practical if the pipeline can inject IdP secrets and a stable callback URL; otherwise keep OIDC verification manual and document results for the course report.
+
+## Optional: OIDC regression (build plan §11.F / §11.G)
+
+These are **optional** polish items for the rubric, not required for a green **`pnpm run test`**.
+
+| Item                                                                        | Plan ref | Status / approach                                                                                                                                                                                                      |
+| --------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **F** — Integration tests for **`/api/auth/oidc/callback`** with mocked IdP | §11.F    | **Not automated in-repo** by default. Feasible follow-up: isolate `exchangeOidcAuthorizationCode` / `openid-client` behind a test double and assert upsert + redirect behavior.                                        |
+| **G** — Playwright happy path with **real** IdP in CI                       | §11.G    | **Requires** CI secrets (issuer, client id/secret, callback URL aligned to preview host). Until then: manual staging per **`docs/deployment/auth0-setup.md`** and record outcomes in **`docs/course-qa-evidence.md`**. |
+
+**Report defense:** State that **F/G** are optional automation; **Path A** is satisfied by production OIDC + manual evidence + **`e2e/smoke.spec.ts`** for non-OIDC paths.
 
 ## Related docs
 
+- **`docs/course-qa-evidence.md`** — Report **Phase 4** checklist (accessibility, UAT, browsers, hosted security) for Part 3 defense
+- **`docs/demo-script.md`** — Presentation happy path (sign-in → workout → set → dashboard)
+- **`docs/troubleshooting.md`** — Common local/hosted issues
 - **`docs/development-workflow.md`** — dev servers, E2E port **5188**, DB migrate/seed
 - **`docs/deployment/README.md`** — production smoke expectations
 - **`pnpm run smoke:deploy`** — set **`DEPLOY_URL`** to your **Render API** origin after deploy (split or monolith)
