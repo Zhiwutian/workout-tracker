@@ -19,7 +19,7 @@ Project documentation for **workout-tracker**: structure, runtime behavior, work
 - **`testing.md`** — Test commands, IDOR env, OIDC manual staging, E2E notes, optional §11.F/G
 - **`troubleshooting.md`** — Common local and hosted issues (DB, CORS, OIDC)
 - **`demo-script.md`** — Short presentation checklist (sign-in → workout → set → dashboard)
-- **`course-qa-evidence.md`** — Report Phase 4 QA template (accessibility, UAT, browsers, security)
+- **`course-qa-evidence.md`** — Report Phase 4 QA checklist (accessibility, UAT, browsers, security); §0 records passing **ci:local** + **test:e2e**
 - **`security-notes.md`** — Cookies, CORS, callbacks, CSP/SW pointers
 
 ## Styleguide (`docs/styleguide/`)

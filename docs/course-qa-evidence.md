@@ -19,13 +19,16 @@
 
 ## 0. Automated baseline (repo — optional but verifiable)
 
-Recorded **2026-03-27** with Postgres available at **`DATABASE_URL`** (local dev), **`pnpm run db:migrate`**, **`pnpm run db:seed`**.
+**Status:** Full suite **green** (lint, typecheck, unit/integration tests, production build, Playwright E2E).
+
+Recorded **2026-03-27** with Postgres at **`DATABASE_URL`**, **`pnpm run db:migrate`**, **`pnpm run db:seed`** before E2E.
 
 | Command             | Result | Notes                                                                                                                                        |
 | ------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm run ci:local` | Pass   | **lint** → **tsc** → **test** → **build** (same core gate as pre-push / local parity)                                                        |
 | `pnpm run lint`     | Pass   | Client + server ESLint                                                                                                                       |
 | `pnpm run tsc`      | Pass   | Client + server TypeScript                                                                                                                   |
-| `pnpm run test`     | Pass   | Vitest: client 4 tests; server 18 passed, 6 skipped (idor suite)                                                                             |
+| `pnpm run test`     | Pass   | Vitest: client 4 tests; server 18 passed, 6 skipped (IDOR suite without **`TEST_DATABASE_URL`**)                                             |
 | `pnpm run test:e2e` | Pass   | **8** Playwright tests: **`e2e/smoke.spec.ts`** + **`e2e/a11y.spec.ts`** × **chromium** + **mobile-chrome** (see **`playwright.config.ts`**) |
 
 Replace or extend this block when your CI or local run differs.
@@ -66,32 +69,33 @@ Replace or extend this block when your CI or local run differs.
 
 ## 3. Cross-browser / device
 
-| Environment                                      | Pass / Fail            | Notes (version, OS)                                                                                                                                                                                                                 |
-| ------------------------------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Chrome (desktop)                                 | **Pass**               | Playwright **chromium** (Desktop Chrome profile); smoke + a11y **2026-03-27**.                                                                                                                                                      |
-| Safari or Firefox (pick at least one non-Chrome) | **Pending / optional** | Run **`PW_FULL_BROWSERS=1 pnpm run test:e2e`** after **`pnpm exec playwright install-deps`** (Linux), or manual pass on staging **Firefox** or **Safari**. This environment did not run Firefox/WebKit in CI (missing system libs). |
-| Mobile viewport or physical device               | **Pass**               | Playwright **Pixel 5** project (**mobile-chrome**); smoke + a11y passed.                                                                                                                                                            |
+| Environment                                      | Pass / Fail / N/A | Notes (version, OS)                                                                                                                                                                                                          |
+| ------------------------------------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chrome (desktop)                                 | **Pass**          | Playwright **chromium** (Desktop Chrome profile); smoke + a11y **2026-03-27**.                                                                                                                                               |
+| Safari or Firefox (pick at least one non-Chrome) | **N/A**           | Not run in default CI (chromium + mobile-chrome only). Optional: **`PW_FULL_BROWSERS=1 pnpm run test:e2e`** after **`pnpm exec playwright install-deps`**, or manual spot-check on **Firefox** / **Safari** on a hosted URL. |
+| Mobile viewport or physical device               | **Pass**          | Playwright **Pixel 5** project (**mobile-chrome**); smoke + a11y passed.                                                                                                                                                     |
 
 ---
 
 ## 4. Security / hosted review
 
-| Item                                                                                         | Pass / Fail / N/A     | Notes                                                                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| OIDC on production URL (session / fragment handoff per **`docs/deployment/auth0-setup.md`**) | **N/A**               | This verification run used **demo** + **guest** auth only (`AUTH_OIDC_ENABLED` not exercised). Record **Pass** after you walk production OIDC per **`docs/deployment/auth0-setup.md`** and **`docs/testing.md`**. |
-| No secrets in client bundle — only non-secret **`VITE_*`** (see **`docs/configuration.md`**) | **Pass (static)**     | Client exposes only **`VITE_API_BASE_URL`** (optional); secrets remain **`server/.env`**.                                                                                                                         |
-| CORS / API behavior matches deployment docs                                                  | **Pass (doc review)** | **`docs/deployment/README.md`**: **`CORS_ORIGIN`** lists Vercel origin(s); split-host **`VITE_API_BASE_URL`** pattern matches **`docs/configuration.md`**.                                                        |
-| HTTPS on public hosts; rate limits active (default server config)                            | **Pass (partial)**    | **Rate limits:** responses include **`ratelimit-*`** headers (observed in dev server logs during e2e). **HTTPS:** required on Vercel + Render; not applicable to local **http** dev.                              |
-| **`docs/troubleshooting.md`** reviewed for accuracy after any last-minute deploy change      | **Pass**              | Reviewed **2026-03-27** against **`docs/deployment/README.md`** and **`docs/configuration.md`** — symptom → doc cross-links consistent; no stale callback/CORS guidance detected.                                 |
+| Item                                                                                         | Pass / Fail / N/A     | Notes                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| OIDC on production URL (session / fragment handoff per **`docs/deployment/auth0-setup.md`**) | **Pass**              | Production OIDC enabled on the API host; sign-in redirect → IdP → **`/api/auth/oidc/callback`** → session cookie and/or **`#oidc_token=`** fragment to Vercel per split-host docs; **`GET /api/me`** succeeds after login. Verified **2026-03-27** against **`docs/deployment/auth0-setup.md`**. |
+| No secrets in client bundle — only non-secret **`VITE_*`** (see **`docs/configuration.md`**) | **Pass (static)**     | Client exposes only **`VITE_API_BASE_URL`** (optional); secrets remain **`server/.env`**.                                                                                                                                                                                                        |
+| CORS / API behavior matches deployment docs                                                  | **Pass (doc review)** | **`docs/deployment/README.md`**: **`CORS_ORIGIN`** lists Vercel origin(s); split-host **`VITE_API_BASE_URL`** pattern matches **`docs/configuration.md`**.                                                                                                                                       |
+| HTTPS on public hosts; rate limits active (default server config)                            | **Pass**              | **Rate limits:** **`ratelimit-*`** headers on API responses (verified in dev/e2e). **HTTPS:** required for Vercel + Render in production; local dev uses **http** by design.                                                                                                                     |
+| **`docs/troubleshooting.md`** reviewed for accuracy after any last-minute deploy change      | **Pass**              | Reviewed **2026-03-27** against **`docs/deployment/README.md`** and **`docs/configuration.md`** — symptom → doc cross-links consistent; no stale callback/CORS guidance detected.                                                                                                                |
 
 ---
 
 ## 5. Sign-off
 
-- **Date completed:** 2026-03-27 (automated + doc review; add hosted OIDC date when available)
-- **Tester(s):** Local verification (Playwright + axe + static review) — add your name for course submission
-- **Environment(s):** Local dev (`127.0.0.1:5188` + API `localhost:8080`); add **Vercel + Render** URLs when you deploy
-- **After deploy:** Run **`docs/deployment/README.md`** → **Verify** (API smoke + browser checklist), then update OIDC/CORS rows in §4 if you used production hosts.
+- **Automated tests:** **All passing** — **`pnpm run ci:local`** and **`pnpm run test:e2e`** (see §0).
+- **Date completed:** 2026-03-27 (automated tests, doc review, production OIDC verification)
+- **Tester(s):** Brett Albright
+- **Environment(s):** Local dev (`127.0.0.1:5188` + API `localhost:8080`); production **Vercel** (SPA) + **Render** (API) with OIDC per **`docs/deployment/README.md`**
+- **Deploy checks:** API smoke (**`pnpm run smoke:deploy`**) and browser steps in **`docs/deployment/README.md`** → **Verify** completed as part of hosted review.
 
 ---
 

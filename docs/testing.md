@@ -2,6 +2,8 @@
 
 Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/workout-tracker-build-plan.md`** §9 and Report 2 auth/session expectations.
 
+**Verification:** The full local gate (**`pnpm run ci:local`**: lint, typecheck, unit/integration tests, production client build) and **E2E** (**`pnpm run test:e2e`**, with Postgres migrated/seeded) are **passing**. Evidence table: **`docs/course-qa-evidence.md`** §0.
+
 ## Commands (from repo root)
 
 | Goal                                 | Command                                                                                                       |
