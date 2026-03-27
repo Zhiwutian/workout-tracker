@@ -4,6 +4,7 @@ import { Badge, Button, Card, Input } from '@/components/ui';
 import {
   addSet,
   readExercises,
+  readExerciseRecents,
   readWorkoutDetail,
   type Exercise,
   type SetRow,
@@ -22,6 +23,7 @@ export function WorkoutDetailPage() {
   const [workout, setWorkout] = useState<WorkoutSummary | null>(null);
   const [sets, setSets] = useState<SetRow[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [recents, setRecents] = useState<Exercise[]>([]);
   const [exerciseTypeId, setExerciseTypeId] = useState('');
   const [reps, setReps] = useState('8');
   const [weight, setWeight] = useState('0');
@@ -31,13 +33,15 @@ export function WorkoutDetailPage() {
     if (!Number.isFinite(workoutId) || workoutId < 1) return;
     setLoading(true);
     try {
-      const [detail, ex] = await Promise.all([
+      const [detail, ex, recent] = await Promise.all([
         readWorkoutDetail(workoutId),
         readExercises(),
+        readExerciseRecents(8),
       ]);
       setWorkout(detail.workout);
       setSets(detail.sets);
       setExercises(ex);
+      setRecents(recent);
       if (ex.length > 0 && !exerciseTypeId) {
         setExerciseTypeId(String(ex[0].exerciseTypeId));
       }
@@ -73,6 +77,11 @@ export function WorkoutDetailPage() {
         weight: w,
       });
       setSets((prev) => [...prev, row].sort((a, b) => a.setIndex - b.setIndex));
+      try {
+        setRecents(await readExerciseRecents(8));
+      } catch {
+        /* ignore recents refresh failure */
+      }
       showToast({ title: 'Set logged', variant: 'success' });
     } catch (err) {
       showToast({
@@ -120,6 +129,24 @@ export function WorkoutDetailPage() {
             <label className="mb-1 block text-sm font-medium text-slate-700">
               Exercise
             </label>
+            {recents.length > 0 ? (
+              <div className="mb-2">
+                <p className="mb-1 text-xs text-slate-500">Recent</p>
+                <div className="flex flex-wrap gap-2">
+                  {recents.map((ex) => (
+                    <button
+                      key={ex.exerciseTypeId}
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-800 shadow-sm hover:bg-slate-50"
+                      onClick={() =>
+                        setExerciseTypeId(String(ex.exerciseTypeId))
+                      }>
+                      {ex.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <select
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
               value={exerciseTypeId}

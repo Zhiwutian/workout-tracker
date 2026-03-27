@@ -148,8 +148,63 @@ export const handlers = [
           userId: null,
           name: 'Back squat',
           muscleGroup: 'legs',
+          archivedAt: null,
         },
       ],
+    });
+  }),
+
+  http.get('/api/exercises/recents', ({ request }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json({
+      data: [
+        {
+          exerciseTypeId: 1,
+          userId: null,
+          name: 'Back squat',
+          muscleGroup: 'legs',
+          archivedAt: null,
+        },
+      ],
+    });
+  }),
+
+  http.get('/api/exercises/archived', ({ request }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json({ data: [] as unknown[] });
+  }),
+
+  http.patch('/api/exercises/:exerciseTypeId', async ({ request, params }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    const body = (await request.json()) as {
+      name?: string;
+      muscleGroup?: string | null;
+      archived?: boolean;
+    };
+    const exerciseTypeId = Number(params.exerciseTypeId);
+    return HttpResponse.json({
+      data: {
+        exerciseTypeId,
+        userId: 1,
+        name: body.name ?? 'Custom',
+        muscleGroup: body.muscleGroup === undefined ? 'legs' : body.muscleGroup,
+        archivedAt: body.archived ? new Date().toISOString() : null,
+      },
     });
   }),
 

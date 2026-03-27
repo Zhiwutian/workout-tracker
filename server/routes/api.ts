@@ -12,7 +12,10 @@ import {
   postAuthLogout,
 } from '@server/controllers/oidc-auth-controller.js';
 import {
+  getArchivedExercises,
+  getExerciseRecents,
   getExercises,
+  patchExercise,
   postExercise,
 } from '@server/controllers/exercise-controller.js';
 import {
@@ -53,8 +56,11 @@ apiRouter.post('/auth/guest', postAuthGuest);
 apiRouter.get('/me', authMiddleware, getMe);
 apiRouter.patch('/profile', authMiddleware, patchProfile);
 
+apiRouter.get('/exercises/recents', authMiddleware, getExerciseRecents);
+apiRouter.get('/exercises/archived', authMiddleware, getArchivedExercises);
 apiRouter.get('/exercises', authMiddleware, getExercises);
 apiRouter.post('/exercises', authMiddleware, postExercise);
+apiRouter.patch('/exercises/:exerciseTypeId', authMiddleware, patchExercise);
 
 apiRouter.get(
   '/export/workout-sets.csv',

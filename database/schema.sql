@@ -24,7 +24,8 @@ create table "exercise_types" (
   "exerciseTypeId" serial primary key,
   "userId" integer references "users" ("userId") on delete cascade,
   "name" text not null,
-  "muscleGroup" text
+  "muscleGroup" text,
+  "archivedAt" timestamptz
 );
 
 create table "workouts" (

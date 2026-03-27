@@ -21,6 +21,8 @@ export type Exercise = {
   userId: number | null;
   name: string;
   muscleGroup: string | null;
+  /** ISO timestamp when archived; null if active. */
+  archivedAt?: string | null;
 };
 
 export type WorkoutSummary = {
@@ -138,6 +140,15 @@ export async function readExercises(): Promise<Exercise[]> {
   return fetchJson<Exercise[]>('/api/exercises');
 }
 
+export async function readExerciseRecents(limit = 8): Promise<Exercise[]> {
+  const q = new URLSearchParams({ limit: String(limit) });
+  return fetchJson<Exercise[]>(`/api/exercises/recents?${q}`);
+}
+
+export async function readArchivedExercises(): Promise<Exercise[]> {
+  return fetchJson<Exercise[]>('/api/exercises/archived');
+}
+
 export async function createExercise(
   name: string,
   muscleGroup?: string | null,
@@ -145,6 +156,20 @@ export async function createExercise(
   return fetchJson<Exercise>('/api/exercises', {
     method: 'POST',
     body: JSON.stringify({ name, muscleGroup: muscleGroup ?? null }),
+  });
+}
+
+export async function patchExercise(
+  exerciseTypeId: number,
+  body: {
+    name?: string;
+    muscleGroup?: string | null;
+    archived?: boolean;
+  },
+): Promise<Exercise> {
+  return fetchJson<Exercise>(`/api/exercises/${exerciseTypeId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
   });
 }
 

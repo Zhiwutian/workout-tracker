@@ -29,22 +29,22 @@ Ship an educational **workout tracker** web app: users log **workouts** and **se
 
 Use this table to reconcile the plan with the repo; update the **Status** column as work lands.
 
-| Area                                                        | Status      | Notes                                                                                                                                                    |
-| ----------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Domain schema (users, profiles, exercises, workouts, sets)  | **Done**    | `server/db/schema.ts`; migrations through **`0004`** (see `database/migrations/`)                                                                        |
-| Demo JWT auth (display name)                                | **Done**    | Gated by **`AUTH_DEMO_ENABLED`**; OIDC is primary for production narrative                                                                               |
-| REST APIs + ownership checks                                | **Done**    | IDOR tests with `TEST_DATABASE_URL`                                                                                                                      |
-| React UI (sign-in, workouts, detail, dashboard, profile)    | **Done**    |                                                                                                                                                          |
-| Seed global exercises                                       | **Done**    | `db:seed`                                                                                                                                                |
-| Styleguide + Cursor rules + `AGENTS.md`                     | **Done**    | Ported/adapted from bible-support template                                                                                                               |
-| `docs/data-flow.md`                                         | **Done**    |                                                                                                                                                          |
-| Light PWA (manifest, icons, minimal SW)                     | **Done**    |                                                                                                                                                          |
-| Drizzle migration snapshots                                 | **Done**    | Under `database/migrations/meta/` (journal tracks applied migrations)                                                                                    |
-| Playwright E2E                                              | **Done**    | `e2e/smoke.spec.ts` + `e2e/a11y.spec.ts` (axe + keyboard sample); **chromium** + **mobile-chrome**; optional **`PW_FULL_BROWSERS=1`** for Firefox/WebKit |
-| Agent / workspace workflow (`AGENTS.md`, `CONTRIBUTING.md`) | **Done**    | Optional parent workspace (e.g. bible-support at `/workspace`); app docs/rules/changelog stay under this repo only                                       |
-| OIDC / OAuth (Auth0-class IdP)                              | **Done**    | `AUTH_OIDC_*`, PKCE + callback, session + split-host handoff; `GET /api/auth/options`; see §11 + ADR 0001                                                |
-| Full deployment runbooks (Auth0, split host)                | **Done**    | **`docs/deployment/README.md`**, **`auth0-setup.md`**, **`vercel-render.md`**; production verified on Vercel+Render                                      |
-| Optional docs from original vision                          | **Partial** | See §7 — remaining: **`docs/pwa.md`**, **`docs/build/*`**, **`docs/learning-path.md`** (optional)                                                        |
+| Area                                                                | Status      | Notes                                                                                                                                                    |
+| ------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain schema (users, profiles, exercises, workouts, sets)          | **Done**    | `server/db/schema.ts`; migrations through **`0005`** (see `database/migrations/`)                                                                        |
+| Demo JWT auth (display name)                                        | **Done**    | Gated by **`AUTH_DEMO_ENABLED`**; OIDC is primary for production narrative                                                                               |
+| REST APIs + ownership checks                                        | **Done**    | IDOR tests with `TEST_DATABASE_URL`                                                                                                                      |
+| React UI (sign-in, workouts, detail, dashboard, exercises, profile) | **Done**    |                                                                                                                                                          |
+| Seed global exercises                                               | **Done**    | `db:seed`                                                                                                                                                |
+| Styleguide + Cursor rules + `AGENTS.md`                             | **Done**    | Ported/adapted from bible-support template                                                                                                               |
+| `docs/data-flow.md`                                                 | **Done**    |                                                                                                                                                          |
+| Light PWA (manifest, icons, minimal SW)                             | **Done**    |                                                                                                                                                          |
+| Drizzle migration snapshots                                         | **Done**    | Under `database/migrations/meta/` (journal tracks applied migrations)                                                                                    |
+| Playwright E2E                                                      | **Done**    | `e2e/smoke.spec.ts` + `e2e/a11y.spec.ts` (axe + keyboard sample); **chromium** + **mobile-chrome**; optional **`PW_FULL_BROWSERS=1`** for Firefox/WebKit |
+| Agent / workspace workflow (`AGENTS.md`, `CONTRIBUTING.md`)         | **Done**    | Optional parent workspace (e.g. bible-support at `/workspace`); app docs/rules/changelog stay under this repo only                                       |
+| OIDC / OAuth (Auth0-class IdP)                                      | **Done**    | `AUTH_OIDC_*`, PKCE + callback, session + split-host handoff; `GET /api/auth/options`; see §11 + ADR 0001                                                |
+| Full deployment runbooks (Auth0, split host)                        | **Done**    | **`docs/deployment/README.md`**, **`auth0-setup.md`**, **`vercel-render.md`**; production verified on Vercel+Render                                      |
+| Optional docs from original vision                                  | **Partial** | See §7 — remaining: **`docs/pwa.md`**, **`docs/build/*`**, **`docs/learning-path.md`** (optional)                                                        |
 
 ### Agent and workspace workflow (Cursor)
 
@@ -279,7 +279,7 @@ Ship **one vertical slice per branch/PR**. Order agreed for **A**:
 | 1   | **Workout history UX** — list filters (week/month/all, local calendar), status (all/active/completed), sort, empty states, resume when active workout is off-list | **Done** — `GET /api/workouts` query params; `WorkoutsPage` UI                                  |
 | 2   | **Export** — CSV of workouts/sets for a date range                                                                                                                | **Done** — `GET /api/export/workout-sets.csv`; **Download CSV** on `WorkoutsPage` (date preset) |
 | 3   | **Timezone-aware** dashboard week (profile timezone)                                                                                                              | **Done** — `resolveWeeklyVolumeWindow` + optional `timezone` query; dashboard uses profile zone |
-| 4   | **Exercise library** — edit/rename/archive custom, recents                                                                                                        | Todo                                                                                            |
+| 4   | **Exercise library** — edit/rename/archive custom, recents                                                                                                        | **Done** — `archivedAt` + PATCH; `/exercises` page; recents on workout detail + API             |
 | 5   | **Richer set logging** — notes, RPE, copy last set                                                                                                                | Todo                                                                                            |
 
 ---

@@ -113,8 +113,11 @@ sequenceDiagram
 
 ## 5. Exercises
 
-- **`GET /api/exercises`:** global rows (`userId` null) plus current user’s custom rows.
-- **`POST /api/exercises`:** creates a user-scoped row; service enforces no duplicate name per user for custom exercises.
+- **`GET /api/exercises`:** global rows (`userId` null) plus current user’s **non-archived** custom rows.
+- **`GET /api/exercises/recents`:** optional **`limit`** — custom + global exercises the user has logged recently (by latest set `createdAt`), excluding archived custom.
+- **`GET /api/exercises/archived`:** current user’s archived custom exercises only.
+- **`POST /api/exercises`:** creates a user-scoped row; duplicate **active** (non-archived) name per user is rejected.
+- **`PATCH /api/exercises/:exerciseTypeId`:** rename / muscle group / archive / unarchive for **owned** custom exercises only; globals return **403**.
 
 ## 6. Client persistence
 
