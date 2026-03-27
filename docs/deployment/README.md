@@ -112,11 +112,34 @@ VITE_API_BASE_URL=https://<your-render-api>.onrender.com
 
 ## Verify
 
+### 1) API smoke (Render origin)
+
+From your machine (repo root), use the **Render API** URL (same host the SPA calls for `/api/*`):
+
 ```sh
 DEPLOY_URL=https://<your-render-api>.onrender.com pnpm run smoke:deploy
 ```
 
-Open the **Vercel** URL, sign in, and confirm API calls and OIDC complete. See **`docs/testing.md`** for manual OIDC checks.
+Expect: `GET /`, `GET /api/health`, `GET /api/hello`, `GET /api/auth/options`, `GET /api/me` → **401** without cookies.
+
+### 2) Browser pass (Vercel SPA)
+
+Open your **Vercel** frontend URL (not the Render URL for day-to-day use). DevTools → **Network**: confirm `/api/*` requests go to **Render** and return **200** (not CORS errors).
+
+| Step | What to do                                                                                                                                                                                          |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A    | Load the app; you should reach **Sign in** (or home) without a blank page.                                                                                                                          |
+| B    | **Continue as guest** — should land on **Workouts**; **Start workout** → **Open** should load the workout detail page.                                                                              |
+| C    | On workout detail, **Save set** (defaults OK) — set should appear under **Sets**.                                                                                                                   |
+| D    | (Optional) **Dashboard** — weekly volume loads or shows empty state.                                                                                                                                |
+| E    | If **demo** auth is enabled: create a **display name** account and repeat B–C.                                                                                                                      |
+| F    | If **OIDC** is enabled: **Sign in with OpenID Connect**, complete IdP login, confirm you return to the SPA **signed in** and **`GET /api/me`** succeeds (see **`docs/deployment/auth0-setup.md`**). |
+
+Full narrative: **`docs/demo-script.md`**. Course QA checklist: **`docs/course-qa-evidence.md`**.
+
+### 3) If something fails
+
+See **`docs/troubleshooting.md`** (CORS, `401`, Auth0 callback, rate limits).
 
 ## Bootstrap (any host)
 

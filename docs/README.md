@@ -16,7 +16,10 @@ Project documentation for **workout-tracker**: structure, runtime behavior, work
 - **`deployment/neon-account-setup.md`**, **`deployment/render-account-setup.md`**, **`deployment/vercel-account-setup.md`**
 - **`deployment/auth0-setup.md`** — Auth0 dashboard walkthrough (callbacks, secrets, local vs prod)
 - **`data-flow.md`** — Auth (OIDC, demo, guest), API, DB, and PWA notes (sequence diagrams)
-- **`testing.md`** — Test commands, IDOR env, OIDC manual staging, E2E notes
+- **`testing.md`** — Test commands, IDOR env, OIDC manual staging, E2E notes, optional §11.F/G
+- **`troubleshooting.md`** — Common local and hosted issues (DB, CORS, OIDC)
+- **`demo-script.md`** — Short presentation checklist (sign-in → workout → set → dashboard)
+- **`course-qa-evidence.md`** — Report Phase 4 QA template (accessibility, UAT, browsers, security)
 - **`security-notes.md`** — Cookies, CORS, callbacks, CSP/SW pointers
 
 ## Styleguide (`docs/styleguide/`)

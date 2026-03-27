@@ -95,6 +95,9 @@ Open the app and confirm the client can hit `/api/hello`.
 - **`docs/README.md`** — index of all project docs
 - **`docs/styleguide/`** — UI, frontend/backend patterns, **security & authz**, database parity
 - **`docs/rules-registry.md`** — Cursor rules under **`.cursor/rules/`**
+- **`docs/troubleshooting.md`** — common fixes (DB, OIDC, CORS, tests)
+- **`docs/demo-script.md`** — presentation checklist for instructors/demo
+- **`docs/course-qa-evidence.md`** — Report **Phase 4** QA checklist (fill during your QA window)
 
 ## Example API endpoints
 

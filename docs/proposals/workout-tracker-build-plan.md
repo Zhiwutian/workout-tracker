@@ -29,22 +29,22 @@ Ship an educational **workout tracker** web app: users log **workouts** and **se
 
 Use this table to reconcile the plan with the repo; update the **Status** column as work lands.
 
-| Area                                                        | Status      | Notes                                                                                                              |
-| ----------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
-| Domain schema (users, profiles, exercises, workouts, sets)  | **Done**    | `server/db/schema.ts`, migrations through `0002`                                                                   |
-| Demo JWT auth (display name)                                | **Done**    | Replace with OIDC for production narrative                                                                         |
-| REST APIs + ownership checks                                | **Done**    | IDOR tests with `TEST_DATABASE_URL`                                                                                |
-| React UI (sign-in, workouts, detail, dashboard, profile)    | **Done**    |                                                                                                                    |
-| Seed global exercises                                       | **Done**    | `db:seed`                                                                                                          |
-| Styleguide + Cursor rules + `AGENTS.md`                     | **Done**    | Ported/adapted from bible-support template                                                                         |
-| `docs/data-flow.md`                                         | **Done**    |                                                                                                                    |
-| Light PWA (manifest, icons, minimal SW)                     | **Done**    |                                                                                                                    |
-| Drizzle `0002` snapshot                                     | **Done**    | `database/migrations/meta/0002_snapshot.json`                                                                      |
-| Playwright smoke E2E                                        | **Done**    | `e2e/smoke.spec.ts`, CI                                                                                            |
-| Agent / workspace workflow (`AGENTS.md`, `CONTRIBUTING.md`) | **Done**    | Optional parent workspace (e.g. bible-support at `/workspace`); app docs/rules/changelog stay under this repo only |
-| OIDC / OAuth (Auth0-class IdP)                              | **Done**    | `AUTH_OIDC_*`, PKCE + callback, `wt_session` cookie, `GET /api/auth/options`; see §11 + ADR 0001                   |
-| Full deployment runbooks (Auth0, split host)                | **Partial** | Default docs: Vercel + Render + Neon; **`docs/deployment/README.md`**; IdP secrets operator-owned                  |
-| Optional docs from original vision                          | **Partial** | See §7 documentation map                                                                                           |
+| Area                                                        | Status      | Notes                                                                                                               |
+| ----------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| Domain schema (users, profiles, exercises, workouts, sets)  | **Done**    | `server/db/schema.ts`, migrations through `0002`                                                                    |
+| Demo JWT auth (display name)                                | **Done**    | Replace with OIDC for production narrative                                                                          |
+| REST APIs + ownership checks                                | **Done**    | IDOR tests with `TEST_DATABASE_URL`                                                                                 |
+| React UI (sign-in, workouts, detail, dashboard, profile)    | **Done**    |                                                                                                                     |
+| Seed global exercises                                       | **Done**    | `db:seed`                                                                                                           |
+| Styleguide + Cursor rules + `AGENTS.md`                     | **Done**    | Ported/adapted from bible-support template                                                                          |
+| `docs/data-flow.md`                                         | **Done**    |                                                                                                                     |
+| Light PWA (manifest, icons, minimal SW)                     | **Done**    |                                                                                                                     |
+| Drizzle `0002` snapshot                                     | **Done**    | `database/migrations/meta/0002_snapshot.json`                                                                       |
+| Playwright smoke E2E                                        | **Done**    | `e2e/smoke.spec.ts`, CI                                                                                             |
+| Agent / workspace workflow (`AGENTS.md`, `CONTRIBUTING.md`) | **Done**    | Optional parent workspace (e.g. bible-support at `/workspace`); app docs/rules/changelog stay under this repo only  |
+| OIDC / OAuth (Auth0-class IdP)                              | **Done**    | `AUTH_OIDC_*`, PKCE + callback, session + split-host handoff; `GET /api/auth/options`; see §11 + ADR 0001           |
+| Full deployment runbooks (Auth0, split host)                | **Done**    | **`docs/deployment/README.md`**, **`auth0-setup.md`**, **`vercel-render.md`**; production verified on Vercel+Render |
+| Optional docs from original vision                          | **Partial** | See §7 documentation map                                                                                            |
 
 ### Agent and workspace workflow (Cursor)
 
@@ -100,7 +100,7 @@ Phases are **ordering guidance**, not rigid sprints. Several may already be sati
 | Report phase (Part 3)                                                          | Status / focus                                                                                              |
 | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | **Phase 1** — Environment & foundation (DB, accessibility baseline, CI)        | Largely **Done** in repo; ensure **hosted Postgres** (e.g. Render) steps match `docs/deployment/README.md`. |
-| **Phase 2** — Auth (UC-1), profile (UC-2), security audit                      | **Path A:** finish **R4** with real **OIDC**; expand tests for session/callback behavior.                   |
+| **Phase 2** — Auth (UC-1), profile (UC-2), security audit                      | **Done** for **Path A** (OIDC + profile); optional: more automated callback tests (§11.F).                  |
 | **Phase 3** — Workout/set CRUD (UC-3/4), dashboard volume                      | Largely **Done** (**R5–R7**).                                                                               |
 | **Phase 4** — QA: WCAG, UAT (three-tap), cross-browser/device, security/stress | **Process + evidence** — not a single PR; schedule and log outcomes (§7, §8 item 12).                       |
 
@@ -110,28 +110,29 @@ Phases are **ordering guidance**, not rigid sprints. Several may already be sati
 
 Mark **Done** / **Todo** in your tracker; paths are relative to `workout-tracker/`.
 
-| Document                                   | Purpose                                                                                                    |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `README.md`                                | Onboarding, scripts, link to proposals + contributing                                                      |
-| `AGENTS.md`                                | Commands, doc entry points, optional parent-workspace layout, copy-paste agent prompt                      |
-| `CONTRIBUTING.md`                          | PR checks, changelog/rules discipline, parent-workspace scope                                              |
-| `docs/architecture.md`                     | Runtime diagram + boundaries                                                                               |
-| `docs/data-flow.md`                        | Mermaid flows: auth, workouts, sets, stats, PWA                                                            |
-| `docs/assumptions.md`                      | UTC week, demo auth, volume definition                                                                     |
-| `docs/configuration.md`                    | Env boundaries + OIDC/session vars                                                                         |
-| `docs/development-workflow.md`             | Local loop, CI, DB, E2E, PWA icons                                                                         |
-| `docs/deployment/README.md`                | Hosted bootstrap + OIDC checklist; **`docs/deployment/auth0-setup.md`** for Auth0 dashboard steps          |
-| `docs/styleguide/*`                        | Implementation standards + **security-and-authz.md**                                                       |
-| `docs/rules-registry.md`                   | Cursor rules index                                                                                         |
-| `docs/troubleshooting.md`                  | **Todo** if course requires explicit stub (link from README)                                               |
-| `docs/testing.md`                          | **Done** — commands, IDOR env, OIDC manual staging + CI notes                                              |
-| `docs/pwa.md`                              | **Todo** optional: extract from `data-flow` + `development-workflow`                                       |
-| `docs/security-notes.md`                   | **Done** — cookies, CORS, callback URLs, CSP/SW pointers                                                   |
-| `docs/course-qa-evidence.md`               | **Todo** optional: Phase 4 checklist (WCAG sampling, UAT / three-tap, browsers/devices) for Part 3 defense |
-| `docs/decisions/0001-oidc-oauth-path-a.md` | **Implemented** (code); ADR indexes **`docs/decisions/README.md`**                                         |
-| `docs/build/*`                             | **Todo** optional: reproducible build / deploy steps                                                       |
-| `docs/learning-path.md`                    | **Todo** optional: student onboarding                                                                      |
-| `CHANGELOG.md`                             | **Unreleased** discipline per PR                                                                           |
+| Document                                   | Purpose                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `README.md`                                | Onboarding, scripts, link to proposals + contributing                                             |
+| `AGENTS.md`                                | Commands, doc entry points, optional parent-workspace layout, copy-paste agent prompt             |
+| `CONTRIBUTING.md`                          | PR checks, changelog/rules discipline, parent-workspace scope                                     |
+| `docs/architecture.md`                     | Runtime diagram + boundaries                                                                      |
+| `docs/data-flow.md`                        | Mermaid flows: auth, workouts, sets, stats, PWA                                                   |
+| `docs/assumptions.md`                      | UTC week, demo auth, volume definition                                                            |
+| `docs/configuration.md`                    | Env boundaries + OIDC/session vars                                                                |
+| `docs/development-workflow.md`             | Local loop, CI, DB, E2E, PWA icons                                                                |
+| `docs/deployment/README.md`                | Hosted bootstrap + OIDC checklist; **`docs/deployment/auth0-setup.md`** for Auth0 dashboard steps |
+| `docs/styleguide/*`                        | Implementation standards + **security-and-authz.md**                                              |
+| `docs/rules-registry.md`                   | Cursor rules index                                                                                |
+| `docs/troubleshooting.md`                  | **Done** — common DB, API, OIDC, client issues; linked from README                                |
+| `docs/demo-script.md`                      | **Done** — presentation happy path (sign-in → workout → set → dashboard)                          |
+| `docs/testing.md`                          | **Done** — commands, IDOR env, OIDC manual staging, optional §11.F/G notes, CI notes              |
+| `docs/pwa.md`                              | **Todo** optional: extract from `data-flow` + `development-workflow`                              |
+| `docs/security-notes.md`                   | **Done** — cookies, CORS, callback URLs, CSP/SW pointers                                          |
+| `docs/course-qa-evidence.md`               | **Template ready** — Phase 4 checklist; fill during QA window (see §8 item 12)                    |
+| `docs/decisions/0001-oidc-oauth-path-a.md` | **Implemented** (code); ADR indexes **`docs/decisions/README.md`**                                |
+| `docs/build/*`                             | **Todo** optional: reproducible build / deploy steps                                              |
+| `docs/learning-path.md`                    | **Todo** optional: student onboarding                                                             |
+| `CHANGELOG.md`                             | **Unreleased** discipline per PR                                                                  |
 
 ---
 
@@ -175,7 +176,7 @@ Numbered items are **in scope** for “done enough to defend in report.” Adjus
 
 ---
 
-## 11. OIDC / OAuth (Path A — **current priority**)
+## 11. OIDC / OAuth (Path A — **implemented** on production; optional polish below)
 
 **Goal:** Satisfy Report 2 **UC-1**, **§5.5**, and **§3.1** (OAuth/session testing) with a real IdP (e.g. **Auth0**).
 
@@ -260,10 +261,10 @@ Numbered items are **in scope** for “done enough to defend in report.” Adjus
 
 ## 14. Next actions
 
-1. **Implement OIDC/OAuth (Path A)** — work through §11; flip §3 row and §5 checkbox when primary login is IdP-backed.
-2. Schedule **Report Phase 4** QA and write evidence (`docs/testing.md` and/or `docs/course-qa-evidence.md`).
-3. Keep §3 **Current state** and §7 rows accurate as work lands.
-4. Add any **missing** §7 files the rubric requires (e.g. `docs/troubleshooting.md`, `docs/security-notes.md`).
+1. ~~**Implement OIDC/OAuth (Path A)**~~ — **Done** for hosted split deploy; keep §11.F/G (optional tests/E2E) if the rubric asks for more automation.
+2. **Report Phase 4** — run WCAG sampling, three-tap UAT, cross-browser checks, hosted security review; record outcomes in **`docs/course-qa-evidence.md`** (and pointer in **`docs/testing.md`** if you prefer a single index).
+3. **§8 deliverables** — **Done** in-repo: **`docs/troubleshooting.md`**, **`docs/demo-script.md`**, **`docs/course-qa-evidence.md`** (fill during QA); confirm **Playwright** smoke in CI for your branch.
+4. Keep §3 **Current state** and §7 rows accurate as work lands.
 5. On scope change: edit this file + `CHANGELOG.md` + optional ADR under `docs/decisions/`.
 
 ---
