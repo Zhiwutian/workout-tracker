@@ -3,17 +3,29 @@ import { Express } from 'express';
 import jwt from 'jsonwebtoken';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
+const { listWorkoutsMock } = vi.hoisted(() => {
+  const row = {
+    workoutId: 1,
+    userId: 1,
+    title: 'Leg day',
+    notes: null,
+    startedAt: new Date('2026-01-01T12:00:00.000Z'),
+    endedAt: null,
+  };
+  return {
+    listWorkoutsMock: vi.fn(async () => [row]),
+  };
+});
+
 vi.mock('@server/services/workout-service.js', () => ({
-  listWorkouts: vi.fn(async () => [
-    {
-      workoutId: 1,
-      userId: 1,
-      title: 'Leg day',
-      notes: null,
-      startedAt: new Date('2026-01-01T12:00:00.000Z'),
-      endedAt: null,
-    },
-  ]),
+  listWorkouts: listWorkoutsMock,
+  createWorkout: vi.fn(),
+  getWorkoutForUser: vi.fn(),
+  updateWorkoutForUser: vi.fn(),
+  deleteWorkoutForUser: vi.fn(),
+  addSetToWorkout: vi.fn(),
+  updateSetForUser: vi.fn(),
+  deleteSetForUser: vi.fn(),
 }));
 
 describe('api envelope', () => {
@@ -27,6 +39,7 @@ describe('api envelope', () => {
   });
 
   it('returns success envelope for GET /api/workouts with auth', async () => {
+    listWorkoutsMock.mockClear();
     const token = jwt.sign({ userId: 1 }, process.env.TOKEN_SECRET!);
     const res = await request(app)
       .get('/api/workouts')
@@ -42,6 +55,53 @@ describe('api envelope', () => {
     );
     expect(res.body.meta).toEqual(
       expect.objectContaining({ requestId: expect.any(String) }),
+    );
+    expect(listWorkoutsMock).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        status: 'all',
+        sort: 'startedAt_desc',
+      }),
+    );
+  });
+
+  it('passes query filters to listWorkouts for GET /api/workouts', async () => {
+    listWorkoutsMock.mockClear();
+    const token = jwt.sign({ userId: 1 }, process.env.TOKEN_SECRET!);
+    await request(app)
+      .get('/api/workouts')
+      .query({
+        status: 'active',
+        sort: 'startedAt_asc',
+        from: '2026-01-01T00:00:00.000Z',
+        to: '2026-01-31T23:59:59.999Z',
+      })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(listWorkoutsMock).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        status: 'active',
+        sort: 'startedAt_asc',
+        from: expect.any(Date),
+        to: expect.any(Date),
+      }),
+    );
+  });
+
+  it('returns validation error for invalid GET /api/workouts query', async () => {
+    const token = jwt.sign({ userId: 1 }, process.env.TOKEN_SECRET!);
+    const res = await request(app)
+      .get('/api/workouts')
+      .query({ status: 'bogus' })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400);
+
+    expect(res.body.error).toEqual(
+      expect.objectContaining({
+        code: 'validation_error',
+      }),
     );
   });
 

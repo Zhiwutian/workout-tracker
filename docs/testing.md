@@ -33,7 +33,8 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 
 ## E2E (Playwright)
 
-- **`e2e/smoke.spec.ts`** — happy path with demo or guest auth as configured for **`pnpm run dev:e2e`**.
+- **`GET /api/workouts`** — optional query: **`from`**, **`to`** (ISO 8601), **`status`** (`all` \| `active` \| `completed`), **`sort`** (`startedAt_desc` \| `startedAt_asc`). Used by the workouts list filters.
+- **`e2e/smoke.spec.ts`** — happy path with demo or guest auth as configured for **`pnpm run dev:e2e`** (asserts visible heading via **`data-testid="workouts-page-heading"`**).
 - **`e2e/a11y.spec.ts`** — axe scan (critical/serious) on sign-in + guest workouts; keyboard focus check on **Continue as guest**.
 - **Projects:** Default **Chromium** + **Mobile Chrome** (viewport). Set **`PW_FULL_BROWSERS=1`** to add Firefox + WebKit (install host deps first: `pnpm exec playwright install-deps` on Linux).
 - **OIDC in CI:** Only practical if the pipeline can inject IdP secrets and a stable callback URL; otherwise keep OIDC verification manual and document results for the course report.

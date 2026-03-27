@@ -146,8 +146,28 @@ export async function createExercise(
   });
 }
 
-export async function readWorkouts(): Promise<WorkoutSummary[]> {
-  return fetchJson<WorkoutSummary[]>('/api/workouts');
+/** Query params for GET /api/workouts (optional). */
+export type ReadWorkoutsParams = {
+  from?: string;
+  to?: string;
+  status?: 'all' | 'active' | 'completed';
+  sort?: 'startedAt_desc' | 'startedAt_asc';
+};
+
+export async function readWorkouts(
+  params?: ReadWorkoutsParams,
+): Promise<WorkoutSummary[]> {
+  const qs = new URLSearchParams();
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  if (params?.status && params.status !== 'all') {
+    qs.set('status', params.status);
+  }
+  if (params?.sort && params.sort !== 'startedAt_desc') {
+    qs.set('sort', params.sort);
+  }
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson<WorkoutSummary[]>(`/api/workouts${suffix}`);
 }
 
 export async function createWorkout(input?: {
