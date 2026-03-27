@@ -161,6 +161,33 @@ export async function upsertUserFromOidcProfile(input: {
         );
         continue;
       }
+      /**
+       * Concurrent first-time sign-ins for the same IdP `sub` can both pass the initial
+       * SELECT and race on INSERT — second transaction hits `users_authSubject_unique`.
+       * Recover by loading the row the winner created (same as returning-user path).
+       */
+      if (isPgUniqueViolation(err, 'users_authSubject_unique')) {
+        const [concurrent] = await db
+          .select({ userId: users.userId })
+          .from(users)
+          .where(eq(users.authSubject, input.sub))
+          .limit(1);
+        if (concurrent) {
+          logger.info(
+            'concurrent OIDC signup lost user insert race; using existing user row',
+          );
+          return concurrent.userId;
+        }
+      }
+      if (isPgUniqueViolation(err)) {
+        logger.error(
+          {
+            constraint: (err as { constraint?: string }).constraint,
+            code: (err as { code?: string }).code,
+          },
+          'oidc upsert unexpected unique violation',
+        );
+      }
       throw err;
     }
   }
