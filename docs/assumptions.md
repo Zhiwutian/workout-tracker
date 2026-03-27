@@ -21,6 +21,12 @@ Production-style **authorization rules** (ownership, no client-trusted `userId`)
 
 **Guest:** `POST /api/auth/guest` creates a real `users` row with `authSubject` `guest:<uuid>`, a unique display name (`Guest <uuid>`), and returns a **JWT** like demo sign-up. The client can use the app without typing a name; data is tied to that guest user until the token is cleared. **Sign out and create a named account** (or OIDC account) to align identity across devices.
 
+## Exercises (custom)
+
+- **Global** exercises (`userId` null) are read-only from the API.
+- **Custom** exercises can be renamed, archived, or restored. **Archived** rows have **`archivedAt`** set; they are omitted from **`GET /api/exercises`** and cannot be chosen for **new** sets until un-archived. Existing sets still reference the row (**`ON DELETE RESTRICT`**).
+- **Recents** are derived from the user’s logged sets (see **`docs/data-flow.md`**).
+
 ## Volume
 
 Per set: **reps × weight** (multiplication). Totals sum this value across included sets.

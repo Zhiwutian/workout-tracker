@@ -49,6 +49,8 @@ export const exerciseTypes = pgTable('exercise_types', {
   }),
   name: text('name').notNull(),
   muscleGroup: text('muscleGroup'),
+  /** Custom exercises only: when set, hidden from pickers until un-archived. */
+  archivedAt: timestamp('archivedAt', { withTimezone: true }),
 });
 
 export const workouts = pgTable('workouts', {

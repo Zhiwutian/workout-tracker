@@ -50,6 +50,10 @@ Access only through a **workout** owned by the current user.
 | ------------- | -------------------------------------------- |
 | `authSubject` | Unique; demo `demo:<uuid>`, later OIDC `sub` |
 
+## Exercise types
+
+- **`exercise_types.archivedAt`:** nullable; when set for a **custom** row (`userId` not null), the exercise is hidden from list/recents and blocked for **new** sets until cleared.
+
 ## Stats query
 
 - **`GET /api/stats/weekly-volume`**: `weekStart` query must match `YYYY-MM-DD`; optional `timezone` (IANA) selects local week semantics—see `docs/assumptions.md`.

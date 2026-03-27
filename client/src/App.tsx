@@ -14,6 +14,9 @@ const WorkoutDetailPage = lazy(async () => ({
 const DashboardPage = lazy(async () => ({
   default: (await import('@/pages/DashboardPage')).DashboardPage,
 }));
+const ExercisesPage = lazy(async () => ({
+  default: (await import('@/pages/ExercisesPage')).ExercisesPage,
+}));
 const ProfilePage = lazy(async () => ({
   default: (await import('@/pages/ProfilePage')).ProfilePage,
 }));
@@ -32,6 +35,7 @@ function AppNav() {
       {me ? (
         <>
           <NavLinkButton to="/">Workouts</NavLinkButton>
+          <NavLinkButton to="/exercises">Exercises</NavLinkButton>
           <NavLinkButton to="/dashboard">Dashboard</NavLinkButton>
           <NavLinkButton to="/profile">Profile</NavLinkButton>
           <NavLinkButton to="/about">About</NavLinkButton>
@@ -91,6 +95,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exercises"
+              element={
+                <ProtectedRoute>
+                  <ExercisesPage />
                 </ProtectedRoute>
               }
             />
