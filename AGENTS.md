@@ -41,24 +41,25 @@ Workspace may include bible-support (parent) and workout-tracker (nested). For t
 
 ## Commands (repo root)
 
-| Command                                    | Purpose                                                                            |
-| ------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `pnpm install`                             | Install dependencies (`postinstall` ensures `server/.env` from example if missing) |
-| `pnpm run dev`                             | Client + server dev watchers                                                       |
-| `pnpm run dev:fresh`                       | Clean stale dev processes, then dev                                                |
-| `pnpm run lint`                            | Client + server lint                                                               |
-| `pnpm run tsc`                             | Typecheck client and server                                                        |
-| `pnpm run test`                            | Full test suite                                                                    |
-| `TEST_DATABASE_URL=… pnpm run test:server` | Includes **IDOR** integration tests (`api-idor.test.ts`)                           |
-| `pnpm run test:e2e`                        | Playwright smoke (needs **`DATABASE_URL`**, browser deps; uses Vite **5188**)      |
-| `pnpm run pwa:icons`                       | Regenerate **`icon-192.png`** / **`icon-512.png`** (requires **sharp**)            |
-| `pnpm run test:changed`                    | Tests related to git diff                                                          |
-| `pnpm run build`                           | Production client build                                                            |
-| `DEPLOY_URL=… pnpm run smoke:deploy`       | Post-deploy smoke against **Render API** URL (split or monolith)                   |
-| `pnpm run ci:local`                        | Lint → tsc → test → build (same core gates as CI; Husky **`pre-push`**)            |
-| `pnpm run db:migrate`                      | Apply Drizzle migrations                                                           |
-| `pnpm run db:seed`                         | Seed global exercises (idempotent)                                                 |
-| `pnpm psql`                                | `psql` using `DATABASE_URL` from `server/.env`                                     |
+| Command                                    | Purpose                                                                                 |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `pnpm install`                             | Install dependencies (`postinstall` ensures `server/.env` from example if missing)      |
+| `pnpm run dev`                             | Client + server dev watchers                                                            |
+| `pnpm run dev:fresh`                       | Clean stale dev processes, then dev                                                     |
+| `pnpm run lint`                            | Client + server lint                                                                    |
+| `pnpm run tsc`                             | Typecheck client and server                                                             |
+| `pnpm run test`                            | Full test suite                                                                         |
+| `TEST_DATABASE_URL=… pnpm run test:server` | Includes **IDOR** integration tests (`api-idor.test.ts`)                                |
+| `pnpm run test:e2e`                        | Playwright smoke (needs **`DATABASE_URL`**, browser deps; uses Vite **5188**)           |
+| `pnpm run pwa:icons`                       | Regenerate **`icon-192.png`** / **`icon-512.png`** (requires **sharp**)                 |
+| `pnpm run test:changed`                    | Tests related to git diff                                                               |
+| `pnpm run build`                           | Production client build                                                                 |
+| `DEPLOY_URL=… pnpm run smoke:deploy`       | Post-deploy smoke against **Render API** URL (split or monolith)                        |
+| `pnpm run ci:local`                        | Lint → tsc → test → build (same core gates as CI; Husky **`pre-push`**)                 |
+| `pnpm run db:migrate`                      | Apply Drizzle migrations                                                                |
+| `pnpm run db:seed`                         | Seed global exercises (idempotent)                                                      |
+| `pnpm run db:reset`                        | **Destructive:** drop **`drizzle`** + **`public`**, migrate, seed (`database/reset.sh`) |
+| `pnpm psql`                                | `psql` using `DATABASE_URL` from `server/.env`                                          |
 
 ## Before commit / PR
 

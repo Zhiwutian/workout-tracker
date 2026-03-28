@@ -28,3 +28,4 @@
 
 - Any migration, env, or release-step notes for deploy:
   - N/A or details here
+- If this PR adds or relies on a **Drizzle migration**: ensure **`pnpm run db:migrate`** runs on each target database (e.g. Render pre-deploy). **`db:seed`** does not re-seed globals when globals already exist — for **new catalog rows** on an existing DB, use **`database/seed-global-exercises-append.sql`** (see **`CHANGELOG`**) or document a reset.

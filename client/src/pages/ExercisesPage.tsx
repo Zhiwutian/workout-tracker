@@ -7,7 +7,9 @@ import {
   readArchivedExercises,
   readExercises,
   type Exercise,
+  type WorkoutType,
 } from '@/lib/workout-api';
+import { WORKOUT_TYPE_LABELS, WORKOUT_TYPES } from '@shared/workout-types';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 function CustomExerciseRow({
@@ -20,12 +22,16 @@ function CustomExerciseRow({
   const { showToast } = useToast();
   const [name, setName] = useState(ex.name);
   const [muscleGroup, setMuscleGroup] = useState(ex.muscleGroup ?? '');
+  const [category, setCategory] = useState<WorkoutType>(
+    ex.category ?? 'resistance',
+  );
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setName(ex.name);
     setMuscleGroup(ex.muscleGroup ?? '');
-  }, [ex.exerciseTypeId, ex.name, ex.muscleGroup]);
+    setCategory(ex.category ?? 'resistance');
+  }, [ex.exerciseTypeId, ex.name, ex.muscleGroup, ex.category]);
 
   async function save(): Promise<void> {
     setBusy(true);
@@ -33,6 +39,7 @@ function CustomExerciseRow({
       await patchExercise(ex.exerciseTypeId, {
         name,
         muscleGroup: muscleGroup.trim() || null,
+        category,
       });
       showToast({ title: 'Exercise updated', variant: 'success' });
       onChanged();
@@ -87,6 +94,22 @@ function CustomExerciseRow({
             aria-label={`Muscle group for ${ex.name}`}
           />
         </div>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-slate-600">
+            Type
+          </label>
+          <select
+            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as WorkoutType)}
+            aria-label="Exercise type">
+            {WORKOUT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {WORKOUT_TYPE_LABELS[t]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button type="button" disabled={busy} onClick={() => void save()}>
@@ -135,6 +158,10 @@ function ArchivedRow({
     <li className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
       <span>
         <span className="font-medium text-slate-900">{ex.name}</span>
+        <span className="text-slate-500">
+          {' '}
+          · {WORKOUT_TYPE_LABELS[ex.category ?? 'resistance']}
+        </span>
         {ex.muscleGroup ? (
           <span className="text-slate-600"> · {ex.muscleGroup}</span>
         ) : null}
@@ -160,6 +187,7 @@ export function ExercisesPage() {
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
   const [newMuscle, setNewMuscle] = useState('');
+  const [newCategory, setNewCategory] = useState<WorkoutType>('resistance');
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
@@ -198,9 +226,10 @@ export function ExercisesPage() {
     }
     setCreating(true);
     try {
-      await createExercise(name, newMuscle.trim() || null);
+      await createExercise(name, newMuscle.trim() || null, newCategory);
       setNewName('');
       setNewMuscle('');
+      setNewCategory('resistance');
       showToast({ title: 'Exercise created', variant: 'success' });
       await load();
     } catch (err) {
@@ -220,9 +249,10 @@ export function ExercisesPage() {
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Exercises</h1>
         <p className="text-sm text-slate-600">
-          Global exercises are shared. Yours can be renamed or archived;
-          archiving hides them from the log-a-set picker until you restore them
-          here.
+          Global exercises are shared. Each exercise has a type (Resistance,
+          Cardio, Flexibility) so the log-a-set picker matches the workout you
+          started. Yours can be renamed or archived; archiving hides them until
+          you restore them here.
         </p>
       </header>
 
@@ -254,6 +284,24 @@ export function ExercisesPage() {
                   onChange={(e) => setNewMuscle(e.target.value)}
                   aria-label="New exercise muscle group"
                 />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Type
+                </label>
+                <select
+                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+                  value={newCategory}
+                  onChange={(e) =>
+                    setNewCategory(e.target.value as WorkoutType)
+                  }
+                  aria-label="New exercise type">
+                  {WORKOUT_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {WORKOUT_TYPE_LABELS[t]}
+                    </option>
+                  ))}
+                </select>
               </div>
               <Button type="submit" disabled={creating}>
                 Create
@@ -310,6 +358,10 @@ export function ExercisesPage() {
                   <li key={ex.exerciseTypeId} className="px-3 py-2 text-sm">
                     <span className="font-medium text-slate-900">
                       {ex.name}
+                    </span>
+                    <span className="text-slate-500">
+                      {' '}
+                      · {WORKOUT_TYPE_LABELS[ex.category ?? 'resistance']}
                     </span>
                     {ex.muscleGroup ? (
                       <span className="text-slate-600">

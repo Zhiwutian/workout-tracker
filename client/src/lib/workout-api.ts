@@ -2,7 +2,10 @@ import {
   type ApiErrorEnvelope,
   type ApiSuccessEnvelope,
 } from '@shared/api-contracts';
+import type { WorkoutType } from '@shared/workout-types';
 import { getApiErrorMessage } from '@/lib';
+
+export type { WorkoutType };
 import { resolveApiInput } from './api-base-url';
 import { getStoredToken } from './auth-storage';
 
@@ -21,6 +24,7 @@ export type Exercise = {
   userId: number | null;
   name: string;
   muscleGroup: string | null;
+  category: WorkoutType;
   /** ISO timestamp when archived; null if active. */
   archivedAt?: string | null;
 };
@@ -30,6 +34,7 @@ export type WorkoutSummary = {
   userId: number;
   title: string | null;
   notes: string | null;
+  workoutType: WorkoutType;
   startedAt: string;
   endedAt: string | null;
 };
@@ -43,6 +48,8 @@ export type SetRow = {
   weight: number;
   volume: number;
   notes: string | null;
+  isWarmup: boolean;
+  restSeconds: number | null;
   createdAt: string;
 };
 
@@ -136,12 +143,21 @@ export async function readMe(): Promise<MeResponse> {
   return fetchJson<MeResponse>('/api/me');
 }
 
-export async function readExercises(): Promise<Exercise[]> {
-  return fetchJson<Exercise[]>('/api/exercises');
+export async function readExercises(
+  workoutType?: WorkoutType,
+): Promise<Exercise[]> {
+  const q = new URLSearchParams();
+  if (workoutType) q.set('workoutType', workoutType);
+  const suffix = q.toString() ? `?${q.toString()}` : '';
+  return fetchJson<Exercise[]>(`/api/exercises${suffix}`);
 }
 
-export async function readExerciseRecents(limit = 8): Promise<Exercise[]> {
+export async function readExerciseRecents(
+  limit = 8,
+  workoutType?: WorkoutType,
+): Promise<Exercise[]> {
   const q = new URLSearchParams({ limit: String(limit) });
+  if (workoutType) q.set('workoutType', workoutType);
   return fetchJson<Exercise[]>(`/api/exercises/recents?${q}`);
 }
 
@@ -152,10 +168,15 @@ export async function readArchivedExercises(): Promise<Exercise[]> {
 export async function createExercise(
   name: string,
   muscleGroup?: string | null,
+  category?: WorkoutType,
 ): Promise<Exercise> {
   return fetchJson<Exercise>('/api/exercises', {
     method: 'POST',
-    body: JSON.stringify({ name, muscleGroup: muscleGroup ?? null }),
+    body: JSON.stringify({
+      name,
+      muscleGroup: muscleGroup ?? null,
+      ...(category ? { category } : {}),
+    }),
   });
 }
 
@@ -164,6 +185,7 @@ export async function patchExercise(
   body: {
     name?: string;
     muscleGroup?: string | null;
+    category?: WorkoutType;
     archived?: boolean;
   },
 ): Promise<Exercise> {
@@ -259,6 +281,7 @@ export async function downloadWorkoutSetsCsv(params?: {
 export async function createWorkout(input?: {
   title?: string | null;
   notes?: string | null;
+  workoutType?: WorkoutType;
 }): Promise<WorkoutSummary> {
   return fetchJson<WorkoutSummary>('/api/workouts', {
     method: 'POST',
@@ -280,12 +303,49 @@ export async function addSet(
     reps: number;
     weight: number;
     notes?: string | null;
+    isWarmup?: boolean;
+    restSeconds?: number | null;
   },
 ): Promise<SetRow> {
   return fetchJson<SetRow>(`/api/workouts/${workoutId}/sets`, {
     method: 'POST',
     body: JSON.stringify(body),
   });
+}
+
+export async function patchSet(
+  setId: number,
+  body: {
+    reps?: number;
+    weight?: number;
+    notes?: string | null;
+    isWarmup?: boolean;
+    restSeconds?: number | null;
+  },
+): Promise<SetRow> {
+  return fetchJson<SetRow>(`/api/sets/${setId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteSet(setId: number): Promise<void> {
+  const token = getStoredToken();
+  const headers = new Headers();
+  headers.set('Accept', 'application/json');
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  const response = await fetch(resolveApiInput(`/api/sets/${setId}`), {
+    method: 'DELETE',
+    headers,
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    const errorBody = (await response
+      .json()
+      .catch(() => null)) as ApiErrorEnvelope | null;
+    throw new Error(getApiErrorMessage(response.status, errorBody));
+  }
 }
 
 export async function readWeeklyVolume(

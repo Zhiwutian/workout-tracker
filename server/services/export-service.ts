@@ -22,13 +22,17 @@ export type ExportSetsFilters = {
 export type WorkoutSetExportRow = {
   workoutId: number;
   workoutTitle: string | null;
+  workoutType: string;
   workoutStartedAt: Date;
   workoutEndedAt: Date | null;
   exerciseName: string;
+  exerciseCategory: string;
   setIndex: number;
   reps: number;
   weight: number;
   volume: number;
+  isWarmup: boolean;
+  restSeconds: number | null;
   setNotes: string | null;
   setCreatedAt: Date;
 };
@@ -54,12 +58,16 @@ export async function listWorkoutSetsForExport(
     .select({
       workoutId: workouts.workoutId,
       workoutTitle: workouts.title,
+      workoutType: workouts.workoutType,
       workoutStartedAt: workouts.startedAt,
       workoutEndedAt: workouts.endedAt,
       exerciseName: exerciseTypes.name,
+      exerciseCategory: exerciseTypes.category,
       setIndex: workoutSets.setIndex,
       reps: workoutSets.reps,
       weight: workoutSets.weight,
+      isWarmup: workoutSets.isWarmup,
+      restSeconds: workoutSets.restSeconds,
       setNotes: workoutSets.notes,
       setCreatedAt: workoutSets.createdAt,
     })

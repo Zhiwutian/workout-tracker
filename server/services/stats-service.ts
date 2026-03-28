@@ -95,6 +95,7 @@ export async function weeklyVolumeForUser(
         eq(workouts.userId, userId),
         gte(workouts.startedAt, weekStart),
         lt(workouts.startedAt, weekEnd),
+        eq(workoutSets.isWarmup, false),
       ),
     );
 

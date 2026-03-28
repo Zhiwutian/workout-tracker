@@ -127,6 +127,45 @@ describe.skipIf(!hasTestDb)('api IDOR (integration)', () => {
       .expect(404);
   });
 
+  it('returns 400 when logging a resistance exercise on a cardio workout', async () => {
+    const t = suffix();
+    const token = await signUp(`wt-mismatch-${t}`);
+
+    const exRes = await request(app)
+      .get('/api/exercises')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    const rows = exRes.body.data as Array<{
+      exerciseTypeId: number;
+      category: string;
+    }>;
+    const resistance = rows.find((r) => r.category === 'resistance');
+    expect(resistance).toBeDefined();
+
+    const created = await request(app)
+      .post('/api/workouts')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ workoutType: 'cardio' })
+      .expect(201);
+    const workoutId = created.body.data.workoutId as number;
+
+    const res = await request(app)
+      .post(`/api/workouts/${workoutId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        exerciseTypeId: resistance!.exerciseTypeId,
+        reps: 1,
+        weight: 0,
+      })
+      .expect(400);
+    expect(res.body.error).toEqual(
+      expect.objectContaining({
+        code: 'client_error',
+        message: 'exercise does not match this workout type',
+      }),
+    );
+  });
+
   it('returns 404 when user B patches user A set', async () => {
     const t = suffix();
     const tokenA = await signUp(`pset-a-${t}`);

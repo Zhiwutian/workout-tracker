@@ -6,12 +6,14 @@ Quick fixes for common local and hosted issues. For deployment env, see **`docs/
 
 ## Database
 
-| Symptom                           | What to check                                                                      |
-| --------------------------------- | ---------------------------------------------------------------------------------- |
-| `ECONNREFUSED` / cannot connect   | Postgres running? `DATABASE_URL` correct host/port/db name?                        |
-| Migration errors after `git pull` | Run `pnpm run db:migrate` from repo root; read the new migration file if it fails. |
-| `relation "…" does not exist`     | Migrations not applied — `pnpm run db:migrate` then `pnpm run db:seed` if needed.  |
-| SSL errors to Neon/hosted DB      | `DB_SSL=true` or `sslmode` in URL per **`docs/configuration.md`**.                 |
+| Symptom                                                        | What to check                                                                                                                                                                                                                                                                                             |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ECONNREFUSED` / cannot connect                                | Postgres running? `DATABASE_URL` correct host/port/db name?                                                                                                                                                                                                                                               |
+| Migration errors after `git pull`                              | Run `pnpm run db:migrate` from repo root; read the new migration file if it fails.                                                                                                                                                                                                                        |
+| `relation "…" does not exist`                                  | Migrations not applied — `pnpm run db:migrate` then `pnpm run db:seed` if needed.                                                                                                                                                                                                                         |
+| **`db:reset`:** migrate “success” but `exercise_types` missing | Drizzle’s migration log lives in schema **`drizzle`**, not **`public`**. **`database/reset.sh`** drops **`drizzle`** and **`public`** so migrations run again. If you only dropped **`public`** by hand, run **`pnpm run db:reset`** or **`DROP SCHEMA drizzle CASCADE`** then **`pnpm run db:migrate`**. |
+| **`db:reset` / wrong DB**                                      | **`DATABASE_URL` must be exported** for **`drizzle-kit migrate`**. **`reset.sh`** uses **`set -a`** when sourcing **`server/.env`** and **`export DATABASE_URL`**.                                                                                                                                        |
+| SSL errors to Neon/hosted DB                                   | `DB_SSL=true` or `sslmode` in URL per **`docs/configuration.md`**.                                                                                                                                                                                                                                        |
 
 ---
 

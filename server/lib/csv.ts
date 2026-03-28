@@ -2,7 +2,7 @@
  * Minimal RFC 4180-style CSV field escaping for export downloads.
  */
 export function escapeCsvField(
-  value: string | number | null | undefined,
+  value: string | number | boolean | null | undefined,
 ): string {
   if (value === null || value === undefined) return '';
   const s = String(value);

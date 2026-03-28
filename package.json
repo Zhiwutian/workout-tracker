@@ -13,6 +13,7 @@
     "start": "NODE_ENV=production pnpm -C server start",
     "build": "pnpm -C client build",
     "db:import": "sh database/import.sh",
+    "db:reset": "sh database/reset.sh",
     "db:generate": "pnpm -C server db:generate",
     "db:migrate": "pnpm -C server db:migrate",
     "db:studio": "pnpm -C server db:studio",

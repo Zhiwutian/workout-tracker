@@ -146,6 +146,23 @@ See **`docs/troubleshooting.md`** (CORS, `401`, Auth0 callback, rate limits).
 - Use **`db:migrate`** + **`db:seed`** on hosted DBs — not destructive **`db:import`**.
 - **PWA:** HTTPS in production for the service worker.
 
+### Destructive full reset (Render Shell / Neon)
+
+To **delete all data** and rebuild schema from migrations + seed (e.g. demo wipe, pre-launch reset):
+
+1. Open **Render** → your API service → **Shell** (or use Neon SQL + local migrate — same outcome if you drop `public` there and then run migrate/seed from a machine with `DATABASE_URL`).
+2. `cd` to the directory that contains this repo’s **`package.json`** (same root Render uses for builds).
+3. Ensure **`DATABASE_URL`** is available in the environment (Render injects it).
+4. Run:
+
+```sh
+pnpm run db:reset
+```
+
+This executes **`database/reset.sh`**: drops Drizzle’s journal schema (**`drizzle`**) and **`public`**, recreates **`public`**, then **`pnpm run db:migrate`** + **`pnpm run db:seed`**. Omitting **`drizzle`** leaves migration history behind so migrate no-ops while **`public`** is empty. Requires **`psql`** on the shell image; if missing, run the same SQL in Neon (both **`DROP SCHEMA drizzle CASCADE`** and **`DROP SCHEMA public CASCADE`**, then recreate **`public`**), then **`db:migrate`** and **`db:seed`** from a machine with Node/pnpm.
+
+**Never** run this against a database you are not willing to erase completely.
+
 ## Demo JWT vs OIDC
 
 - **`AUTH_DEMO_ENABLED`:** often **`false`** in production when OIDC is primary.

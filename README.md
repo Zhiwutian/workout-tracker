@@ -136,7 +136,8 @@ Health:
 - `pnpm run test:changed` - runs related tests for changed files (fast local PR feedback)
 - `pnpm run build` - builds the client for production
 - `pnpm run start` - starts production server
-- `pnpm run db:import` - resets/imports schema and seed data
+- `pnpm run db:import` - resets/imports schema from `database/schema.sql` + `data.sql` (does not align with Drizzle migration history; prefer `db:reset` for a clean migrate path)
+- `pnpm run db:reset` - drops **`drizzle`** (migration journal) + **`public`**, then `db:migrate` + `db:seed` (destructive; needs `psql` + `DATABASE_URL`). Same command works locally and in **Render Shell** from the app root
 - `pnpm run db:generate` - generates Drizzle SQL migrations from schema
 - `pnpm run db:migrate` - applies Drizzle migrations
 - `pnpm run db:seed` - inserts starter data if tables are empty

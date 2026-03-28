@@ -25,6 +25,7 @@ create table "exercise_types" (
   "userId" integer references "users" ("userId") on delete cascade,
   "name" text not null,
   "muscleGroup" text,
+  "category" text not null default 'resistance',
   "archivedAt" timestamptz
 );
 
@@ -33,6 +34,7 @@ create table "workouts" (
   "userId" integer not null references "users" ("userId") on delete cascade,
   "title" text,
   "notes" text,
+  "workoutType" text not null default 'resistance',
   "startedAt" timestamptz not null default now(),
   "endedAt" timestamptz
 );
@@ -45,5 +47,7 @@ create table "workout_sets" (
   "reps" integer not null,
   "weight" real not null,
   "notes" text,
+  "isWarmup" boolean not null default false,
+  "restSeconds" integer,
   "createdAt" timestamptz not null default now()
 );
