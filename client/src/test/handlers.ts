@@ -8,6 +8,7 @@ let mockWorkouts: {
   userId: number;
   title: string | null;
   notes: string | null;
+  workoutType: string;
   startedAt: string;
   endedAt: string | null;
 }[] = [];
@@ -20,6 +21,7 @@ export function resetApiMockState(): void {
       userId: 1,
       title: null,
       notes: null,
+      workoutType: 'resistance',
       startedAt: new Date().toISOString(),
       endedAt: null,
     },
@@ -100,6 +102,9 @@ export const handlers = [
         { status: 401 },
       );
     }
+    const body = (await request.json().catch(() => ({}))) as {
+      workoutType?: string;
+    };
     const nextId =
       mockWorkouts.reduce((m, w) => Math.max(m, w.workoutId), 0) + 1;
     const row = {
@@ -107,6 +112,7 @@ export const handlers = [
       userId: 1,
       title: null as string | null,
       notes: null as string | null,
+      workoutType: body.workoutType ?? 'resistance',
       startedAt: new Date().toISOString(),
       endedAt: null as string | null,
     };
@@ -141,17 +147,28 @@ export const handlers = [
         { status: 401 },
       );
     }
-    return HttpResponse.json({
-      data: [
-        {
-          exerciseTypeId: 1,
-          userId: null,
-          name: 'Back squat',
-          muscleGroup: 'legs',
-          archivedAt: null,
-        },
-      ],
-    });
+    const url = new URL(request.url);
+    const wt = url.searchParams.get('workoutType') ?? 'resistance';
+    const all = [
+      {
+        exerciseTypeId: 1,
+        userId: null as number | null,
+        name: 'Back squat',
+        muscleGroup: 'legs',
+        category: 'resistance',
+        archivedAt: null,
+      },
+      {
+        exerciseTypeId: 2,
+        userId: null as number | null,
+        name: 'Running',
+        muscleGroup: null as string | null,
+        category: 'cardio',
+        archivedAt: null,
+      },
+    ];
+    const data = all.filter((e) => e.category === wt);
+    return HttpResponse.json({ data });
   }),
 
   http.get('/api/exercises/recents', ({ request }) => {
@@ -161,17 +178,28 @@ export const handlers = [
         { status: 401 },
       );
     }
-    return HttpResponse.json({
-      data: [
-        {
-          exerciseTypeId: 1,
-          userId: null,
-          name: 'Back squat',
-          muscleGroup: 'legs',
-          archivedAt: null,
-        },
-      ],
-    });
+    const url = new URL(request.url);
+    const wt = url.searchParams.get('workoutType') ?? 'resistance';
+    const all = [
+      {
+        exerciseTypeId: 1,
+        userId: null as number | null,
+        name: 'Back squat',
+        muscleGroup: 'legs',
+        category: 'resistance',
+        archivedAt: null,
+      },
+      {
+        exerciseTypeId: 2,
+        userId: null as number | null,
+        name: 'Running',
+        muscleGroup: null as string | null,
+        category: 'cardio',
+        archivedAt: null,
+      },
+    ];
+    const data = all.filter((e) => e.category === wt);
+    return HttpResponse.json({ data });
   }),
 
   http.get('/api/exercises/archived', ({ request }) => {
@@ -194,6 +222,7 @@ export const handlers = [
     const body = (await request.json()) as {
       name?: string;
       muscleGroup?: string | null;
+      category?: string;
       archived?: boolean;
     };
     const exerciseTypeId = Number(params.exerciseTypeId);
@@ -203,6 +232,7 @@ export const handlers = [
         userId: 1,
         name: body.name ?? 'Custom',
         muscleGroup: body.muscleGroup === undefined ? 'legs' : body.muscleGroup,
+        category: body.category ?? 'resistance',
         archivedAt: body.archived ? new Date().toISOString() : null,
       },
     });
@@ -220,6 +250,9 @@ export const handlers = [
       exerciseTypeId: number;
       reps: number;
       weight: number;
+      notes?: string | null;
+      isWarmup?: boolean;
+      restSeconds?: number | null;
     };
     const row = {
       setId: Date.now(),
@@ -229,10 +262,56 @@ export const handlers = [
       reps: body.reps,
       weight: body.weight,
       volume: body.reps * body.weight,
-      notes: null as string | null,
+      notes: body.notes ?? null,
+      isWarmup: body.isWarmup ?? false,
+      restSeconds: body.restSeconds === undefined ? null : body.restSeconds,
       createdAt: new Date().toISOString(),
     };
     return HttpResponse.json({ data: row }, { status: 201 });
+  }),
+
+  http.patch('/api/sets/:setId', async ({ request, params }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    const setId = Number(params.setId);
+    const body = (await request.json()) as {
+      reps?: number;
+      weight?: number;
+      notes?: string | null;
+      isWarmup?: boolean;
+      restSeconds?: number | null;
+    };
+    const reps = body.reps ?? 8;
+    const weight = body.weight ?? 0;
+    return HttpResponse.json({
+      data: {
+        setId,
+        workoutId: 1,
+        exerciseTypeId: 1,
+        setIndex: 0,
+        reps,
+        weight,
+        volume: reps * weight,
+        notes: body.notes ?? null,
+        isWarmup: body.isWarmup ?? false,
+        restSeconds: body.restSeconds === undefined ? null : body.restSeconds,
+        createdAt: new Date().toISOString(),
+      },
+    });
+  }),
+
+  http.delete('/api/sets/:setId', ({ request }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    return new HttpResponse(null, { status: 204 });
   }),
 
   http.get('/api/stats/weekly-volume', ({ request }) => {

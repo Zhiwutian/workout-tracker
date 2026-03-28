@@ -8,7 +8,7 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Changed
 
-- **`docs/proposals/workout-tracker-build-plan.md`** — status and §3/§6/§7/§14 synced with shipped MVP, OIDC, Phase 4 QA, E2E+a11y, migrations through **0005**; §14 next actions point at optional polish and product backlog; **§15** post-MVP slice backlog (slices 1–4 **Done**: history, CSV export, timezone weekly volume, exercise library).
+- **`docs/proposals/workout-tracker-build-plan.md`** — §3 migration note through **0007**; **§15** slice 6 (workout types) **Done**; slices 1–6 **Done** overall.
 - **`docs/course-qa-evidence.md`**, **`docs/testing.md`**, **`docs/README.md`** — document **all tests passing** (**`pnpm run ci:local`** + **`pnpm run test:e2e`**); §4 OIDC **Pass** (production Auth0 / split-host); **Tester(s):** Brett Albright; cross-browser §3 optional Firefox/WebKit; sign-off updated.
 - **`docs/deployment/README.md`** — expanded **Verify** into API smoke, browser checklist (guest → workout → set), optional demo/OIDC, and troubleshooting pointer.
 - **`server/config/env.ts`** — trim OIDC-related env strings at load so pasted **`AUTH_OIDC_REDIRECT_URI`** cannot include trailing newlines (Auth0 **redirect_uri** errors).
@@ -19,6 +19,13 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Added
 
+- **`pnpm run db:reset`** — runs **`database/reset.sh`**: `DROP SCHEMA public CASCADE`, then **`db:migrate`** + **`db:seed`**. For local dev and optional **Render Shell** full wipes; documented in **`README.md`**, **`docs/development-workflow.md`**, **`docs/deployment/README.md`**.
+
+- **Workout types (Resistance / Cardio / Flexibility):** migration **`0007_workout_and_exercise_types`** — **`workouts.workoutType`** and **`exercise_types.category`** (default **`resistance`**). **`GET /api/exercises`** and **`GET /api/exercises/recents`** accept optional **`workoutType`**; create/patch workout and create/patch custom exercise carry type/category; **`POST /api/workouts/:id/sets`** returns **400** when the exercise **`category`** does not match the workout’s **`workoutType`**. CSV export adds **`workout_type`** and **`exercise_category`**. UI: type when starting a workout, badges, filtered picker/recents; shared **`shared/workout-types.ts`**. Integration test in **`api-idor.test.ts`** (requires **`TEST_DATABASE_URL`**). E2E: cardio workout exercise list in **`e2e/smoke.spec.ts`**.
+- **Deploy / existing databases:** ship **`pnpm run db:migrate`** so **0007** applies on hosted Postgres. **`db:seed`** skips inserting globals when any global row already exists — use **`database/seed-global-exercises-append.sql`** (idempotent) or a controlled DB reset if you need the expanded catalog on an old database.
+- **Global exercise seed:** expanded starter catalog — more **resistance** movements for chest, back, legs, shoulders, and arms; additional **cardio** and **flexibility** entries (`server/scripts/seed.ts`). Applies on fresh DBs when **`db:seed`** runs and no global exercises exist yet.
+
+- **Richer set logging (slice 5):** migration **`0006_set_warmup_rest`** — **`isWarmup`**, **`restSeconds`** on **`workout_sets`**; **`WorkoutDetailPage`** notes, warm-up, rest, edit/delete sets, **Same as last**; weekly volume excludes warm-ups; CSV adds **`is_warmup`**, **`rest_seconds`**.
 - **Exercise library (slice 4):** migration **`0005_exercise_archive`** (`archivedAt` on **`exercise_types`**); **`GET /api/exercises/recents`**, **`GET /api/exercises/archived`**, **`PATCH /api/exercises/:exerciseTypeId`**; **`ExercisesPage`** (rename, archive, restore); **Recent** chips on **`WorkoutDetailPage`**.
 - **Timezone-aware weekly volume (slice 3):** optional **`timezone`** query on **`GET /api/stats/weekly-volume`**; **`resolveWeeklyVolumeWindow`** in **`stats-service`** (Luxon); dashboard uses profile **`timezone`** and **`mondayWeekStartISOInZone`**; tests in **`stats-service.test.ts`** and **`week.test.ts`**.
 - **CSV export (slice 2):** **`GET /api/export/workout-sets.csv`** (optional **`from`/`to`** on workout start time); **`downloadWorkoutSetsCsv`** in **`workout-api`**; **Download CSV** on **`WorkoutsPage`** aligned with date range preset; **`server/services/export-service`**, **`csv`** / **`csv-build`** helpers and tests.
@@ -30,6 +37,8 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 - **Continue as guest:** `POST /api/auth/guest` creates a server user with `authSubject` `guest:<uuid>` and returns a JWT; **`GET /api/me`** and **`PATCH /api/profile`** include **`isGuest`**. Sign-in page adds **Continue as guest**; nav and workouts/profile copy explain guest vs named accounts. Tests (MSW, API, optional Postgres IDOR, Playwright smoke).
 
 ### Fixed
+
+- **`database/reset.sh`:** also **`DROP SCHEMA IF EXISTS drizzle CASCADE`** (Drizzle’s migration journal); dropping only **`public`** made **`drizzle-kit migrate`** no-op while **`public`** stayed empty. Sourcing **`server/.env`** uses **`set -a`** / **`export DATABASE_URL`** for the same DB as **`psql`**. Post-migrate check for **`exercise_types`**; **`db:seed`** exits **1** on failure.
 
 - **`profiles.displayName`:** removed global unique index so **multiple OIDC users** can share the same display name (e.g. same Google “name” on different accounts). **Demo** sign-in still matches only `demo:*` accounts; demo sign-up rejects a name if another **demo** row already uses it. **Drizzle** `DrizzleQueryError` is unwrapped in **`isPgUniqueViolation`** so PG **`23505`** is detected on the `cause` chain.
 - **OIDC split deploy (Vercel + Render):** after successful IdP callback, redirect to the SPA includes **`#oidc_token=`** (Bearer JWT in the fragment) when **`AUTH_FRONTEND_ORIGIN`** is set, so **`/api/me`** works even when browsers block cross-site session cookies; client bootstraps the token from the hash before render.

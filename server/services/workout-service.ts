@@ -2,6 +2,7 @@ import { and, asc, desc, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { workoutSets, workouts } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
+import { isWorkoutType, type WorkoutType } from '@shared/workout-types';
 
 function requireDb(): DbClient {
   const db = getDrizzleDb();
@@ -19,6 +20,7 @@ export type WorkoutRecord = {
   userId: number;
   title: string | null;
   notes: string | null;
+  workoutType: string;
   startedAt: Date;
   endedAt: Date | null;
 };
@@ -31,6 +33,8 @@ export type SetRecord = {
   reps: number;
   weight: number;
   notes: string | null;
+  isWarmup: boolean;
+  restSeconds: number | null;
   createdAt: Date;
 };
 
@@ -77,15 +81,24 @@ export async function listWorkouts(
 
 export async function createWorkout(
   userId: number,
-  input: { title?: string | null; notes?: string | null },
+  input: {
+    title?: string | null;
+    notes?: string | null;
+    workoutType?: WorkoutType;
+  },
 ): Promise<WorkoutRecord> {
   const db = requireDb();
+  const wt: WorkoutType = input.workoutType ?? 'resistance';
+  if (!isWorkoutType(wt)) {
+    throw new ClientError(400, 'invalid workout type');
+  }
   const [row] = await db
     .insert(workouts)
     .values({
       userId,
       title: input.title?.trim() || null,
       notes: input.notes?.trim() || null,
+      workoutType: wt,
     })
     .returning();
   if (!row) throw new ClientError(500, 'failed to create workout');
@@ -120,6 +133,7 @@ export async function updateWorkoutForUser(
     title?: string | null;
     notes?: string | null;
     endedAt?: string | null;
+    workoutType?: WorkoutType;
   },
 ): Promise<WorkoutRecord> {
   const db = requireDb();
@@ -129,6 +143,12 @@ export async function updateWorkoutForUser(
   const updates: Partial<typeof workouts.$inferInsert> = {};
   if (patch.title !== undefined) updates.title = patch.title?.trim() || null;
   if (patch.notes !== undefined) updates.notes = patch.notes?.trim() || null;
+  if (patch.workoutType !== undefined) {
+    if (!isWorkoutType(patch.workoutType)) {
+      throw new ClientError(400, 'invalid workout type');
+    }
+    updates.workoutType = patch.workoutType;
+  }
   if (patch.endedAt !== undefined) {
     updates.endedAt =
       patch.endedAt && patch.endedAt.trim() !== ''
@@ -163,6 +183,8 @@ export async function addSetToWorkout(
     reps: number;
     weight: number;
     notes?: string | null;
+    isWarmup?: boolean;
+    restSeconds?: number | null;
     setIndex?: number;
   },
 ): Promise<SetRecord> {
@@ -185,6 +207,11 @@ export async function addSetToWorkout(
       reps: input.reps,
       weight: input.weight,
       notes: input.notes?.trim() || null,
+      isWarmup: input.isWarmup ?? false,
+      restSeconds:
+        input.restSeconds === undefined || input.restSeconds === null
+          ? null
+          : input.restSeconds,
     })
     .returning();
   if (!row) throw new ClientError(500, 'failed to add set');
@@ -199,6 +226,8 @@ export async function updateSetForUser(
     weight: number;
     notes: string | null;
     setIndex: number;
+    isWarmup: boolean;
+    restSeconds: number | null;
   }>,
 ): Promise<SetRecord> {
   const db = requireDb();
@@ -211,9 +240,17 @@ export async function updateSetForUser(
   const parent = await getWorkoutForUser(userId, s.workoutId);
   if (!parent) throw new ClientError(404, 'set not found');
 
+  const updates: Partial<typeof workoutSets.$inferInsert> = {};
+  if (patch.reps !== undefined) updates.reps = patch.reps;
+  if (patch.weight !== undefined) updates.weight = patch.weight;
+  if (patch.setIndex !== undefined) updates.setIndex = patch.setIndex;
+  if (patch.notes !== undefined) updates.notes = patch.notes?.trim() || null;
+  if (patch.isWarmup !== undefined) updates.isWarmup = patch.isWarmup;
+  if (patch.restSeconds !== undefined) updates.restSeconds = patch.restSeconds;
+
   const [row] = await db
     .update(workoutSets)
-    .set(patch)
+    .set(updates)
     .where(eq(workoutSets.setId, setId))
     .returning();
   if (!row) throw new ClientError(404, 'set not found');

@@ -33,11 +33,15 @@
 - Apply migrations with `pnpm run db:migrate`.
 - Seed starter data with `pnpm run db:seed` (idempotent: skips when table has rows).
 - Optionally add/update sample data in `database/data.sql`.
-- Rebuild local DB state with:
+- **Full wipe + migrations + seed (recommended):** from repo root, with Postgres running and `DATABASE_URL` set (or in `server/.env`):
 
 ```sh
-pnpm run db:import
+pnpm run db:reset
 ```
+
+This runs `database/reset.sh`: drops `public`, applies all Drizzle migrations, then `db:seed`. **Destructive** — every table and row is removed.
+
+- **SQL mirror only (legacy):** `pnpm run db:import` loads `database/schema.sql` + `data.sql`. Do not run `db:migrate` immediately afterward unless you understand migration journal drift (see **`docs/styleguide/database-patterns.md`**).
 
 ## CI Workflow
 

@@ -100,24 +100,24 @@ sequenceDiagram
 
 ## 3. Workout and sets
 
-- **List/create workouts:** `GET/POST /api/workouts` → `workout-service` scopes by `userId`.
+- **List/create workouts:** `GET/POST /api/workouts` → `workout-service` scopes by `userId`. Create/patch may set **`workoutType`** (`resistance` \| `cardio` \| `flexibility`).
 - **Detail / patch / delete workout:** `workoutId` in path; service loads workout and asserts `workout.userId === req.user.userId` (or equivalent).
-- **Add set:** `POST /api/workouts/:workoutId/sets` → verifies workout ownership, then `exerciseTypeId` usable (global or same user’s custom).
-- **Patch/delete set:** `setId` → resolve set → workout → user.
+- **Add set:** `POST /api/workouts/:workoutId/sets` → verifies workout ownership, then `exerciseTypeId` usable (global or same user’s custom) and **`exercise.category === workout.workoutType`**, else **400**. Body may include **`notes`**, **`isWarmup`**, **`restSeconds`** (optional seconds after the set).
+- **Patch/delete set:** `setId` → resolve set → workout → user. **`PATCH /api/sets/:setId`** can update reps, weight, notes, **`isWarmup`**, **`restSeconds`**, **`setIndex`**.
 
 ## 4. Weekly volume stats
 
 - **`GET /api/stats/weekly-volume?weekStart=YYYY-MM-DD`** — optional **`timezone=IANA`**
 - **Window:** If **`timezone`** is omitted or UTC, **`weekStart`** is UTC midnight and the window is **`[weekStart, weekStart + 7d)`** in UTC. If **`timezone`** is a non-UTC IANA zone, **`weekStart`** is local start-of-day in that zone and the window is seven local days, evaluated on **`workouts.startedAt`** (see **`docs/assumptions.md`**).
-- **Metric:** sum over sets on those workouts: **reps × weight** (`server/lib/volume.ts`).
+- **Metric:** sum over **non-warm-up** sets (`isWarmup = false`) on those workouts: **reps × weight** (`server/lib/volume.ts`).
 
 ## 5. Exercises
 
-- **`GET /api/exercises`:** global rows (`userId` null) plus current user’s **non-archived** custom rows.
-- **`GET /api/exercises/recents`:** optional **`limit`** — custom + global exercises the user has logged recently (by latest set `createdAt`), excluding archived custom.
+- **`GET /api/exercises`:** global rows (`userId` null) plus current user’s **non-archived** custom rows. Optional query **`workoutType`** filters to exercises whose **`category`** matches (picker alignment with active workout).
+- **`GET /api/exercises/recents`:** optional **`limit`** and optional **`workoutType`** — only exercises whose **`category`** matches **`workoutType`**, ranked by the user’s latest **`workout_sets`** (see **`listRecentExercisesForUser`**).
 - **`GET /api/exercises/archived`:** current user’s archived custom exercises only.
-- **`POST /api/exercises`:** creates a user-scoped row; duplicate **active** (non-archived) name per user is rejected.
-- **`PATCH /api/exercises/:exerciseTypeId`:** rename / muscle group / archive / unarchive for **owned** custom exercises only; globals return **403**.
+- **`POST /api/exercises`:** creates a user-scoped row; duplicate **active** (non-archived) name per user is rejected. Body may set **`category`** (`resistance` \| `cardio` \| `flexibility`).
+- **`PATCH /api/exercises/:exerciseTypeId`:** rename / muscle group / **`category`** / archive / unarchive for **owned** custom exercises only; globals return **403**.
 
 ## 6. Client persistence
 

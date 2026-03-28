@@ -54,6 +54,11 @@ Access only through a **workout** owned by the current user.
 
 - **`exercise_types.archivedAt`:** nullable; when set for a **custom** row (`userId` not null), the exercise is hidden from list/recents and blocked for **new** sets until cleared.
 
+## Workout sets
+
+- **`workout_sets.isWarmup`:** default false; when true, set is **excluded** from weekly volume aggregation.
+- **`workout_sets.restSeconds`:** optional; seconds after the set (storage only).
+
 ## Stats query
 
 - **`GET /api/stats/weekly-volume`**: `weekStart` query must match `YYYY-MM-DD`; optional `timezone` (IANA) selects local week semantics—see `docs/assumptions.md`.

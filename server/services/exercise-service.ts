@@ -12,6 +12,7 @@ import {
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { exerciseTypes, workoutSets, workouts } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
+import { isWorkoutType, type WorkoutType } from '@shared/workout-types';
 
 function requireDb(): DbClient {
   const db = getDrizzleDb();
@@ -29,6 +30,8 @@ export type ExerciseTypeRecord = {
   userId: number | null;
   name: string;
   muscleGroup: string | null;
+  /** resistance | cardio | flexibility */
+  category: string;
   archivedAt: Date | null;
 };
 
@@ -38,6 +41,7 @@ function toRecord(row: typeof exerciseTypes.$inferSelect): ExerciseTypeRecord {
     userId: row.userId,
     name: row.name,
     muscleGroup: row.muscleGroup,
+    category: row.category,
     archivedAt: row.archivedAt,
   };
 }
@@ -45,16 +49,20 @@ function toRecord(row: typeof exerciseTypes.$inferSelect): ExerciseTypeRecord {
 /** Global catalog plus this user's non-archived custom exercises. */
 export async function listExercisesForUser(
   userId: number,
+  options?: { workoutType?: WorkoutType },
 ): Promise<ExerciseTypeRecord[]> {
   const db = requireDb();
+  const scope = or(
+    isNull(exerciseTypes.userId),
+    and(eq(exerciseTypes.userId, userId), isNull(exerciseTypes.archivedAt)),
+  );
   const rows = await db
     .select()
     .from(exerciseTypes)
     .where(
-      or(
-        isNull(exerciseTypes.userId),
-        and(eq(exerciseTypes.userId, userId), isNull(exerciseTypes.archivedAt)),
-      ),
+      options?.workoutType
+        ? and(scope, eq(exerciseTypes.category, options.workoutType))
+        : scope,
     )
     .orderBy(asc(exerciseTypes.name));
   return rows.map(toRecord);
@@ -66,9 +74,17 @@ export async function listExercisesForUser(
 export async function listRecentExercisesForUser(
   userId: number,
   limit: number,
+  options?: { workoutType?: WorkoutType },
 ): Promise<ExerciseTypeRecord[]> {
   const db = requireDb();
   const lim = Math.min(Math.max(1, limit), 50);
+  const exerciseScope = or(
+    isNull(exerciseTypes.userId),
+    and(eq(exerciseTypes.userId, userId), isNull(exerciseTypes.archivedAt)),
+  );
+  const typeFilter = options?.workoutType
+    ? and(exerciseScope, eq(exerciseTypes.category, options.workoutType))
+    : exerciseScope;
   const ranked = await db
     .select({
       exerciseTypeId: workoutSets.exerciseTypeId,
@@ -80,18 +96,7 @@ export async function listRecentExercisesForUser(
       exerciseTypes,
       eq(workoutSets.exerciseTypeId, exerciseTypes.exerciseTypeId),
     )
-    .where(
-      and(
-        eq(workouts.userId, userId),
-        or(
-          isNull(exerciseTypes.userId),
-          and(
-            eq(exerciseTypes.userId, userId),
-            isNull(exerciseTypes.archivedAt),
-          ),
-        ),
-      ),
-    )
+    .where(and(eq(workouts.userId, userId), typeFilter))
     .groupBy(workoutSets.exerciseTypeId)
     .orderBy(desc(max(workoutSets.createdAt)))
     .limit(lim);
@@ -132,10 +137,14 @@ export async function createCustomExercise(
   userId: number,
   name: string,
   muscleGroup?: string | null,
+  category: WorkoutType = 'resistance',
 ): Promise<ExerciseTypeRecord> {
   const db = requireDb();
   const trimmed = name.trim();
   if (!trimmed) throw new ClientError(400, 'name is required');
+  if (!isWorkoutType(category)) {
+    throw new ClientError(400, 'invalid exercise category');
+  }
 
   const existing = await db
     .select({ exerciseTypeId: exerciseTypes.exerciseTypeId })
@@ -158,6 +167,7 @@ export async function createCustomExercise(
       userId,
       name: trimmed,
       muscleGroup: muscleGroup?.trim() || null,
+      category,
     })
     .returning();
 
@@ -168,6 +178,7 @@ export async function createCustomExercise(
 export type PatchCustomExerciseInput = {
   name?: string;
   muscleGroup?: string | null;
+  category?: WorkoutType;
   archived?: boolean;
 };
 
@@ -192,7 +203,15 @@ export async function patchCustomExercise(
 
   let name = row.name;
   let muscleGroup = row.muscleGroup;
+  let category = row.category;
   let archivedAt = row.archivedAt;
+
+  if (patch.category !== undefined) {
+    if (!isWorkoutType(patch.category)) {
+      throw new ClientError(400, 'invalid exercise category');
+    }
+    category = patch.category;
+  }
 
   if (patch.name !== undefined) {
     const trimmed = patch.name.trim();
@@ -250,6 +269,7 @@ export async function patchCustomExercise(
     .set({
       name,
       muscleGroup,
+      category,
       archivedAt,
     })
     .where(eq(exerciseTypes.exerciseTypeId, exerciseTypeId))
@@ -278,4 +298,20 @@ export async function assertExerciseUsable(
     throw new ClientError(400, 'exercise is archived');
   }
   return toRecord(row);
+}
+
+/** Same as {@link assertExerciseUsable} plus category must match the workout session type. */
+export async function assertExerciseUsableForWorkout(
+  userId: number,
+  exerciseTypeId: number,
+  workoutType: string,
+): Promise<ExerciseTypeRecord> {
+  const ex = await assertExerciseUsable(userId, exerciseTypeId);
+  if (!isWorkoutType(workoutType)) {
+    throw new ClientError(400, 'invalid workout type');
+  }
+  if (ex.category !== workoutType) {
+    throw new ClientError(400, 'exercise does not match this workout type');
+  }
+  return ex;
 }

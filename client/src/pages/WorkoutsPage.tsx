@@ -11,8 +11,10 @@ import {
   downloadWorkoutSetsCsv,
   readWorkouts,
   type ReadWorkoutsParams,
+  type WorkoutType,
   type WorkoutSummary,
 } from '@/lib/workout-api';
+import { WORKOUT_TYPE_LABELS, WORKOUT_TYPES } from '@shared/workout-types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -47,6 +49,8 @@ export function WorkoutsPage() {
   const [rangePreset, setRangePreset] = useState<RangePreset>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortFilter, setSortFilter] = useState<SortFilter>('startedAt_desc');
+  const [newWorkoutType, setNewWorkoutType] =
+    useState<WorkoutType>('resistance');
 
   const listParams = useMemo(
     () => buildListParams(rangePreset, statusFilter, sortFilter),
@@ -80,7 +84,7 @@ export function WorkoutsPage() {
   async function handleNewWorkout(): Promise<void> {
     setCreating(true);
     try {
-      const w = await createWorkout({});
+      const w = await createWorkout({ workoutType: newWorkoutType });
       setWorkouts((prev) => [w, ...prev]);
       setActiveSessions((prev) => [w, ...prev]);
       showToast({ title: 'Workout started', variant: 'success' });
@@ -152,12 +156,30 @@ export function WorkoutsPage() {
             )}
           </p>
         </div>
-        <Button
-          type="button"
-          disabled={creating}
-          onClick={() => void handleNewWorkout()}>
-          Start workout
-        </Button>
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">
+              Workout type
+            </label>
+            <select
+              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={newWorkoutType}
+              onChange={(e) => setNewWorkoutType(e.target.value as WorkoutType)}
+              aria-label="Workout type">
+              {WORKOUT_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {WORKOUT_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button
+            type="button"
+            disabled={creating}
+            onClick={() => void handleNewWorkout()}>
+            Start workout
+          </Button>
+        </div>
       </header>
 
       {showResumeBar && (
@@ -276,7 +298,10 @@ export function WorkoutsPage() {
                       : ''}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-slate-200 text-slate-800">
+                    {WORKOUT_TYPE_LABELS[w.workoutType ?? 'resistance']}
+                  </Badge>
                   {!w.endedAt && (
                     <Badge className="bg-amber-100 text-amber-900">
                       Active

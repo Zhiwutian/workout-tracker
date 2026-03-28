@@ -36,5 +36,6 @@ Keep these in parity for every schema change.
 ## Operational safety
 
 - Hosted bootstrap: **`pnpm run db:migrate`** then **`pnpm run db:seed`**.
-- Avoid destructive import/reset commands against production-like databases.
+- **Local / intentional wipe:** **`pnpm run db:reset`** (`database/reset.sh`) drops **`drizzle`** (journal) + **`public`**, migrates, seeds — see **`docs/deployment/README.md`** before using on hosted DBs.
+- Avoid destructive import/reset commands against production-like databases unless that is the explicit goal.
 - Environment SSL: follow `server/config/env.ts` / deployment docs for `DATABASE_URL` and TLS.

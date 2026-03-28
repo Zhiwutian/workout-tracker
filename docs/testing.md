@@ -6,24 +6,24 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 
 ## Commands (from repo root)
 
-| Goal                                 | Command                                                                                                       |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| Lint                                 | `pnpm run lint`                                                                                               |
-| Typecheck                            | `pnpm run tsc`                                                                                                |
-| Unit + integration (client + server) | `pnpm run test`                                                                                               |
-| Server only                          | `pnpm run test:server`                                                                                        |
-| Client only                          | `pnpm run test:client`                                                                                        |
-| Changed files (fast feedback)        | `pnpm run test:changed`                                                                                       |
-| Production client build              | `pnpm run build`                                                                                              |
-| Full local CI parity                 | `pnpm run ci:local`                                                                                           |
-| E2E (needs DB + browser deps)        | See **`docs/development-workflow.md`** — typically `pnpm run test:e2e` with `DATABASE_URL` set                |
-| IDOR / Postgres-backed API tests     | `TEST_DATABASE_URL=postgres://… pnpm run test:server` — runs `server/routes/api-idor.test.ts` when URL is set |
+| Goal                                 | Command                                                                                                                                                                                                        |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lint                                 | `pnpm run lint`                                                                                                                                                                                                |
+| Typecheck                            | `pnpm run tsc`                                                                                                                                                                                                 |
+| Unit + integration (client + server) | `pnpm run test`                                                                                                                                                                                                |
+| Server only                          | `pnpm run test:server`                                                                                                                                                                                         |
+| Client only                          | `pnpm run test:client`                                                                                                                                                                                         |
+| Changed files (fast feedback)        | `pnpm run test:changed`                                                                                                                                                                                        |
+| Production client build              | `pnpm run build`                                                                                                                                                                                               |
+| Full local CI parity                 | `pnpm run ci:local`                                                                                                                                                                                            |
+| E2E (needs DB + browser deps)        | See **`docs/development-workflow.md`** — typically `pnpm run test:e2e` with `DATABASE_URL` set                                                                                                                 |
+| IDOR / Postgres-backed API tests     | `TEST_DATABASE_URL=postgres://… pnpm run test:server` — runs `server/routes/api-idor.test.ts` when URL is set (cross-tenant + **400** when exercise category ≠ workout **`workoutType`** on **`POST …/sets`**) |
 
 ## What is covered today
 
 - **API routes:** Supertest against the Express app (e.g. health, **`GET /api/auth/options`**, demo auth when enabled).
 - **Client:** Vitest + Testing Library + MSW handlers for `/api/*` (including auth options and logout).
-- **Ownership:** Optional Postgres IDOR suite when **`TEST_DATABASE_URL`** is provided (CI quality job).
+- **Ownership:** Optional Postgres IDOR suite when **`TEST_DATABASE_URL`** is provided (CI quality job), including workout-type mismatch on log set.
 
 ## OIDC / session
 
@@ -35,9 +35,10 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 
 - **`GET /api/workouts`** — optional query: **`from`**, **`to`** (ISO 8601), **`status`** (`all` \| `active` \| `completed`), **`sort`** (`startedAt_desc` \| `startedAt_asc`). Used by the workouts list filters.
 - **`GET /api/stats/weekly-volume`** — optional **`timezone`** (IANA); server unit tests cover **`resolveWeeklyVolumeWindow`** (UTC vs zone).
-- **`GET/PATCH /api/exercises`** — custom exercise archive, recents, and **`ExercisesPage`**; run **`pnpm run db:migrate`** after pulling migration **`0005`**.
+- **`GET/PATCH /api/exercises`** — custom exercise archive, recents, **`category`**, and **`ExercisesPage`**; migrations **`0005`**+.
+- **Set logging / CSV** — migration **`0006`** (`isWarmup`, `restSeconds`); **`0007`** (`workoutType`, exercise **`category`**); **`WorkoutDetailPage`** edit/delete; CSV **`is_warmup`**, **`rest_seconds`**, **`workout_type`**, **`exercise_category`**.
 - **`GET /api/export/workout-sets.csv`** — authenticated CSV download of sets joined with workout + exercise; optional **`from`** / **`to`** filter on **workout `startedAt`** (same idea as list). **`Content-Disposition: attachment`**.
-- **`e2e/smoke.spec.ts`** — happy path with demo or guest auth as configured for **`pnpm run dev:e2e`** (asserts visible heading via **`data-testid="workouts-page-heading"`**).
+- **`e2e/smoke.spec.ts`** — happy path with demo or guest auth; cardio workout row asserts **Cardio** badge and filtered picker has no **Bench press** (skipped when the DB has no global cardio exercises — run **`database/seed-global-exercises-append.sql`** or reset + **`db:seed`**). CI uses a fresh Postgres service so the test runs there.
 - **`e2e/a11y.spec.ts`** — axe scan (critical/serious) on sign-in + guest workouts; keyboard focus check on **Continue as guest**.
 - **Projects:** Default **Chromium** + **Mobile Chrome** (viewport). Set **`PW_FULL_BROWSERS=1`** to add Firefox + WebKit (install host deps first: `pnpm exec playwright install-deps` on Linux).
 - **OIDC in CI:** Only practical if the pipeline can inject IdP secrets and a stable callback URL; otherwise keep OIDC verification manual and document results for the course report.

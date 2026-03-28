@@ -1,4 +1,5 @@
 import {
+  boolean,
   integer,
   pgTable,
   real,
@@ -49,6 +50,8 @@ export const exerciseTypes = pgTable('exercise_types', {
   }),
   name: text('name').notNull(),
   muscleGroup: text('muscleGroup'),
+  /** resistance | cardio | flexibility — must match workout type when logging sets. */
+  category: text('category').notNull().default('resistance'),
   /** Custom exercises only: when set, hidden from pickers until un-archived. */
   archivedAt: timestamp('archivedAt', { withTimezone: true }),
 });
@@ -60,6 +63,8 @@ export const workouts = pgTable('workouts', {
     .references(() => users.userId, { onDelete: 'cascade' }),
   title: text('title'),
   notes: text('notes'),
+  /** resistance | cardio | flexibility */
+  workoutType: text('workoutType').notNull().default('resistance'),
   startedAt: timestamp('startedAt', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -78,6 +83,10 @@ export const workoutSets = pgTable('workout_sets', {
   reps: integer('reps').notNull(),
   weight: real('weight').notNull(),
   notes: text('notes'),
+  /** When true, excluded from weekly volume totals; still exported. */
+  isWarmup: boolean('isWarmup').notNull().default(false),
+  /** Optional rest taken after this set (seconds). */
+  restSeconds: integer('restSeconds'),
   createdAt: timestamp('createdAt', { withTimezone: true })
     .notNull()
     .defaultNow(),

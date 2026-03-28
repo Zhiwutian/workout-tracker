@@ -20,13 +20,17 @@ describe('buildWorkoutSetsCsv', () => {
     const row: WorkoutSetExportRow = {
       workoutId: 1,
       workoutTitle: 'Leg day',
+      workoutType: 'resistance',
       workoutStartedAt: new Date('2026-01-15T10:00:00.000Z'),
       workoutEndedAt: null,
       exerciseName: 'Squat',
+      exerciseCategory: 'resistance',
       setIndex: 0,
       reps: 8,
       weight: 135,
       volume: 1080,
+      isWarmup: false,
+      restSeconds: 120,
       setNotes: null,
       setCreatedAt: new Date('2026-01-15T10:05:00.000Z'),
     };
