@@ -1,4 +1,6 @@
-@import url('tailwindcss');
+/* prettier-ignore — bare import required for @tailwindcss/vite */
+/* stylelint-disable-next-line import-notation -- url() breaks Tailwind Vite pipeline */
+@import 'tailwindcss';
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;

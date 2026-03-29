@@ -10,7 +10,7 @@ Conventions for **workout-tracker** client UI. This repo is a **learning resourc
 
 ## Implementation (current stack)
 
-- **Tailwind CSS v4** via `@import 'tailwindcss'` in `client/src/index.css`.
+- **Tailwind CSS v4** via `@import 'tailwindcss'` in `client/src/index.css` (must stay **bare** — `url('tailwindcss')` and Stylelint’s `import-notation` autofix break **`@tailwindcss/vite`**, so utilities never generate).
 - Prefer **utility classes** in components for layout, spacing, and typography.
 - Use **`client/src/index.css`** only for global resets and shared tokens as the design system grows.
 

@@ -59,6 +59,8 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Fixed
 
+- **`client/src/index.css`:** keep **`@import 'tailwindcss'`** (not `url('tailwindcss')`). **Stylelint** `import-notation` **--fix** rewrote the import so **`@tailwindcss/vite`** did not run and **Tailwind utilities disappeared**; disabled for that line with **`stylelint-disable-next-line`**.
+
 - **`database/reset.sh`:** also **`DROP SCHEMA IF EXISTS drizzle CASCADE`** (Drizzle’s migration journal); dropping only **`public`** made **`drizzle-kit migrate`** no-op while **`public`** stayed empty. Sourcing **`server/.env`** uses **`set -a`** / **`export DATABASE_URL`** for the same DB as **`psql`**. Post-migrate check for **`exercise_types`**; **`db:seed`** exits **1** on failure.
 
 - **`profiles.displayName`:** removed global unique index so **multiple OIDC users** can share the same display name (e.g. same Google “name” on different accounts). **Demo** sign-in still matches only `demo:*` accounts; demo sign-up rejects a name if another **demo** row already uses it. **Drizzle** `DrizzleQueryError` is unwrapped in **`isPgUniqueViolation`** so PG **`23505`** is detected on the `cause` chain.
