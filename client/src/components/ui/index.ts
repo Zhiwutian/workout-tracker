@@ -2,5 +2,8 @@ export { Badge } from './Badge';
 export { Button } from './Button';
 export { Card } from './Card';
 export { EmptyState } from './EmptyState';
+export { FieldLabel } from './FieldLabel';
 export { Input } from './Input';
 export { SectionHeader } from './SectionHeader';
+export { Select } from './Select';
+export { Textarea } from './Textarea';

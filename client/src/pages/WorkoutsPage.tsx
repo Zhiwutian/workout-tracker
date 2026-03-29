@@ -1,7 +1,20 @@
 import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { useToast } from '@/components/app/toast-context';
-import { Badge, Button, Card, EmptyState } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  FieldLabel,
+  Select,
+} from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthContext';
+import {
+  WorkoutListFilters,
+  type WorkoutSortFilter,
+  type WorkoutStatusFilter,
+} from '@/features/workouts/WorkoutListFilters';
+import { WorkoutResumeBanner } from '@/features/workouts/WorkoutResumeBanner';
 import {
   type RangePreset,
   rangePresetToIsoRange,
@@ -14,17 +27,15 @@ import {
   type WorkoutType,
   type WorkoutSummary,
 } from '@/lib/workout-api';
+import { useAbortableAsyncEffect } from '@/lib/use-abortable-async-effect';
 import { WORKOUT_TYPE_LABELS, WORKOUT_TYPES } from '@shared/workout-types';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-type StatusFilter = 'all' | 'active' | 'completed';
-type SortFilter = 'startedAt_desc' | 'startedAt_asc';
 
 function buildListParams(
   rangePreset: RangePreset,
-  status: StatusFilter,
-  sort: SortFilter,
+  status: WorkoutStatusFilter,
+  sort: WorkoutSortFilter,
 ): ReadWorkoutsParams {
   const range = rangePresetToIsoRange(rangePreset);
   return {
@@ -47,8 +58,9 @@ export function WorkoutsPage() {
   const [exporting, setExporting] = useState(false);
 
   const [rangePreset, setRangePreset] = useState<RangePreset>('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [sortFilter, setSortFilter] = useState<SortFilter>('startedAt_desc');
+  const [statusFilter, setStatusFilter] = useState<WorkoutStatusFilter>('all');
+  const [sortFilter, setSortFilter] =
+    useState<WorkoutSortFilter>('startedAt_desc');
   const [newWorkoutType, setNewWorkoutType] =
     useState<WorkoutType>('resistance');
 
@@ -57,29 +69,24 @@ export function WorkoutsPage() {
     [rangePreset, statusFilter, sortFilter],
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [list, active] = await Promise.all([
-        readWorkouts(listParams),
-        readWorkouts({ status: 'active', sort: 'startedAt_desc' }),
-      ]);
-      setWorkouts(list);
-      setActiveSessions(active);
-    } catch (err) {
-      showToast({
-        title: 'Could not load workouts',
-        description: err instanceof Error ? err.message : undefined,
-        variant: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [listParams, showToast]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useAbortableAsyncEffect(
+    async (signal) => {
+      setLoading(true);
+      try {
+        const [list, active] = await Promise.all([
+          readWorkouts(listParams),
+          readWorkouts({ status: 'active', sort: 'startedAt_desc' }),
+        ]);
+        if (signal.aborted) return;
+        setWorkouts(list);
+        setActiveSessions(active);
+      } finally {
+        if (!signal.aborted) setLoading(false);
+      }
+    },
+    [listParams],
+    'Could not load workouts',
+  );
 
   async function handleNewWorkout(): Promise<void> {
     setCreating(true);
@@ -158,11 +165,9 @@ export function WorkoutsPage() {
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
-              Workout type
-            </label>
-            <select
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            <FieldLabel htmlFor="new-workout-type">Workout type</FieldLabel>
+            <Select
+              id="new-workout-type"
               value={newWorkoutType}
               onChange={(e) => setNewWorkoutType(e.target.value as WorkoutType)}
               aria-label="Workout type">
@@ -171,7 +176,7 @@ export function WorkoutsPage() {
                   {WORKOUT_TYPE_LABELS[t]}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <Button
             type="button"
@@ -182,85 +187,21 @@ export function WorkoutsPage() {
         </div>
       </header>
 
-      {showResumeBar && (
-        <Card className="border-indigo-200 bg-indigo-50/80 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-indigo-900">
-                Workout in progress
-              </p>
-              <p className="text-xs text-indigo-800/90">
-                {resumeWorkout.title ?? `Workout #${resumeWorkout.workoutId}`} ·{' '}
-                {new Date(resumeWorkout.startedAt).toLocaleString()}
-              </p>
-            </div>
-            <NavLinkButton
-              to={`/workouts/${resumeWorkout.workoutId}`}
-              className="bg-indigo-600 text-white hover:bg-indigo-500 hover:text-white">
-              Resume
-            </NavLinkButton>
-          </div>
-        </Card>
-      )}
+      {showResumeBar && resumeWorkout ? (
+        <WorkoutResumeBanner workout={resumeWorkout} />
+      ) : null}
 
-      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Date range
-          </label>
-          <select
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            value={rangePreset}
-            onChange={(e) => setRangePreset(e.target.value as RangePreset)}
-            aria-label="Date range">
-            <option value="all">All time</option>
-            <option value="week">This week</option>
-            <option value="month">This month</option>
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Status
-          </label>
-          <select
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            aria-label="Workout status">
-            <option value="all">All</option>
-            <option value="active">Active only</option>
-            <option value="completed">Completed only</option>
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Sort
-          </label>
-          <select
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            value={sortFilter}
-            onChange={(e) => setSortFilter(e.target.value as SortFilter)}
-            aria-label="Sort workouts">
-            <option value="startedAt_desc">Newest first</option>
-            <option value="startedAt_asc">Oldest first</option>
-          </select>
-        </div>
-        <div className="ml-auto flex min-w-[9rem] flex-col gap-1">
-          <span className="text-xs font-medium text-slate-600">Export</span>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={exporting || loading}
-            onClick={() => void handleExportCsv()}
-            aria-label="Download workout sets as CSV for the date range above">
-            {exporting ? 'Exporting…' : 'Download CSV'}
-          </Button>
-        </div>
-      </div>
-      <p className="text-xs text-slate-500">
-        CSV includes every set for workouts that <strong>started</strong> in the
-        selected date range (independent of status filters).
-      </p>
+      <WorkoutListFilters
+        rangePreset={rangePreset}
+        onRangePresetChange={setRangePreset}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        sortFilter={sortFilter}
+        onSortFilterChange={setSortFilter}
+        exporting={exporting}
+        loading={loading}
+        onExportCsv={handleExportCsv}
+      />
 
       {loading && <p className="text-sm text-slate-600">Loading…</p>}
       {!loading && workouts.length === 0 && (

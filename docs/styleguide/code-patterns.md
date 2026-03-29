@@ -54,9 +54,10 @@ Architecture and conventions for **workout-tracker**.
 ## Feature placement
 
 - Screens: `client/src/pages/`
-- Domain modules + API calls: `client/src/features/<domain>/`
+- Domain UI (components that belong to a feature): `client/src/features/<domain>/`
+- **HTTP API wrappers:** `client/src/lib/api/*` (grouped by area), re-exported from **`client/src/lib/workout-api.ts`** for stable imports
 - Reusable primitives: `client/src/components/ui/`
-- App shell: `client/src/components/app/` (if used)
-- Global UI state: `client/src/state/`
-- Utilities: `client/src/lib/`
+- App shell: `client/src/components/app/` (toasts, nav, error boundary)
+- Global UI state: `client/src/state/` (optional; keep server data request-driven when possible)
+- Utilities + hooks: `client/src/lib/` (e.g. `api-client.ts`, `use-abortable-async-effect.ts`, `week.ts`)
 - Backend services: `server/services/`

@@ -32,7 +32,10 @@
   - `components/app/` contains app-level cross-cutting UI (error boundary, toasts, nav link button wrapper).
   - `components/ui/` contains reusable Tailwind-based UI primitives and a barrel export at `components/ui/index.ts`.
   - `features/auth/` contains `AuthProvider`, `ProtectedRoute`, and auth context.
-  - `lib/workout-api.ts` (and related) centralizes authenticated API calls.
+  - `lib/api-client.ts` builds `fetch` options (cookies, Bearer, JSON envelope).
+  - `lib/api/*` holds grouped API functions (`auth-api`, `exercise-api`, `workouts-api`, `stats-api`, `types.ts`).
+  - `lib/workout-api.ts` re-exports those modules so the rest of the app can `import … from '@/lib/workout-api'`.
+  - `lib/use-abortable-async-effect.ts` helps pages load data with abort + error toasts.
   - `state/` contains optional global UI state (`AppStateProvider`); keep workout data request-driven from pages/features.
   - `lib/index.ts` exposes shared frontend utilities through a barrel export.
   - Recommended growth pattern:
@@ -70,7 +73,7 @@
 - `tsconfig.json`
   - Server TypeScript config, including `@server/*` alias mapping to simplify imports.
 - `lib/`
-  - Shared backend utilities and middleware (errors, auth, request typing, response envelopes).
+  - Shared backend utilities and middleware (errors, auth, **`async-handler`**, **`domain-zod`**, **`request-user`**, response envelopes).
 - `public/`
   - Server-hosted static files (uploads or other direct-served assets).
 - Example paths:

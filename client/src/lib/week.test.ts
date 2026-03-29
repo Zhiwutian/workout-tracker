@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { DateTime } from 'luxon';
-import { mondayWeekStartISOInZone, utcWeekStartISO } from './week';
+import {
+  mondayWeekStartISOInZone,
+  mondayWeekStartISOInZoneNow,
+  utcWeekStartISO,
+} from './week';
 
 describe('mondayWeekStartISOInZone', () => {
   it('returns ISO Monday for the week containing now in the zone', () => {
@@ -17,5 +21,11 @@ describe('mondayWeekStartISOInZone', () => {
     expect(mondayWeekStartISOInZone('Invalid/Zone', fixed)).toBe(
       utcWeekStartISO(fixed.toUTC().toJSDate()),
     );
+  });
+});
+
+describe('mondayWeekStartISOInZoneNow', () => {
+  it('returns yyyy-mm-dd for UTC', () => {
+    expect(mondayWeekStartISOInZoneNow('UTC')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

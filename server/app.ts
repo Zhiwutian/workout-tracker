@@ -1,3 +1,6 @@
+/**
+ * Express app factory: security headers, CORS, JSON body, `/api` router, static client (prod), error middleware.
+ */
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';

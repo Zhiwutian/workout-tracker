@@ -141,5 +141,5 @@ sequenceDiagram
 | Routes + middleware | `server/routes/api.ts`                                                                                       |
 | JWT + session auth  | `server/lib/authorization-middleware.ts`, `server/lib/session-cookies.ts`, `server/services/auth-service.ts` |
 | OIDC                | `server/services/oidc-service.ts`, `server/controllers/oidc-auth-controller.ts`                              |
-| Client API          | `client/src/lib/workout-api.ts`                                                                              |
+| Client API          | `client/src/lib/api-client.ts`, `client/src/lib/api/*`, barrel `client/src/lib/workout-api.ts`               |
 | Auth UI             | `client/src/features/auth/*`, `client/src/pages/SignInPage.tsx`                                              |

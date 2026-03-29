@@ -1,3 +1,6 @@
+/**
+ * **`GET /api/hello`** — minimal JSON sanity check (useful in tutorials and deploy smoke).
+ */
 import { Request, Response } from 'express';
 import { sendSuccess } from '@server/lib/http-response.js';
 

@@ -1,3 +1,8 @@
+/**
+ * Single registry for JSON API routes under `/api`.
+ * Pattern: import a controller function, wrap with `asyncHandler` if it returns a Promise,
+ * and add `authMiddleware` for routes that require a logged-in user.
+ */
 import { Router } from 'express';
 import {
   getMe,
@@ -37,47 +42,76 @@ import {
   removeWorkout,
 } from '@server/controllers/workout-controller.js';
 import { authMiddleware } from '@server/lib/authorization-middleware.js';
+import { asyncHandler } from '@server/lib/async-handler.js';
 
 const apiRouter = Router();
 
 apiRouter.get('/hello', readHello);
-apiRouter.get('/health', readHealth);
-apiRouter.get('/ready', readReady);
+apiRouter.get('/health', asyncHandler(readHealth));
+apiRouter.get('/ready', asyncHandler(readReady));
 
 apiRouter.get('/auth/options', getAuthOptions);
-apiRouter.get('/auth/oidc/login', getOidcLogin);
+apiRouter.get('/auth/oidc/login', asyncHandler(getOidcLogin));
 apiRouter.get('/auth/oidc/callback', getOidcCallback);
 apiRouter.post('/auth/logout', postAuthLogout);
 
-apiRouter.post('/auth/sign-up', postAuthSignUp);
-apiRouter.post('/auth/sign-in', postAuthSignIn);
-apiRouter.post('/auth/guest', postAuthGuest);
+apiRouter.post('/auth/sign-up', asyncHandler(postAuthSignUp));
+apiRouter.post('/auth/sign-in', asyncHandler(postAuthSignIn));
+apiRouter.post('/auth/guest', asyncHandler(postAuthGuest));
 
-apiRouter.get('/me', authMiddleware, getMe);
-apiRouter.patch('/profile', authMiddleware, patchProfile);
+apiRouter.get('/me', authMiddleware, asyncHandler(getMe));
+apiRouter.patch('/profile', authMiddleware, asyncHandler(patchProfile));
 
-apiRouter.get('/exercises/recents', authMiddleware, getExerciseRecents);
-apiRouter.get('/exercises/archived', authMiddleware, getArchivedExercises);
-apiRouter.get('/exercises', authMiddleware, getExercises);
-apiRouter.post('/exercises', authMiddleware, postExercise);
-apiRouter.patch('/exercises/:exerciseTypeId', authMiddleware, patchExercise);
+apiRouter.get(
+  '/exercises/recents',
+  authMiddleware,
+  asyncHandler(getExerciseRecents),
+);
+apiRouter.get(
+  '/exercises/archived',
+  authMiddleware,
+  asyncHandler(getArchivedExercises),
+);
+apiRouter.get('/exercises', authMiddleware, asyncHandler(getExercises));
+apiRouter.post('/exercises', authMiddleware, asyncHandler(postExercise));
+apiRouter.patch(
+  '/exercises/:exerciseTypeId',
+  authMiddleware,
+  asyncHandler(patchExercise),
+);
 
 apiRouter.get(
   '/export/workout-sets.csv',
   authMiddleware,
-  getExportWorkoutSetsCsv,
+  asyncHandler(getExportWorkoutSetsCsv),
 );
 
-apiRouter.get('/workouts', authMiddleware, getWorkouts);
-apiRouter.post('/workouts', authMiddleware, postWorkout);
-apiRouter.get('/workouts/:workoutId', authMiddleware, getWorkout);
-apiRouter.patch('/workouts/:workoutId', authMiddleware, patchWorkout);
-apiRouter.delete('/workouts/:workoutId', authMiddleware, removeWorkout);
-apiRouter.post('/workouts/:workoutId/sets', authMiddleware, postSet);
+apiRouter.get('/workouts', authMiddleware, asyncHandler(getWorkouts));
+apiRouter.post('/workouts', authMiddleware, asyncHandler(postWorkout));
+apiRouter.get('/workouts/:workoutId', authMiddleware, asyncHandler(getWorkout));
+apiRouter.patch(
+  '/workouts/:workoutId',
+  authMiddleware,
+  asyncHandler(patchWorkout),
+);
+apiRouter.delete(
+  '/workouts/:workoutId',
+  authMiddleware,
+  asyncHandler(removeWorkout),
+);
+apiRouter.post(
+  '/workouts/:workoutId/sets',
+  authMiddleware,
+  asyncHandler(postSet),
+);
 
-apiRouter.patch('/sets/:setId', authMiddleware, patchSet);
-apiRouter.delete('/sets/:setId', authMiddleware, removeSet);
+apiRouter.patch('/sets/:setId', authMiddleware, asyncHandler(patchSet));
+apiRouter.delete('/sets/:setId', authMiddleware, asyncHandler(removeSet));
 
-apiRouter.get('/stats/weekly-volume', authMiddleware, getWeeklyVolume);
+apiRouter.get(
+  '/stats/weekly-volume',
+  authMiddleware,
+  asyncHandler(getWeeklyVolume),
+);
 
 export default apiRouter;

@@ -1,6 +1,6 @@
 import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { useToast } from '@/components/app/toast-context';
-import { Button } from '@/components/ui';
+import { Button, FieldLabel, Select } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthContext';
 import { patchProfile } from '@/lib/workout-api';
 import { FormEvent, useEffect, useState } from 'react';
@@ -53,17 +53,20 @@ export function ProfilePage() {
         className="max-w-sm space-y-4"
         onSubmit={(e) => void handleSubmit(e)}>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <FieldLabel
+            className="text-sm font-medium text-slate-700"
+            htmlFor="profile-weight-unit">
             Weight unit
-          </label>
-          <select
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          </FieldLabel>
+          <Select
+            id="profile-weight-unit"
+            className="w-full"
             value={weightUnit}
             onChange={(e) => setWeightUnit(e.target.value as 'lb' | 'kg')}
             aria-label="Weight unit">
             <option value="lb">Pounds (lb)</option>
             <option value="kg">Kilograms (kg)</option>
-          </select>
+          </Select>
         </div>
         <Button type="submit" disabled={busy}>
           Save

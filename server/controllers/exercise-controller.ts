@@ -1,6 +1,15 @@
+/**
+ * Exercise catalog and user-owned custom exercises: list, recents, archived, create, patch (incl. archive).
+ * Query/body validation uses **`domain-zod`** for workout type; **`requireUserId`** for authenticated routes.
+ */
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import {
+  exerciseTypeIdParams,
+  workoutTypeSchema,
+} from '@server/lib/domain-zod.js';
 import { sendSuccess } from '@server/lib/http-response.js';
+import { requireUserId } from '@server/lib/request-user.js';
 import {
   createCustomExercise,
   listArchivedCustomExercisesForUser,
@@ -8,18 +17,15 @@ import {
   listRecentExercisesForUser,
   patchCustomExercise,
 } from '@server/services/exercise-service.js';
-import type { WorkoutType } from '@shared/workout-types';
-
-const workoutTypeEnum = z.enum(['resistance', 'cardio', 'flexibility']);
 
 const createBodySchema = z.object({
   name: z.string().trim().min(1).max(120),
   muscleGroup: z.string().trim().max(80).nullable().optional(),
-  category: workoutTypeEnum.optional(),
+  category: workoutTypeSchema.optional(),
 });
 
 const exercisesQuerySchema = z.object({
-  workoutType: workoutTypeEnum.optional(),
+  workoutType: workoutTypeSchema.optional(),
 });
 
 function serializeExercise(r: {
@@ -51,88 +57,68 @@ function serializeExercise(r: {
 export async function getExercises(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const q = exercisesQuerySchema.parse(req.query);
-    const rows = await listExercisesForUser(userId, {
-      workoutType: q.workoutType as WorkoutType | undefined,
-    });
-    sendSuccess(res, rows.map(serializeExercise));
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const q = exercisesQuerySchema.parse(req.query);
+  const rows = await listExercisesForUser(userId, {
+    workoutType: q.workoutType,
+  });
+  sendSuccess(res, rows.map(serializeExercise));
 }
 
 /** GET /api/exercises/recents?limit=8 */
 export async function getExerciseRecents(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const q = z
-      .object({
-        limit: z.coerce.number().int().min(1).max(50).optional(),
-        workoutType: workoutTypeEnum.optional(),
-      })
-      .parse(req.query);
-    const rows = await listRecentExercisesForUser(userId, q.limit ?? 8, {
-      workoutType: q.workoutType as WorkoutType | undefined,
-    });
-    sendSuccess(res, rows.map(serializeExercise));
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const q = z
+    .object({
+      limit: z.coerce.number().int().min(1).max(50).optional(),
+      workoutType: workoutTypeSchema.optional(),
+    })
+    .parse(req.query);
+  const rows = await listRecentExercisesForUser(userId, q.limit ?? 8, {
+    workoutType: q.workoutType,
+  });
+  sendSuccess(res, rows.map(serializeExercise));
 }
 
 /** GET /api/exercises/archived */
 export async function getArchivedExercises(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const rows = await listArchivedCustomExercisesForUser(userId);
-    sendSuccess(res, rows.map(serializeExercise));
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const rows = await listArchivedCustomExercisesForUser(userId);
+  sendSuccess(res, rows.map(serializeExercise));
 }
 
 /** POST /api/exercises */
 export async function postExercise(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const body = createBodySchema.parse(req.body);
-    const row = await createCustomExercise(
-      userId,
-      body.name,
-      body.muscleGroup,
-      body.category ?? 'resistance',
-    );
-    sendSuccess(res, serializeExercise(row), 201);
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const body = createBodySchema.parse(req.body);
+  const row = await createCustomExercise(
+    userId,
+    body.name,
+    body.muscleGroup,
+    body.category ?? 'resistance',
+  );
+  sendSuccess(res, serializeExercise(row), 201);
 }
 
 const patchBodySchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
     muscleGroup: z.string().trim().max(80).nullable().optional(),
-    category: workoutTypeEnum.optional(),
+    category: workoutTypeSchema.optional(),
     archived: z.boolean().optional(),
   })
   .refine(
@@ -151,25 +137,16 @@ const patchBodySchema = z
 export async function patchExercise(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const exerciseTypeId = z.coerce
-      .number()
-      .int()
-      .positive()
-      .parse(req.params.exerciseTypeId);
-    const body = patchBodySchema.parse(req.body);
-    const row = await patchCustomExercise(userId, exerciseTypeId, {
-      name: body.name,
-      muscleGroup: body.muscleGroup,
-      category: body.category,
-      archived: body.archived,
-    });
-    sendSuccess(res, serializeExercise(row));
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const { exerciseTypeId } = exerciseTypeIdParams.parse(req.params);
+  const body = patchBodySchema.parse(req.body);
+  const row = await patchCustomExercise(userId, exerciseTypeId, {
+    name: body.name,
+    muscleGroup: body.muscleGroup,
+    category: body.category,
+    archived: body.archived,
+  });
+  sendSuccess(res, serializeExercise(row));
 }

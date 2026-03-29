@@ -1,3 +1,7 @@
+/**
+ * Root React tree: `AuthProvider`, nav, and `react-router` routes.
+ * Heavy pages are `lazy()`-loaded so the first paint stays smaller (see Vite code-split output).
+ */
 import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { EmptyState } from '@/components/ui';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';

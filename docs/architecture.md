@@ -14,9 +14,9 @@ At runtime, the browser loads static assets from the server and calls API routes
 - **Browser Client**
   - Executes React UI.
   - Uses React Router for route-level pages (`/`, `/about`).
-  - Uses `react-hook-form` + `zod` for client-side form handling/validation.
+  - Forms are mostly **controlled components**; **react-hook-form** + **zod** are optional for larger forms (see **`docs/styleguide/frontend-patterns.md`**).
   - Uses Context + reducer (`AppStateProvider`) for lean global UI state.
-  - Authenticated flows send **`Authorization: Bearer`** when a demo/guest JWT is stored, and use **`fetch(..., { credentials: 'include' })`** so **OIDC** session cookies are sent; see `client/src/lib/workout-api.ts` and `client/src/features/auth/`.
+  - Authenticated flows use **`client/src/lib/api-client.ts`** (Bearer when a demo/guest JWT is stored, **`credentials: 'include'`** for OIDC cookies); higher-level calls live in **`client/src/lib/api/*`** and the **`workout-api.ts`** barrel—see `client/src/features/auth/`.
   - Calls backend endpoints under `/api/*`.
 - **Express Server**
   - Serves API routes.
@@ -43,7 +43,7 @@ Example server paths:
 - `GET /api/ready` → same stack as health (readiness includes DB).
 - `GET /api/workouts` → `authMiddleware` → `workout-controller` → `workout-service` → `db/schema.ts` (user-scoped rows).
 
-**Authorization:** every user-owned handler must enforce ownership using **`req.user.userId`** from `authMiddleware`—see **`docs/styleguide/security-and-authz.md`**.
+**Authorization:** after `authMiddleware`, use **`requireUserId(req)`** and enforce **ownership** in services—see **`docs/styleguide/security-and-authz.md`**.
 
 ## Error Handling
 
@@ -66,7 +66,7 @@ Example server paths:
 - **Context (auth and app providers)**
   - Auth session and shared providers (see `client/src/features/auth/`).
 - **Server state**
-  - Data loaded from `/api/*` remains request-driven through feature API modules (for example `client/src/lib/workout-api.ts`).
+  - Data loaded from `/api/*` remains request-driven through **`client/src/lib/workout-api.ts`** (barrel over `lib/api/*`).
 
 ## Environment and Configuration
 

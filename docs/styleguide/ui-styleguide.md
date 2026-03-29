@@ -1,12 +1,12 @@
 # UI styleguide
 
-Conventions for **workout-tracker** client UI.
+Conventions for **workout-tracker** client UI. This repo is a **learning resource**: prefer clarity and consistency over clever one-offs.
 
 ## Principles
 
 - Clear hierarchy, readable forms, and obvious primary actions.
-- Prefer **accessibility** defaults: labels, focus order, keyboard use, sufficient contrast.
-- Keep styling **consistent** across pages (shared components over one-off CSS).
+- Prefer **accessibility** defaults: labels linked to controls (`htmlFor` / `id`), focus order, keyboard use, sufficient contrast.
+- Keep styling **consistent** across pages (**shared components** over copy-pasted Tailwind).
 
 ## Implementation (current stack)
 
@@ -16,17 +16,26 @@ Conventions for **workout-tracker** client UI.
 
 This repo’s global CSS is intentionally minimal compared to larger apps; when you add design tokens (colors, radii, focus rings), define them in **`index.css`** and document them here.
 
-## Components
+## Components (`client/src/components/ui/`)
 
-- Reusable controls and layout primitives live under **`client/src/components/ui/`**.
-- Page-specific markup stays in **`client/src/pages/`** or feature folders.
+| Primitive                                                      | Role                                                                                             |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **`Button`**                                                   | Primary actions, variants (`ghost`, etc.).                                                       |
+| **`Input`**                                                    | Single-line text and numeric fields (shared focus ring).                                         |
+| **`Select`**                                                   | Native `<select>` with the same visual baseline as **`Input`**.                                  |
+| **`FieldLabel`**                                               | Consistent label styling; override with **`className`** for larger form sections (e.g. profile). |
+| **`Textarea`**                                                 | Multi-line notes (e.g. set notes); matches **`Input`** border/focus.                             |
+| **`Card`**, **`Badge`**, **`EmptyState`**, **`SectionHeader`** | Layout and emphasis.                                                                             |
+
+Page-specific markup stays in **`pages/`** or **`features/`**; reuse these primitives before inventing new class stacks.
 
 ## Forms
 
-- Use **react-hook-form** + **Zod**; surface validation errors next to fields.
-- Keep destructive actions (delete workout, etc.) confirmable when product requires it.
+- **Today:** most forms use **React `useState`** + controlled inputs so beginners can read state flow in one file.
+- **react-hook-form** is optional (see **`frontend-patterns.md`**). If you adopt it, surface validation errors next to fields and keep schemas aligned with the API.
+- Destructive actions (delete set, etc.) should stay **confirmable** when the product requires it.
 
 ## Related
 
-- **`frontend-patterns.md`** — structure, state, and API usage.
+- **`frontend-patterns.md`** — structure, state, API usage, **`useAbortableAsyncEffect`**.
 - **`frontend-accessibility-guard`** rule (`.cursor/rules/`) when editing UI.

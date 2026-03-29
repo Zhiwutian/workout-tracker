@@ -1,9 +1,25 @@
 # Documentation index
 
+**Start here for every doc file in this tree.** This page is the **canonical index** (table of contents).
+
+- **New to navigating these docs?** Read **[`documentation-guide.md`](./documentation-guide.md)** first—it explains how this index fits with the root **`README.md`**, **`AGENTS.md`**, and **`CHANGELOG.md`**.
+
 Project documentation for **workout-tracker**: structure, runtime behavior, workflow, and implementation standards.
+
+## New to full-stack development?
+
+Suggested order:
+
+1. **`app-startup-walkthrough.md`** — what runs when you `pnpm run dev`.
+2. **`data-flow.md`** — how auth and API calls move between browser and server.
+3. **`styleguide/README.md`** — where patterns live; read **`security-and-authz.md`** before changing anything that reads or writes user data.
+4. **`project-structure.md`** — where to put new files.
+
+The codebase includes **short comments** in central files (`api-client`, `api.ts`, `AuthContext`, etc.) explaining how pieces connect; skim those when you open a file for the first time.
 
 ## Core docs
 
+- **`documentation-guide.md`** — How to navigate this folder; points here for the full index
 - **`architecture.md`** — Architecture, request lifecycle, boundaries
 - **`project-structure.md`** — Directories and where to add code
 - **`development-workflow.md`** — Local setup, DB, CI, branching, **styleguide + Cursor rules** pointers
@@ -76,7 +92,7 @@ TEST_CHANGED_BASE=origin/main pnpm run test:changed
 
 ## Comment standards
 
-Use comments for maintainability, not to restate obvious code. JSDoc on exported functions and non-trivial helpers; inline comments for non-obvious control flow or safety. Update comments when behavior changes.
+Use comments for maintainability, not to restate obvious code. **JSDoc** on exported functions and non-trivial helpers; inline comments for non-obvious control flow or safety. In **architecture glue** files (API client, route table, auth provider), a short **file-level or section comment** helps newer developers orient—update those when behavior changes.
 
 ## Tailwind and imports
 
@@ -85,6 +101,5 @@ Use comments for maintainability, not to restate obvious code. JSDoc on exported
 
 ## Frontend state and forms
 
-- **react-hook-form** + **zod** for forms.
-- Keep feature schemas near features (e.g. `client/src/features/auth/`).
+- Most screens use **local state** + controlled inputs; **react-hook-form** is **optional** (see **`styleguide/frontend-patterns.md`**).
 - Context for auth; local state for page-owned UI; avoid unnecessary global stores.

@@ -1,3 +1,8 @@
+/**
+ * Week boundaries for the dashboard and stats. Uses **Luxon** for IANA timezone-aware
+ * “Monday of this week” math (DST-safe). Pages should call helpers here instead of
+ * importing Luxon directly so date rules stay in one place.
+ */
 import { DateTime } from 'luxon';
 
 /** Monday 00:00 UTC for the week containing `d`, as `YYYY-MM-DD`. */
@@ -28,4 +33,9 @@ export function mondayWeekStartISOInZone(
   }
   const monday = z.minus({ days: z.weekday - 1 }).startOf('day');
   return monday.toFormat('yyyy-MM-dd');
+}
+
+/** Current calendar week’s Monday in `ianaZone` (keeps Luxon usage inside this module). */
+export function mondayWeekStartISOInZoneNow(ianaZone: string): string {
+  return mondayWeekStartISOInZone(ianaZone, DateTime.now());
 }

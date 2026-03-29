@@ -68,6 +68,8 @@ Workspace may include bible-support (parent) and workout-tracker (nested). For t
 
 ## Documentation
 
+- **How to navigate docs:** **`docs/documentation-guide.md`** (intro + pointers); **full index:** **`docs/README.md`**
+- **Learning path (newer full-stack devs):** `docs/README.md` → **`docs/app-startup-walkthrough.md`**, **`docs/data-flow.md`**, then **`docs/styleguide/README.md`**
 - **Patterns & security:** `docs/styleguide/README.md` → especially **`docs/styleguide/security-and-authz.md`**
 - **Cursor rules index:** `docs/rules-registry.md`
 - **Env:** `docs/configuration.md`
