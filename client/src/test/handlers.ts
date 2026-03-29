@@ -1,7 +1,12 @@
+import type { UiPreferences } from '@shared/ui-preferences';
 import { http, HttpResponse } from 'msw';
 
 const MOCK_TOKEN = 'msw-test-access-token';
 const MOCK_GUEST_TOKEN = 'msw-guest-access-token';
+
+/** In-memory profile prefs for MSW (PATCH /api/profile uiPreferences merge). */
+let mockUiPreferences: UiPreferences | null = null;
+let mockProfileWeightUnit: 'lb' | 'kg' = 'lb';
 
 let mockWorkouts: {
   workoutId: number;
@@ -15,6 +20,8 @@ let mockWorkouts: {
 
 /** Reset in-memory API mock state between tests. */
 export function resetApiMockState(): void {
+  mockUiPreferences = null;
+  mockProfileWeightUnit = 'lb';
   mockWorkouts = [
     {
       workoutId: 1,
@@ -77,8 +84,9 @@ export const handlers = [
         displayName: isGuest
           ? 'Guest 00000000-0000-4000-8000-000000000001'
           : 'Test Lifter',
-        weightUnit: 'lb',
+        weightUnit: mockProfileWeightUnit,
         timezone: null,
+        uiPreferences: mockUiPreferences,
         updatedAt: new Date().toISOString(),
         isGuest,
       },
@@ -348,12 +356,26 @@ export const handlers = [
         { status: 401 },
       );
     }
+    const body = (await request.json()) as {
+      weightUnit?: string;
+      uiPreferences?: UiPreferences;
+    };
+    if (body.weightUnit === 'kg' || body.weightUnit === 'lb') {
+      mockProfileWeightUnit = body.weightUnit;
+    }
+    if (body.uiPreferences && typeof body.uiPreferences === 'object') {
+      mockUiPreferences = {
+        ...(mockUiPreferences ?? {}),
+        ...body.uiPreferences,
+      };
+    }
     return HttpResponse.json({
       data: {
         userId: 1,
         displayName: 'Test Lifter',
-        weightUnit: 'kg',
+        weightUnit: mockProfileWeightUnit,
         timezone: null,
+        uiPreferences: mockUiPreferences,
         updatedAt: new Date().toISOString(),
         isGuest: false,
       },

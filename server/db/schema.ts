@@ -1,6 +1,8 @@
+import type { UiPreferences } from '@shared/ui-preferences.js';
 import {
   boolean,
   integer,
+  jsonb,
   pgTable,
   real,
   serial,
@@ -35,6 +37,8 @@ export const profiles = pgTable('profiles', {
   displayName: text('displayName').notNull(),
   weightUnit: text('weightUnit').notNull().default('lb'),
   timezone: text('timezone'),
+  /** Optional display prefs (text scale, dark mode, high contrast); merged on PATCH. */
+  uiPreferences: jsonb('uiPreferences').$type<UiPreferences | null>(),
   updatedAt: timestamp('updatedAt', { withTimezone: true })
     .notNull()
     .defaultNow(),

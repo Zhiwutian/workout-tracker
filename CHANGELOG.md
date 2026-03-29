@@ -6,6 +6,11 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ## [Unreleased]
 
+### Added
+
+- **Display and accessibility (Phase 1):** app shell **text size**, **theme** (**`themeMode`**: `system` \| `light` \| `dark` — **`system`** follows **`prefers-color-scheme`**), and **high contrast** via **`client/src/state/`** (`AppStateProvider` + **`DISPLAY_STORAGE_KEYS`** `wt-*` in **`localStorage`**, including **`wt-theme-mode`**); **`client/src/lib/display-shell.ts`** syncs **`document.documentElement`**; inline boot script in **`client/index.html`** applies the same classes early to reduce shell FOUC. Global CSS in **`client/src/index.css`** (`.app-text-scale-*`, `.app-dark-mode`, `.app-high-contrast`, indigo/amber/toast tuning); **Profile** controls and reset; **`color-scheme`** on `<html>`. Tests: **`display-shell.test.ts`**, **`app-state-store.test.ts`**, **`App.display-shell.test.tsx`**; E2E **`e2e/display-preferences.spec.ts`** (reload persistence via **`localStorage`**, no DB). Proposal: **`docs/proposals/display-and-accessibility-settings.md`**.
+- **Display and accessibility (Phase 2):** **`profiles.uiPreferences`** **`jsonb`** (migration **`0008_profile_ui_preferences`**); **`PATCH /api/profile`** and **`GET /api/me`** include merged **`uiPreferences`** (`shared/ui-preferences.ts`, **`server/lib/ui-preferences.ts`** Zod + merge). Client: **`AuthContext`** applies server prefs when **`me.uiPreferences`** changes; **Profile** PATCHes on each control + reset. **`database/schema.sql`** parity. Server tests **`ui-preferences.test.ts`**.
+
 ### Documentation
 
 - **Styleguides** (`docs/styleguide/`) — aligned with code: **`api-client`**, **`lib/api/*`**, **`useAbortableAsyncEffect`**, **`requireUserId`**, **`domain-zod`**, UI primitives; **RHF optional**; parent/multirepo note in **`styleguide/README.md`**.
@@ -54,6 +59,8 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 - **Continue as guest:** `POST /api/auth/guest` creates a server user with `authSubject` `guest:<uuid>` and returns a JWT; **`GET /api/me`** and **`PATCH /api/profile`** include **`isGuest`**. Sign-in page adds **Continue as guest**; nav and workouts/profile copy explain guest vs named accounts. Tests (MSW, API, optional Postgres IDOR, Playwright smoke).
 
 ### Fixed
+
+- **`client/src/index.css`:** keep **`@import 'tailwindcss'`** (not `url('tailwindcss')`). **Stylelint** `import-notation` **--fix** rewrote the import so **`@tailwindcss/vite`** did not run and **Tailwind utilities disappeared**; disabled for that line with **`stylelint-disable-next-line`**.
 
 - **`database/reset.sh`:** also **`DROP SCHEMA IF EXISTS drizzle CASCADE`** (Drizzle’s migration journal); dropping only **`public`** made **`drizzle-kit migrate`** no-op while **`public`** stayed empty. Sourcing **`server/.env`** uses **`set -a`** / **`export DATABASE_URL`** for the same DB as **`psql`**. Post-migrate check for **`exercise_types`**; **`db:seed`** exits **1** on failure.
 

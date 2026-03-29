@@ -17,6 +17,7 @@ create table "profiles" (
   "displayName" text not null,
   "weightUnit" text not null default 'lb',
   "timezone" text,
+  "uiPreferences" jsonb,
   "updatedAt" timestamptz not null default now()
 );
 

@@ -10,11 +10,20 @@ Conventions for **workout-tracker** client UI. This repo is a **learning resourc
 
 ## Implementation (current stack)
 
-- **Tailwind CSS v4** via `@import 'tailwindcss'` in `client/src/index.css`.
+- **Tailwind CSS v4** via `@import 'tailwindcss'` in `client/src/index.css` (must stay **bare** — `url('tailwindcss')` and Stylelint’s `import-notation` autofix break **`@tailwindcss/vite`**, so utilities never generate).
 - Prefer **utility classes** in components for layout, spacing, and typography.
 - Use **`client/src/index.css`** only for global resets and shared tokens as the design system grows.
 
 This repo’s global CSS is intentionally minimal compared to larger apps; when you add design tokens (colors, radii, focus rings), define them in **`index.css`** and document them here.
+
+## Display shell (accessibility)
+
+- **State:** `textScale` (`sm`–`xl`), **`themeMode`** (`system` \| `light` \| `dark`), and `highContrast` live in **`client/src/state/app-state-store.ts`** and persist with **`DISPLAY_STORAGE_KEYS`** (`wt-text-scale`, **`wt-theme-mode`**, `wt-high-contrast`). Legacy **`wt-dark-mode`** is read once and migrated to **`themeMode`**.
+- **Effective dark:** When **`themeMode`** is **`system`**, the shell follows **`prefers-color-scheme`** (**`useSystemPrefersDark`**). **`light`** / **`dark`** force the corresponding shell.
+- **DOM sync:** **`client/src/lib/display-shell.ts`** sets `app-text-scale-*`, `app-dark-mode`, and `app-high-contrast` on **`document.documentElement`** (and **`App.tsx`** drives layout from the same effective values). An **inline script** in **`client/index.html`** repeats the storage keys and rules so the first paint matches before React hydrates.
+- **Shell classes:** **`App.tsx`** uses `app-text-scale-*` plus either default light (`bg-slate-50`), effective `app-dark-mode`, or `app-high-contrast`. If both contrast toggles are on, **high contrast wins** for the shell (see Profile copy).
+- **Global overrides:** **`index.css`** maps Tailwind `text-*` sizes under each scale and adjusts slate / indigo / amber / toast colors under `.app-dark-mode` and `.app-high-contrast`.
+- **User controls:** **Profile → Display and accessibility** — changes **`PATCH`** **`/api/profile`** as **`uiPreferences`** (merged on the server in **`profiles.uiPreferences`**; optional deprecated **`darkMode`** in stored JSON is normalized to **`themeMode`**). **`GET /api/me`** returns the merged object so new sessions/devices match after sign-in (see **`docs/proposals/display-and-accessibility-settings.md`**).
 
 ## Components (`client/src/components/ui/`)
 

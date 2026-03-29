@@ -1,3 +1,5 @@
+/* prettier-ignore — bare import required for @tailwindcss/vite */
+/* stylelint-disable-next-line import-notation -- url() breaks Tailwind Vite pipeline */
 @import 'tailwindcss';
 
 :root {
@@ -7,9 +9,380 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-size-adjust: 100%;
+
+  --app-text-scale-sm: 1.125rem;
+  --app-text-scale-md: 1.25rem;
+  --app-text-scale-lg: 1.375rem;
+  --app-text-scale-xl: 1.5rem;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+}
+
+/*
+ * Mobile native select menus use the rendered control geometry as their anchor.
+ * Keep selects at a touch-friendly size so picker popups are not tiny/misaligned.
+ */
+@media (width <= 768px) {
+  select {
+    font-size: 16px !important;
+    min-height: 44px;
+    line-height: 1.25;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    appearance: auto;
+  }
+
+  option,
+  optgroup {
+    font-size: 16px !important;
+  }
+}
+
+/* App-wide text scaling tokens (Profile “Text size”). */
+.app-text-scale-sm {
+  font-size: var(--app-text-scale-sm);
+}
+
+.app-text-scale-md {
+  font-size: var(--app-text-scale-md);
+}
+
+.app-text-scale-lg {
+  font-size: var(--app-text-scale-lg);
+}
+
+.app-text-scale-xl {
+  font-size: var(--app-text-scale-xl);
+}
+
+/* Remap Tailwind text utilities inside each scale wrapper. */
+.app-text-scale-sm .text-xs {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+}
+
+.app-text-scale-sm .text-sm {
+  font-size: 0.95rem;
+  line-height: 1.375rem;
+}
+
+.app-text-scale-sm .text-base {
+  font-size: 1.1rem;
+  line-height: 1.65rem;
+}
+
+.app-text-scale-sm .text-lg {
+  font-size: 1.225rem;
+  line-height: 1.825rem;
+}
+
+.app-text-scale-sm .text-xl {
+  font-size: 1.35rem;
+  line-height: 1.95rem;
+}
+
+.app-text-scale-sm .text-2xl {
+  font-size: 1.6rem;
+  line-height: 2.1rem;
+}
+
+.app-text-scale-sm .text-3xl {
+  font-size: 1.95rem;
+  line-height: 2.4rem;
+}
+
+.app-text-scale-sm input,
+.app-text-scale-sm select,
+.app-text-scale-sm button,
+.app-text-scale-sm textarea {
+  font-size: 1rem;
+}
+
+.app-text-scale-md .text-xs {
+  font-size: 0.9rem;
+  line-height: 1.3rem;
+}
+
+.app-text-scale-md .text-sm {
+  font-size: 1.05rem;
+  line-height: 1.55rem;
+}
+
+.app-text-scale-md .text-base {
+  font-size: 1.2rem;
+  line-height: 1.8rem;
+}
+
+.app-text-scale-md .text-lg {
+  font-size: 1.4rem;
+  line-height: 2.05rem;
+}
+
+.app-text-scale-md .text-xl {
+  font-size: 1.6rem;
+  line-height: 2.2rem;
+}
+
+.app-text-scale-md .text-2xl {
+  font-size: 1.9rem;
+  line-height: 2.45rem;
+}
+
+.app-text-scale-md .text-3xl {
+  font-size: 2.25rem;
+  line-height: 2.7rem;
+}
+
+.app-text-scale-lg .text-xs {
+  font-size: 0.98rem;
+  line-height: 1.4rem;
+}
+
+.app-text-scale-lg .text-sm {
+  font-size: 1.15rem;
+  line-height: 1.65rem;
+}
+
+.app-text-scale-lg .text-base {
+  font-size: 1.3rem;
+  line-height: 1.95rem;
+}
+
+.app-text-scale-lg .text-lg {
+  font-size: 1.5rem;
+  line-height: 2.15rem;
+}
+
+.app-text-scale-lg .text-xl {
+  font-size: 1.75rem;
+  line-height: 2.3rem;
+}
+
+.app-text-scale-lg .text-2xl {
+  font-size: 2.05rem;
+  line-height: 2.55rem;
+}
+
+.app-text-scale-lg .text-3xl {
+  font-size: 2.4rem;
+  line-height: 2.85rem;
+}
+
+.app-text-scale-xl .text-xs {
+  font-size: 1.05rem;
+  line-height: 1.5rem;
+}
+
+.app-text-scale-xl .text-sm {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.app-text-scale-xl .text-base {
+  font-size: 1.45rem;
+  line-height: 2.05rem;
+}
+
+.app-text-scale-xl .text-lg {
+  font-size: 1.7rem;
+  line-height: 2.3rem;
+}
+
+.app-text-scale-xl .text-xl {
+  font-size: 1.95rem;
+  line-height: 2.5rem;
+}
+
+.app-text-scale-xl .text-2xl {
+  font-size: 2.3rem;
+  line-height: 2.9rem;
+}
+
+.app-text-scale-xl .text-3xl {
+  font-size: 2.7rem;
+  line-height: 3.15rem;
+}
+
+@media (width <= 768px) {
+  .app-text-scale-xl .text-sm {
+    font-size: 1.35rem;
+    line-height: 1.9rem;
+  }
+
+  .app-text-scale-xl .text-base {
+    font-size: 1.6rem;
+    line-height: 2.2rem;
+  }
+
+  .app-text-scale-xl .text-lg {
+    font-size: 1.85rem;
+    line-height: 2.45rem;
+  }
+
+  .app-text-scale-xl .text-xl {
+    font-size: 2.1rem;
+    line-height: 2.65rem;
+  }
+}
+
+/*
+ * High-contrast mode: boost Tailwind slate surfaces (app shell).
+ * High contrast wins over dark mode when both are enabled (see App shell classes).
+ */
+.app-high-contrast [class*='text-slate-'] {
+  color: #000 !important;
+}
+
+.app-high-contrast [class*='bg-slate-'],
+.app-high-contrast .bg-white {
+  background-color: #fff !important;
+}
+
+.app-high-contrast [class*='border-slate-'] {
+  border-color: #000 !important;
+}
+
+.app-high-contrast [class*='hover:bg-slate-']:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.app-high-contrast [class*='hover:text-slate-']:hover {
+  color: #000 !important;
+}
+
+.app-high-contrast [class*='text-indigo-'] {
+  color: #000 !important;
+}
+
+.app-high-contrast [class*='bg-indigo-'] {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+.app-high-contrast [class*='hover:bg-indigo-']:hover {
+  background-color: #1f2937 !important;
+  color: #fff !important;
+}
+
+.app-high-contrast [class*='text-amber-'] {
+  color: #000 !important;
+}
+
+.app-high-contrast [class*='bg-amber-'] {
+  background-color: #fff !important;
+  border: 1px solid #000 !important;
+}
+
+.app-high-contrast [class*='border-emerald-'],
+.app-high-contrast [class*='bg-emerald-'],
+.app-high-contrast [class*='text-emerald-'],
+.app-high-contrast [class*='border-red-'],
+.app-high-contrast [class*='bg-red-'],
+.app-high-contrast [class*='text-red-'] {
+  border-color: #000 !important;
+  background-color: #fff !important;
+  color: #000 !important;
+}
+
+/* Dark mode: shell surfaces (workout-tracker palette includes indigo + amber). */
+.app-dark-mode [class*='text-slate-'] {
+  color: #e5e7eb !important;
+}
+
+.app-dark-mode [class*='bg-slate-'],
+.app-dark-mode .bg-white {
+  background-color: #0f172a !important;
+}
+
+.app-dark-mode [class*='border-slate-'] {
+  border-color: #334155 !important;
+}
+
+.app-dark-mode [class*='hover:bg-slate-']:hover {
+  background-color: #1e293b !important;
+}
+
+.app-dark-mode [class*='text-indigo-600'],
+.app-dark-mode [class*='text-indigo-900'] {
+  color: #a5b4fc !important;
+}
+
+.app-dark-mode [class*='bg-indigo-600'] {
+  background-color: #4f46e5 !important;
+}
+
+.app-dark-mode [class*='hover:bg-indigo-500']:hover,
+.app-dark-mode [class*='hover:bg-indigo-']:hover {
+  background-color: #6366f1 !important;
+}
+
+.app-dark-mode [class*='text-indigo-500'] {
+  color: #c7d2fe !important;
+}
+
+.app-dark-mode [class*='text-amber-800'],
+.app-dark-mode [class*='text-amber-900'] {
+  color: #fde68a !important;
+}
+
+.app-dark-mode [class*='bg-amber-100'] {
+  background-color: #78350f !important;
+}
+
+.app-dark-mode [class*='border-emerald-'] {
+  border-color: #065f46 !important;
+  background-color: #022c22 !important;
+}
+
+.app-dark-mode [class*='text-emerald-900'],
+.app-dark-mode [class*='text-emerald-'] {
+  color: #a7f3d0 !important;
+}
+
+.app-dark-mode [class*='border-red-'] {
+  border-color: #991b1b !important;
+  background-color: #450a0a !important;
+}
+
+.app-dark-mode [class*='text-red-900'],
+.app-dark-mode [class*='text-red-'] {
+  color: #fecaca !important;
+}
+
+/*
+ * Interactive cursors — unlayered + !important so they beat Tailwind ordering.
+ * (Keep after .app-text-scale-* form rules.)
+ */
+/* stylelint-disable no-descending-specificity, selector-not-notation */
+button:disabled,
+button[disabled],
+[aria-disabled='true'] {
+  cursor: not-allowed !important;
+}
+
+button:not(:disabled):not([disabled]),
+[role='button']:not([aria-disabled='true']):not(:disabled),
+a:any-link,
+a[href],
+summary,
+select,
+label[for],
+input[type='checkbox'],
+input[type='radio'] {
+  cursor: pointer !important;
+}
+/* stylelint-enable no-descending-specificity, selector-not-notation */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

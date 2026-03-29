@@ -6,7 +6,14 @@ import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { EmptyState } from '@/components/ui';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
-import { lazy, Suspense } from 'react';
+import { cn } from '@/lib';
+import {
+  effectiveDarkShell,
+  syncDocumentElementDisplayShell,
+} from '@/lib/display-shell';
+import { useSystemPrefersDark } from '@/lib/use-system-prefers-dark';
+import { useAppState, type ThemeMode } from '@/state';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 const WorkoutsPage = lazy(async () => ({
@@ -31,11 +38,37 @@ const AboutPage = lazy(async () => ({
   default: (await import('@/pages/AboutPage')).AboutPage,
 }));
 
+function mainLayoutClassNames(
+  highContrast: boolean,
+  themeMode: ThemeMode,
+  systemDark: boolean,
+): string {
+  const dark = effectiveDarkShell(highContrast, themeMode, systemDark);
+  const contrastClassName = highContrast
+    ? 'bg-white text-black'
+    : dark
+      ? 'bg-slate-950 text-slate-100'
+      : 'bg-slate-50 text-slate-900';
+  return `mx-auto min-h-screen w-full max-w-3xl px-6 py-10 ${contrastClassName}`;
+}
+
 function AppNav() {
   const { me, signOut } = useAuth();
+  const state = useAppState();
+  const systemDark = useSystemPrefersDark();
+  const darkShell = effectiveDarkShell(
+    state.highContrast,
+    state.themeMode,
+    systemDark,
+  );
 
   return (
-    <nav className="mb-6 flex flex-wrap items-center gap-2">
+    <nav
+      className={cn(
+        'mb-6 flex flex-wrap items-center gap-2',
+        state.highContrast && 'border-b border-slate-300 pb-4',
+        darkShell && !state.highContrast && 'border-b border-slate-700 pb-4',
+      )}>
       {me ? (
         <>
           <NavLinkButton to="/">Workouts</NavLinkButton>
@@ -69,9 +102,24 @@ function AppNav() {
  * App shell: auth-aware navigation and workout routes.
  */
 export default function App() {
+  const state = useAppState();
+  const systemDark = useSystemPrefersDark();
+  const mainClassName = useMemo(
+    () => mainLayoutClassNames(state.highContrast, state.themeMode, systemDark),
+    [state.highContrast, state.themeMode, systemDark],
+  );
+
+  useEffect(() => {
+    syncDocumentElementDisplayShell(
+      document.documentElement,
+      state,
+      systemDark,
+    );
+  }, [state, systemDark]);
+
   return (
     <AuthProvider>
-      <main className="mx-auto min-h-screen w-full max-w-3xl bg-slate-50 px-6 py-10 text-slate-900">
+      <main className={mainClassName}>
         <AppNav />
         <Suspense
           fallback={<p className="text-sm text-slate-600">Loading page...</p>}>

@@ -2,12 +2,35 @@ import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { useToast } from '@/components/app/toast-context';
 import { Button, FieldLabel, Select } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthContext';
+import type { UiPreferences } from '@/lib/api/types';
 import { patchProfile } from '@/lib/workout-api';
-import { FormEvent, useEffect, useState } from 'react';
+import type { ThemeMode } from '@shared/ui-preferences';
+import {
+  initialDisplayState,
+  type TextScale,
+  useAppDispatch,
+  useAppState,
+} from '@/state';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
+
+const TEXT_SCALE_OPTIONS: { value: TextScale; label: string }[] = [
+  { value: 'sm', label: 'Small' },
+  { value: 'md', label: 'Medium' },
+  { value: 'lg', label: 'Large' },
+  { value: 'xl', label: 'Extra large' },
+];
+
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'system', label: 'Match system' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
 
 export function ProfilePage() {
   const { me, refreshMe } = useAuth();
   const { showToast } = useToast();
+  const display = useAppState();
+  const dispatchDisplay = useAppDispatch();
   const [weightUnit, setWeightUnit] = useState<'lb' | 'kg'>('lb');
 
   useEffect(() => {
@@ -16,6 +39,22 @@ export function ProfilePage() {
     }
   }, [me]);
   const [busy, setBusy] = useState(false);
+
+  const persistUiPreferences = useCallback(
+    async (partial: UiPreferences) => {
+      try {
+        await patchProfile({ uiPreferences: partial });
+        await refreshMe();
+      } catch (err) {
+        showToast({
+          title: 'Could not save display settings',
+          description: err instanceof Error ? err.message : undefined,
+          variant: 'error',
+        });
+      }
+    },
+    [refreshMe, showToast],
+  );
 
   async function handleSubmit(e: FormEvent): Promise<void> {
     e.preventDefault();
@@ -49,6 +88,107 @@ export function ProfilePage() {
           device.
         </p>
       ) : null}
+
+      <section
+        className="max-w-lg space-y-4 rounded-md border border-slate-200 bg-white p-4 shadow-sm"
+        aria-labelledby="profile-display-heading">
+        <h2
+          id="profile-display-heading"
+          className="text-lg font-medium text-slate-900">
+          Display and accessibility
+        </h2>
+        <p className="text-sm text-slate-600">
+          Changes save to your account. <strong>High contrast</strong> overrides
+          light/dark theme for the page shell. <strong>Match system</strong>{' '}
+          follows your OS/browser appearance when high contrast is off.
+        </p>
+        <fieldset>
+          <legend className="text-sm font-medium text-slate-700">Theme</legend>
+          <div
+            className="mt-2 flex flex-col gap-2"
+            role="radiogroup"
+            aria-label="Theme">
+            {THEME_OPTIONS.map(({ value, label }) => (
+              <label
+                key={value}
+                className="flex cursor-pointer items-center gap-2 text-sm text-slate-800">
+                <input
+                  type="radio"
+                  name="wt-theme-mode"
+                  value={value}
+                  data-testid={`display-theme-${value}`}
+                  className="size-4 border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  checked={display.themeMode === value}
+                  onChange={() => {
+                    dispatchDisplay({ type: 'themeMode/set', payload: value });
+                    void persistUiPreferences({ themeMode: value });
+                  }}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-800">
+          <input
+            type="checkbox"
+            className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            checked={display.highContrast}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              dispatchDisplay({
+                type: 'highContrast/set',
+                payload: checked,
+              });
+              void persistUiPreferences({ highContrast: checked });
+            }}
+          />
+          High contrast
+        </label>
+        <fieldset>
+          <legend className="text-sm font-medium text-slate-700">
+            Text size
+          </legend>
+          <div
+            className="mt-2 flex flex-col gap-2"
+            role="radiogroup"
+            aria-label="Text size">
+            {TEXT_SCALE_OPTIONS.map(({ value, label }) => (
+              <label
+                key={value}
+                className="flex cursor-pointer items-center gap-2 text-sm text-slate-800">
+                <input
+                  type="radio"
+                  name="wt-text-scale"
+                  value={value}
+                  className="size-4 border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  checked={display.textScale === value}
+                  onChange={() => {
+                    dispatchDisplay({ type: 'textScale/set', payload: value });
+                    void persistUiPreferences({ textScale: value });
+                  }}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-slate-700"
+          onClick={() => {
+            dispatchDisplay({ type: 'display/reset' });
+            void persistUiPreferences({
+              textScale: initialDisplayState.textScale,
+              highContrast: initialDisplayState.highContrast,
+              themeMode: initialDisplayState.themeMode,
+            });
+          }}>
+          Reset display settings
+        </Button>
+      </section>
+
       <form
         className="max-w-sm space-y-4"
         onSubmit={(e) => void handleSubmit(e)}>

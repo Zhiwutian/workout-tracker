@@ -8,6 +8,56 @@
     <meta name="theme-color" content="#0f172a" />
     <meta name="description" content="Log workouts, sets, and weekly volume." />
     <title>Workout Tracker</title>
+    <!--
+      Early shell: keep key strings in sync with client/src/state/display-storage.ts
+      and logic with client/src/lib/display-shell.ts (syncDocumentElementDisplayShell).
+    -->
+    <script>
+      (function () {
+        try {
+          var K = {
+            hc: 'wt-high-contrast',
+            tm: 'wt-theme-mode',
+            ts: 'wt-text-scale',
+            legacyDark: 'wt-dark-mode',
+          };
+          var root = document.documentElement;
+          var hc = localStorage.getItem(K.hc) === 'true';
+          var tm = localStorage.getItem(K.tm);
+          if (tm !== 'system' && tm !== 'light' && tm !== 'dark') {
+            var ld = localStorage.getItem(K.legacyDark);
+            if (ld === 'true') tm = 'dark';
+            else if (ld === 'false') tm = 'light';
+            else tm = 'system';
+          }
+          var tsc = localStorage.getItem(K.ts);
+          var scaleCls =
+            tsc === 'md' || tsc === 'lg' || tsc === 'xl'
+              ? 'app-text-scale-' + tsc
+              : 'app-text-scale-sm';
+          root.classList.add(scaleCls);
+          var prefersDark =
+            typeof window.matchMedia === 'function' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = false;
+          if (!hc) {
+            if (tm === 'dark') dark = true;
+            else if (tm === 'system' && prefersDark) dark = true;
+          }
+          if (hc) {
+            root.classList.add('app-high-contrast');
+            root.style.colorScheme = 'light';
+          } else if (dark) {
+            root.classList.add('app-dark-mode');
+            root.style.colorScheme = 'dark';
+          } else {
+            root.style.colorScheme = 'light';
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
