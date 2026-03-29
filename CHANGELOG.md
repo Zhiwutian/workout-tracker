@@ -6,6 +6,10 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ## [Unreleased]
 
+### Added
+
+- **Display and accessibility (Phase 1):** app shell **text size**, **dark mode**, and **high contrast** via **`client/src/state/`** (`AppStateProvider` + **`DISPLAY_STORAGE_KEYS`** `wt-*` in **`localStorage`**); global CSS in **`client/src/index.css`** (`.app-text-scale-*`, `.app-dark-mode`, `.app-high-contrast`, indigo/amber/toast tuning); **Profile** controls and reset; **`color-scheme`** on `<html>`. Tests: **`app-state-store.test.ts`**, **`App.display-shell.test.tsx`**. Proposal: **`docs/proposals/display-and-accessibility-settings.md`**.
+
 ### Documentation
 
 - **Styleguides** (`docs/styleguide/`) — aligned with code: **`api-client`**, **`lib/api/*`**, **`useAbortableAsyncEffect`**, **`requireUserId`**, **`domain-zod`**, UI primitives; **RHF optional**; parent/multirepo note in **`styleguide/README.md`**.

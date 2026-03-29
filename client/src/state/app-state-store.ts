@@ -1,15 +1,41 @@
 import { createContext, Dispatch } from 'react';
 
-/** Reserved for future global UI state (themes, layout). */
-export type AppState = Record<string, never>;
+export type TextScale = 'sm' | 'md' | 'lg' | 'xl';
 
-export type AppAction = { type: 'noop' };
+export type AppState = {
+  textScale: TextScale;
+  highContrast: boolean;
+  darkMode: boolean;
+};
 
-export const initialState: AppState = {};
+export type AppAction =
+  | { type: 'textScale/set'; payload: TextScale }
+  | { type: 'highContrast/set'; payload: boolean }
+  | { type: 'darkMode/set'; payload: boolean }
+  | { type: 'display/reset' };
 
+export const initialDisplayState: AppState = {
+  textScale: 'sm',
+  highContrast: false,
+  darkMode: false,
+};
+
+/**
+ * Reducer for frontend app-level UI state (display / accessibility shell).
+ */
 export function appStateReducer(state: AppState, action: AppAction): AppState {
-  void action;
-  return state;
+  switch (action.type) {
+    case 'textScale/set':
+      return { ...state, textScale: action.payload };
+    case 'highContrast/set':
+      return { ...state, highContrast: action.payload };
+    case 'darkMode/set':
+      return { ...state, darkMode: action.payload };
+    case 'display/reset':
+      return { ...initialDisplayState };
+    default:
+      return state;
+  }
 }
 
 export const AppStateContext = createContext<AppState | null>(null);
