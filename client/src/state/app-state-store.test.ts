@@ -14,11 +14,22 @@ describe('appStateReducer', () => {
     expect(next.textScale).toBe('lg');
   });
 
-  it('allows dark mode and high contrast together (shell picks HC first)', () => {
+  it('sets theme mode', () => {
+    const next = appStateReducer(initialDisplayState, {
+      type: 'themeMode/set',
+      payload: 'dark',
+    });
+    expect(next.themeMode).toBe('dark');
+  });
+
+  it('allows high contrast with theme mode', () => {
     let state: AppState = initialDisplayState;
-    state = appStateReducer(state, { type: 'darkMode/set', payload: true });
-    state = appStateReducer(state, { type: 'highContrast/set', payload: true });
-    expect(state.darkMode).toBe(true);
+    state = appStateReducer(state, { type: 'themeMode/set', payload: 'dark' });
+    state = appStateReducer(state, {
+      type: 'highContrast/set',
+      payload: true,
+    });
+    expect(state.themeMode).toBe('dark');
     expect(state.highContrast).toBe(true);
   });
 
@@ -27,7 +38,7 @@ describe('appStateReducer', () => {
       type: 'textScale/set',
       payload: 'xl',
     });
-    state = appStateReducer(state, { type: 'darkMode/set', payload: true });
+    state = appStateReducer(state, { type: 'themeMode/set', payload: 'dark' });
     state = appStateReducer(state, { type: 'display/reset' });
     expect(state).toEqual(initialDisplayState);
   });

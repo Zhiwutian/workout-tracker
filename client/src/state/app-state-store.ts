@@ -1,23 +1,26 @@
+import type { ThemeMode } from '@shared/ui-preferences';
 import { createContext, Dispatch } from 'react';
 
 export type TextScale = 'sm' | 'md' | 'lg' | 'xl';
 
+export type { ThemeMode };
+
 export type AppState = {
   textScale: TextScale;
   highContrast: boolean;
-  darkMode: boolean;
+  themeMode: ThemeMode;
 };
 
 export type AppAction =
   | { type: 'textScale/set'; payload: TextScale }
   | { type: 'highContrast/set'; payload: boolean }
-  | { type: 'darkMode/set'; payload: boolean }
+  | { type: 'themeMode/set'; payload: ThemeMode }
   | { type: 'display/reset' };
 
 export const initialDisplayState: AppState = {
   textScale: 'sm',
   highContrast: false,
-  darkMode: false,
+  themeMode: 'system',
 };
 
 /**
@@ -29,8 +32,8 @@ export function appStateReducer(state: AppState, action: AppAction): AppState {
       return { ...state, textScale: action.payload };
     case 'highContrast/set':
       return { ...state, highContrast: action.payload };
-    case 'darkMode/set':
-      return { ...state, darkMode: action.payload };
+    case 'themeMode/set':
+      return { ...state, themeMode: action.payload };
     case 'display/reset':
       return { ...initialDisplayState };
     default:

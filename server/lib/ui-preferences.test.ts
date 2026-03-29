@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   mergeUiPreferences,
+  normalizeUiPreferences,
   parseStoredUiPreferences,
   uiPreferencesPatchSchema,
 } from './ui-preferences.js';
 
 describe('uiPreferencesPatchSchema', () => {
   it('accepts partial objects', () => {
+    expect(uiPreferencesPatchSchema.parse({ themeMode: 'dark' })).toEqual({
+      themeMode: 'dark',
+    });
+  });
+
+  it('accepts legacy darkMode', () => {
     expect(uiPreferencesPatchSchema.parse({ darkMode: true })).toEqual({
       darkMode: true,
     });
@@ -14,8 +21,22 @@ describe('uiPreferencesPatchSchema', () => {
 
   it('rejects unknown keys', () => {
     expect(() =>
-      uiPreferencesPatchSchema.parse({ darkMode: true, extra: 1 }),
+      uiPreferencesPatchSchema.parse({ themeMode: 'dark', extra: 1 }),
     ).toThrow();
+  });
+});
+
+describe('normalizeUiPreferences', () => {
+  it('maps legacy darkMode to themeMode', () => {
+    expect(normalizeUiPreferences({ darkMode: true })).toEqual({
+      themeMode: 'dark',
+    });
+  });
+
+  it('prefers themeMode over darkMode', () => {
+    expect(
+      normalizeUiPreferences({ darkMode: true, themeMode: 'light' }),
+    ).toEqual({ themeMode: 'light' });
   });
 });
 
@@ -33,15 +54,21 @@ describe('parseStoredUiPreferences', () => {
       textScale: 'lg',
     });
   });
+
+  it('normalizes darkMode from storage', () => {
+    expect(parseStoredUiPreferences({ darkMode: false })).toEqual({
+      themeMode: 'light',
+    });
+  });
 });
 
 describe('mergeUiPreferences', () => {
-  it('merges over existing', () => {
+  it('merges and normalizes', () => {
     expect(
       mergeUiPreferences(
-        { textScale: 'sm', darkMode: true },
-        { darkMode: false },
+        { textScale: 'sm', themeMode: 'dark' },
+        { themeMode: 'light' },
       ),
-    ).toEqual({ textScale: 'sm', darkMode: false });
+    ).toEqual({ textScale: 'sm', themeMode: 'light' });
   });
 });

@@ -6,6 +6,7 @@ import {
   initialDisplayState,
   type AppState,
   type TextScale,
+  type ThemeMode,
 } from './app-state-store';
 import { DISPLAY_STORAGE_KEYS } from './display-storage';
 
@@ -21,9 +22,13 @@ function readPersistedDisplayState(): AppState {
   const persistedHighContrast = window.localStorage.getItem(
     DISPLAY_STORAGE_KEYS.highContrast,
   );
-  const persistedDarkMode = window.localStorage.getItem(
-    DISPLAY_STORAGE_KEYS.darkMode,
+  const persistedThemeMode = window.localStorage.getItem(
+    DISPLAY_STORAGE_KEYS.themeMode,
   );
+  const persistedLegacyDark = window.localStorage.getItem(
+    DISPLAY_STORAGE_KEYS.darkModeLegacy,
+  );
+
   const textScale: TextScale =
     persistedTextScale === 'sm' ||
     persistedTextScale === 'md' ||
@@ -31,11 +36,25 @@ function readPersistedDisplayState(): AppState {
     persistedTextScale === 'xl'
       ? persistedTextScale
       : initialDisplayState.textScale;
+
+  let themeMode: ThemeMode = initialDisplayState.themeMode;
+  if (
+    persistedThemeMode === 'system' ||
+    persistedThemeMode === 'light' ||
+    persistedThemeMode === 'dark'
+  ) {
+    themeMode = persistedThemeMode;
+  } else if (persistedLegacyDark === 'true') {
+    themeMode = 'dark';
+  } else if (persistedLegacyDark === 'false') {
+    themeMode = 'light';
+  }
+
   return {
     ...initialDisplayState,
     textScale,
     highContrast: persistedHighContrast === 'true',
-    darkMode: persistedDarkMode === 'true',
+    themeMode,
   };
 }
 
@@ -56,10 +75,11 @@ export function AppStateProvider({ children }: Props) {
       String(state.highContrast),
     );
     window.localStorage.setItem(
-      DISPLAY_STORAGE_KEYS.darkMode,
-      String(state.darkMode),
+      DISPLAY_STORAGE_KEYS.themeMode,
+      state.themeMode,
     );
-  }, [state.textScale, state.highContrast, state.darkMode]);
+    window.localStorage.removeItem(DISPLAY_STORAGE_KEYS.darkModeLegacy);
+  }, [state.textScale, state.highContrast, state.themeMode]);
 
   return (
     <AppStateContext.Provider value={state}>

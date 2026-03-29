@@ -98,8 +98,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         payload: raw.highContrast,
       });
     }
-    if (raw.darkMode !== undefined) {
-      dispatchDisplay({ type: 'darkMode/set', payload: raw.darkMode });
+    if (raw.themeMode !== undefined) {
+      dispatchDisplay({ type: 'themeMode/set', payload: raw.themeMode });
+    } else if (raw.darkMode !== undefined) {
+      dispatchDisplay({
+        type: 'themeMode/set',
+        payload: raw.darkMode ? 'dark' : 'light',
+      });
     }
   }, [dispatchDisplay, loading, meUiPrefsKey]);
 

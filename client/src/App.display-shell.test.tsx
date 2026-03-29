@@ -19,35 +19,53 @@ function renderApp(path = '/about') {
 
 describe('App display shell', () => {
   beforeEach(() => {
+    document.documentElement.className = '';
     document.documentElement.style.colorScheme = '';
     localStorage.removeItem(DISPLAY_STORAGE_KEYS.textScale);
     localStorage.removeItem(DISPLAY_STORAGE_KEYS.highContrast);
-    localStorage.removeItem(DISPLAY_STORAGE_KEYS.darkMode);
+    localStorage.removeItem(DISPLAY_STORAGE_KEYS.themeMode);
+    localStorage.removeItem(DISPLAY_STORAGE_KEYS.darkModeLegacy);
   });
 
-  it('applies dark mode class when persisted', async () => {
-    localStorage.setItem(DISPLAY_STORAGE_KEYS.darkMode, 'true');
+  it('applies dark mode on documentElement when theme persisted', async () => {
+    localStorage.setItem(DISPLAY_STORAGE_KEYS.themeMode, 'dark');
     renderApp('/about');
 
-    const main = await screen.findByRole('main');
-    expect(main.className).toContain('app-dark-mode');
+    await screen.findByRole('main');
+    expect(document.documentElement.classList.contains('app-dark-mode')).toBe(
+      true,
+    );
     expect(document.documentElement.style.colorScheme).toBe('dark');
   });
 
-  it('applies high contrast and color-scheme light when persisted', async () => {
+  it('migrates legacy wt-dark-mode to dark shell', async () => {
+    localStorage.setItem(DISPLAY_STORAGE_KEYS.darkModeLegacy, 'true');
+    renderApp('/about');
+
+    await screen.findByRole('main');
+    expect(document.documentElement.classList.contains('app-dark-mode')).toBe(
+      true,
+    );
+  });
+
+  it('applies high contrast on documentElement when persisted', async () => {
     localStorage.setItem(DISPLAY_STORAGE_KEYS.highContrast, 'true');
     renderApp('/about');
 
-    const main = await screen.findByRole('main');
-    expect(main.className).toContain('app-high-contrast');
+    await screen.findByRole('main');
+    expect(
+      document.documentElement.classList.contains('app-high-contrast'),
+    ).toBe(true);
     expect(document.documentElement.style.colorScheme).toBe('light');
   });
 
-  it('applies text scale class when persisted', async () => {
+  it('applies text scale class on documentElement when persisted', async () => {
     localStorage.setItem(DISPLAY_STORAGE_KEYS.textScale, 'xl');
     renderApp('/about');
 
-    const main = await screen.findByRole('main');
-    expect(main.className).toContain('app-text-scale-xl');
+    await screen.findByRole('main');
+    expect(
+      document.documentElement.classList.contains('app-text-scale-xl'),
+    ).toBe(true);
   });
 });

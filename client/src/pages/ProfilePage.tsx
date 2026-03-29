@@ -4,6 +4,7 @@ import { Button, FieldLabel, Select } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { UiPreferences } from '@/lib/api/types';
 import { patchProfile } from '@/lib/workout-api';
+import type { ThemeMode } from '@shared/ui-preferences';
 import {
   initialDisplayState,
   type TextScale,
@@ -17,6 +18,12 @@ const TEXT_SCALE_OPTIONS: { value: TextScale; label: string }[] = [
   { value: 'md', label: 'Medium' },
   { value: 'lg', label: 'Large' },
   { value: 'xl', label: 'Extra large' },
+];
+
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'system', label: 'Match system' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
 ];
 
 export function ProfilePage() {
@@ -91,42 +98,53 @@ export function ProfilePage() {
           Display and accessibility
         </h2>
         <p className="text-sm text-slate-600">
-          Choices apply immediately and are saved to your account (same as
-          weight unit). If both <strong>High contrast</strong> and{' '}
-          <strong>Dark mode</strong> are on, high contrast takes precedence for
-          the page shell.
+          Changes save to your account. <strong>High contrast</strong> overrides
+          light/dark theme for the page shell. <strong>Match system</strong>{' '}
+          follows your OS/browser appearance when high contrast is off.
         </p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-800">
-            <input
-              type="checkbox"
-              className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-              checked={display.darkMode}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                dispatchDisplay({ type: 'darkMode/set', payload: checked });
-                void persistUiPreferences({ darkMode: checked });
-              }}
-            />
-            Dark mode
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-800">
-            <input
-              type="checkbox"
-              className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-              checked={display.highContrast}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                dispatchDisplay({
-                  type: 'highContrast/set',
-                  payload: checked,
-                });
-                void persistUiPreferences({ highContrast: checked });
-              }}
-            />
-            High contrast
-          </label>
-        </div>
+        <fieldset>
+          <legend className="text-sm font-medium text-slate-700">Theme</legend>
+          <div
+            className="mt-2 flex flex-col gap-2"
+            role="radiogroup"
+            aria-label="Theme">
+            {THEME_OPTIONS.map(({ value, label }) => (
+              <label
+                key={value}
+                className="flex cursor-pointer items-center gap-2 text-sm text-slate-800">
+                <input
+                  type="radio"
+                  name="wt-theme-mode"
+                  value={value}
+                  data-testid={`display-theme-${value}`}
+                  className="size-4 border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  checked={display.themeMode === value}
+                  onChange={() => {
+                    dispatchDisplay({ type: 'themeMode/set', payload: value });
+                    void persistUiPreferences({ themeMode: value });
+                  }}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-800">
+          <input
+            type="checkbox"
+            className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            checked={display.highContrast}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              dispatchDisplay({
+                type: 'highContrast/set',
+                payload: checked,
+              });
+              void persistUiPreferences({ highContrast: checked });
+            }}
+          />
+          High contrast
+        </label>
         <fieldset>
           <legend className="text-sm font-medium text-slate-700">
             Text size
@@ -164,7 +182,7 @@ export function ProfilePage() {
             void persistUiPreferences({
               textScale: initialDisplayState.textScale,
               highContrast: initialDisplayState.highContrast,
-              darkMode: initialDisplayState.darkMode,
+              themeMode: initialDisplayState.themeMode,
             });
           }}>
           Reset display settings

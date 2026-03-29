@@ -7,8 +7,12 @@ import { EmptyState } from '@/components/ui';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 import { cn } from '@/lib';
-import type { AppState } from '@/state';
-import { useAppState } from '@/state';
+import {
+  effectiveDarkShell,
+  syncDocumentElementDisplayShell,
+} from '@/lib/display-shell';
+import { useSystemPrefersDark } from '@/lib/use-system-prefers-dark';
+import { useAppState, type ThemeMode } from '@/state';
 import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
@@ -34,35 +38,36 @@ const AboutPage = lazy(async () => ({
   default: (await import('@/pages/AboutPage')).AboutPage,
 }));
 
-function shellClassNames(state: AppState): string {
-  const textScaleClassName =
-    state.textScale === 'xl'
-      ? 'app-text-scale-xl'
-      : state.textScale === 'lg'
-        ? 'app-text-scale-lg'
-        : state.textScale === 'md'
-          ? 'app-text-scale-md'
-          : 'app-text-scale-sm';
-  const contrastClassName = state.highContrast
-    ? 'app-high-contrast bg-white text-black'
-    : state.darkMode
-      ? 'app-dark-mode bg-slate-950 text-slate-100'
+function mainLayoutClassNames(
+  highContrast: boolean,
+  themeMode: ThemeMode,
+  systemDark: boolean,
+): string {
+  const dark = effectiveDarkShell(highContrast, themeMode, systemDark);
+  const contrastClassName = highContrast
+    ? 'bg-white text-black'
+    : dark
+      ? 'bg-slate-950 text-slate-100'
       : 'bg-slate-50 text-slate-900';
-  return `mx-auto min-h-screen w-full max-w-3xl px-6 py-10 ${contrastClassName} ${textScaleClassName}`;
+  return `mx-auto min-h-screen w-full max-w-3xl px-6 py-10 ${contrastClassName}`;
 }
 
 function AppNav() {
   const { me, signOut } = useAuth();
   const state = useAppState();
+  const systemDark = useSystemPrefersDark();
+  const darkShell = effectiveDarkShell(
+    state.highContrast,
+    state.themeMode,
+    systemDark,
+  );
 
   return (
     <nav
       className={cn(
         'mb-6 flex flex-wrap items-center gap-2',
         state.highContrast && 'border-b border-slate-300 pb-4',
-        state.darkMode &&
-          !state.highContrast &&
-          'border-b border-slate-700 pb-4',
+        darkShell && !state.highContrast && 'border-b border-slate-700 pb-4',
       )}>
       {me ? (
         <>
@@ -98,18 +103,19 @@ function AppNav() {
  */
 export default function App() {
   const state = useAppState();
-  const mainClassName = useMemo(() => shellClassNames(state), [state]);
+  const systemDark = useSystemPrefersDark();
+  const mainClassName = useMemo(
+    () => mainLayoutClassNames(state.highContrast, state.themeMode, systemDark),
+    [state.highContrast, state.themeMode, systemDark],
+  );
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (state.highContrast) {
-      root.style.colorScheme = 'light';
-    } else if (state.darkMode) {
-      root.style.colorScheme = 'dark';
-    } else {
-      root.style.colorScheme = 'light';
-    }
-  }, [state.highContrast, state.darkMode]);
+    syncDocumentElementDisplayShell(
+      document.documentElement,
+      state,
+      systemDark,
+    );
+  }, [state, systemDark]);
 
   return (
     <AuthProvider>
