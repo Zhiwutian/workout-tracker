@@ -1,4 +1,10 @@
 /* eslint-disable react-refresh/only-export-components -- useAuth is intentionally co-located */
+/**
+ * Global auth state for the SPA:
+ * - **JWT in storage** — demo sign-in / guest; sent as `Authorization: Bearer` (see `api-client`).
+ * - **OIDC session** — server sets `wt_session`; `readMe` still runs so the UI knows `userId`, display name, etc.
+ * - **`refreshMe`** — call after profile changes; uses a generation counter so slow 401s cannot wipe a newer session.
+ */
 import {
   createContext,
   ReactNode,

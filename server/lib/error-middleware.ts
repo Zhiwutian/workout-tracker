@@ -1,4 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/**
+ * Last Express middleware: maps thrown errors to HTTP responses using the API envelope.
+ * Controllers throw `ClientError` for expected cases; Zod failures become validation errors.
+ */
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { ZodError } from 'zod';

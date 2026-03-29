@@ -1,6 +1,10 @@
+/**
+ * **`GET /api/stats/weekly-volume`** — aggregate volume and set count for a calendar week (optional IANA timezone).
+ */
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { sendSuccess } from '@server/lib/http-response.js';
+import { requireUserId } from '@server/lib/request-user.js';
 import {
   resolveWeeklyVolumeWindow,
   weeklyVolumeForUser,
@@ -16,26 +20,21 @@ const querySchema = z.object({
 export async function getWeeklyVolume(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const q = querySchema.parse(req.query);
-    const { startUtc, endUtc, zoneUsed } = resolveWeeklyVolumeWindow(
-      q.weekStart,
-      q.timezone,
-    );
-    const stats = await weeklyVolumeForUser(userId, startUtc, endUtc);
-    sendSuccess(res, {
-      weekStart: q.weekStart,
-      weekStartUtc: startUtc.toISOString(),
-      weekEndUtc: endUtc.toISOString(),
-      totalVolume: stats.totalVolume,
-      setCount: stats.setCount,
-      ...(zoneUsed !== 'utc' ? { timezone: zoneUsed } : {}),
-    });
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const q = querySchema.parse(req.query);
+  const { startUtc, endUtc, zoneUsed } = resolveWeeklyVolumeWindow(
+    q.weekStart,
+    q.timezone,
+  );
+  const stats = await weeklyVolumeForUser(userId, startUtc, endUtc);
+  sendSuccess(res, {
+    weekStart: q.weekStart,
+    weekStartUtc: startUtc.toISOString(),
+    weekEndUtc: endUtc.toISOString(),
+    totalVolume: stats.totalVolume,
+    setCount: stats.setCount,
+    ...(zoneUsed !== 'utc' ? { timezone: zoneUsed } : {}),
+  });
 }

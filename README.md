@@ -1,6 +1,6 @@
 # workout-tracker
 
-Full-stack **workout tracker** (React, Express, PostgreSQL, Drizzle). Patterns and Cursor rules align with the **bible-support** monorepo template; see **`docs/styleguide/`**, **`AGENTS.md`**, and **`CONTRIBUTING.md`** (PR scope and optional parent workspace).
+Full-stack **workout tracker** (React, Express, PostgreSQL, Drizzle). Patterns and Cursor rules align with the **bible-support** monorepo template; see **`docs/documentation-guide.md`** (how to use the docs), **`docs/README.md`** (full doc index), **`docs/styleguide/`**, **`AGENTS.md`**, and **`CONTRIBUTING.md`** (PR scope and optional parent workspace).
 
 ## Tech Stack
 
@@ -8,7 +8,7 @@ Full-stack **workout tracker** (React, Express, PostgreSQL, Drizzle). Patterns a
 - pnpm 10 (via Corepack)
 - React 19 + Vite 7 + Tailwind CSS 4 (`client`)
 - React Router (`client` route-level pages)
-- React Hook Form + Zod (`client` forms)
+- React Hook Form + Zod available (`client` forms—many screens use plain `useState`; see **`docs/styleguide/frontend-patterns.md`**)
 - React Context + reducer (`client` global UI state)
 - Express 5 + PostgreSQL (`server`)
 - Helmet + CORS + rate limiting (`server` security basics)

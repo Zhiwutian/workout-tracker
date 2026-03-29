@@ -1,181 +1,18 @@
 import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { useToast } from '@/components/app/toast-context';
-import { Button, Card, Input } from '@/components/ui';
+import { Button, FieldLabel, Input, Select } from '@/components/ui';
+import { ArchivedExerciseRow } from '@/features/exercises/ArchivedExerciseRow';
+import { CustomExerciseRow } from '@/features/exercises/CustomExerciseRow';
 import {
   createExercise,
-  patchExercise,
   readArchivedExercises,
   readExercises,
   type Exercise,
   type WorkoutType,
 } from '@/lib/workout-api';
+import { useAbortableAsyncEffect } from '@/lib/use-abortable-async-effect';
 import { WORKOUT_TYPE_LABELS, WORKOUT_TYPES } from '@shared/workout-types';
-import { FormEvent, useCallback, useEffect, useState } from 'react';
-
-function CustomExerciseRow({
-  ex,
-  onChanged,
-}: {
-  ex: Exercise;
-  onChanged: () => void;
-}) {
-  const { showToast } = useToast();
-  const [name, setName] = useState(ex.name);
-  const [muscleGroup, setMuscleGroup] = useState(ex.muscleGroup ?? '');
-  const [category, setCategory] = useState<WorkoutType>(
-    ex.category ?? 'resistance',
-  );
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    setName(ex.name);
-    setMuscleGroup(ex.muscleGroup ?? '');
-    setCategory(ex.category ?? 'resistance');
-  }, [ex.exerciseTypeId, ex.name, ex.muscleGroup, ex.category]);
-
-  async function save(): Promise<void> {
-    setBusy(true);
-    try {
-      await patchExercise(ex.exerciseTypeId, {
-        name,
-        muscleGroup: muscleGroup.trim() || null,
-        category,
-      });
-      showToast({ title: 'Exercise updated', variant: 'success' });
-      onChanged();
-    } catch (err) {
-      showToast({
-        title: 'Could not update',
-        description: err instanceof Error ? err.message : undefined,
-        variant: 'error',
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function archive(): Promise<void> {
-    setBusy(true);
-    try {
-      await patchExercise(ex.exerciseTypeId, { archived: true });
-      showToast({ title: 'Exercise archived', variant: 'success' });
-      onChanged();
-    } catch (err) {
-      showToast({
-        title: 'Could not archive',
-        description: err instanceof Error ? err.message : undefined,
-        variant: 'error',
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Card className="p-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Name
-          </label>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            aria-label={`Name for ${ex.name}`}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Muscle group
-          </label>
-          <Input
-            value={muscleGroup}
-            onChange={(e) => setMuscleGroup(e.target.value)}
-            aria-label={`Muscle group for ${ex.name}`}
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Type
-          </label>
-          <select
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as WorkoutType)}
-            aria-label="Exercise type">
-            {WORKOUT_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {WORKOUT_TYPE_LABELS[t]}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button type="button" disabled={busy} onClick={() => void save()}>
-          Save
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={busy}
-          onClick={() => void archive()}>
-          Archive
-        </Button>
-      </div>
-    </Card>
-  );
-}
-
-function ArchivedRow({
-  ex,
-  onChanged,
-}: {
-  ex: Exercise;
-  onChanged: () => void;
-}) {
-  const { showToast } = useToast();
-  const [busy, setBusy] = useState(false);
-
-  async function restore(): Promise<void> {
-    setBusy(true);
-    try {
-      await patchExercise(ex.exerciseTypeId, { archived: false });
-      showToast({ title: 'Exercise restored', variant: 'success' });
-      onChanged();
-    } catch (err) {
-      showToast({
-        title: 'Could not restore',
-        description: err instanceof Error ? err.message : undefined,
-        variant: 'error',
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <li className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-      <span>
-        <span className="font-medium text-slate-900">{ex.name}</span>
-        <span className="text-slate-500">
-          {' '}
-          · {WORKOUT_TYPE_LABELS[ex.category ?? 'resistance']}
-        </span>
-        {ex.muscleGroup ? (
-          <span className="text-slate-600"> · {ex.muscleGroup}</span>
-        ) : null}
-      </span>
-      <Button
-        type="button"
-        size="sm"
-        disabled={busy}
-        onClick={() => void restore()}>
-        Restore
-      </Button>
-    </li>
-  );
-}
+import { FormEvent, useState } from 'react';
 
 /**
  * Manage custom exercises (rename, archive) and browse globals.
@@ -189,30 +26,26 @@ export function ExercisesPage() {
   const [newMuscle, setNewMuscle] = useState('');
   const [newCategory, setNewCategory] = useState<WorkoutType>('resistance');
   const [creating, setCreating] = useState(false);
+  const [loadKey, setLoadKey] = useState(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [a, ar] = await Promise.all([
-        readExercises(),
-        readArchivedExercises(),
-      ]);
-      setActive(a);
-      setArchived(ar);
-    } catch (err) {
-      showToast({
-        title: 'Could not load exercises',
-        description: err instanceof Error ? err.message : undefined,
-        variant: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [showToast]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useAbortableAsyncEffect(
+    async (signal) => {
+      setLoading(true);
+      try {
+        const [a, ar] = await Promise.all([
+          readExercises(),
+          readArchivedExercises(),
+        ]);
+        if (signal.aborted) return;
+        setActive(a);
+        setArchived(ar);
+      } finally {
+        if (!signal.aborted) setLoading(false);
+      }
+    },
+    [loadKey],
+    'Could not load exercises',
+  );
 
   const globals = active.filter((e) => e.userId === null);
   const custom = active.filter((e) => e.userId !== null);
@@ -231,7 +64,7 @@ export function ExercisesPage() {
       setNewMuscle('');
       setNewCategory('resistance');
       showToast({ title: 'Exercise created', variant: 'success' });
-      await load();
+      setLoadKey((k) => k + 1);
     } catch (err) {
       showToast({
         title: 'Could not create',
@@ -266,31 +99,40 @@ export function ExercisesPage() {
               className="mt-3 max-w-xl space-y-3"
               onSubmit={(e) => void handleCreate(e)}>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <FieldLabel
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="new-exercise-name">
                   Name
-                </label>
+                </FieldLabel>
                 <Input
+                  id="new-exercise-name"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   aria-label="New exercise name"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <FieldLabel
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="new-exercise-muscle">
                   Muscle group (optional)
-                </label>
+                </FieldLabel>
                 <Input
+                  id="new-exercise-muscle"
                   value={newMuscle}
                   onChange={(e) => setNewMuscle(e.target.value)}
                   aria-label="New exercise muscle group"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <FieldLabel
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="new-exercise-type">
                   Type
-                </label>
-                <select
-                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+                </FieldLabel>
+                <Select
+                  id="new-exercise-type"
+                  className="w-full"
                   value={newCategory}
                   onChange={(e) =>
                     setNewCategory(e.target.value as WorkoutType)
@@ -301,7 +143,7 @@ export function ExercisesPage() {
                       {WORKOUT_TYPE_LABELS[t]}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <Button type="submit" disabled={creating}>
                 Create
@@ -321,7 +163,10 @@ export function ExercisesPage() {
               <ul className="mt-3 space-y-3">
                 {custom.map((ex) => (
                   <li key={ex.exerciseTypeId}>
-                    <CustomExerciseRow ex={ex} onChanged={() => void load()} />
+                    <CustomExerciseRow
+                      ex={ex}
+                      onChanged={() => setLoadKey((k) => k + 1)}
+                    />
                   </li>
                 ))}
               </ul>
@@ -335,10 +180,10 @@ export function ExercisesPage() {
             ) : (
               <ul className="mt-3 space-y-2">
                 {archived.map((ex) => (
-                  <ArchivedRow
+                  <ArchivedExerciseRow
                     key={ex.exerciseTypeId}
                     ex={ex}
-                    onChanged={() => void load()}
+                    onChanged={() => setLoadKey((k) => k + 1)}
                   />
                 ))}
               </ul>

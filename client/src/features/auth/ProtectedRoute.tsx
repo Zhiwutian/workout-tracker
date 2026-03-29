@@ -1,3 +1,6 @@
+/**
+ * Wraps routes that need a logged-in user. Reads `AuthContext`; redirects to `/sign-in` if absent.
+ */
 import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';

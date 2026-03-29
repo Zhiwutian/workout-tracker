@@ -6,8 +6,25 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ## [Unreleased]
 
+### Documentation
+
+- **Styleguides** (`docs/styleguide/`) — aligned with code: **`api-client`**, **`lib/api/*`**, **`useAbortableAsyncEffect`**, **`requireUserId`**, **`domain-zod`**, UI primitives; **RHF optional**; parent/multirepo note in **`styleguide/README.md`**.
+- **`docs/documentation-guide.md`** — Introduces the doc set and points to **`docs/README.md`** as the canonical index.
+- **`docs/README.md`** — “New to full-stack?” reading order; comment standards for teaching-oriented glue files; links to the documentation guide.
+- **`docs/project-structure.md`**, **`code-patterns.md`**, **`AGENTS.md`**, **`proposals/optimization-and-abstraction.md`** (marked **Done**).
+
 ### Changed
 
+- **Client API layout:** types and calls split under **`client/src/lib/api/`** (**`types`**, **`auth-api`**, **`exercise-api`**, **`workouts-api`**, **`stats-api`**); **`workout-api.ts`** re-exports for existing **`@/lib/workout-api`** imports.
+- **`useAbortableAsyncEffect`** (**`client/src/lib/use-abortable-async-effect.ts`**) — shared abort + error toast for data loads; used on **`DashboardPage`**, **`WorkoutsPage`**, **`ExercisesPage`** (refresh via **`loadKey`**), **`WorkoutDetailPage`**.
+- **`api-client.test.ts`** — covers **`mergeApiRequestInit`** (Accept, Bearer, JSON **`Content-Type`**, credentials).
+- **`mondayWeekStartISOInZoneNow`** in **`week.ts`** — dashboard no longer imports Luxon directly; Luxon stays encapsulated in **`week`**.
+- **`ProfilePage`** — weight unit control uses **`FieldLabel`** + **`Select`** (aligned with other forms).
+- **`exercise-controller`** — `workoutType` query values pass through without `as WorkoutType` (`workoutTypeSchema` infers **`WorkoutType`**).
+- **Server:** **`requireUserId(req)`** in **`server/lib/request-user.ts`** replaces repeated auth checks in controllers.
+- **Client:** **`Textarea`** UI primitive; **`parseRestSecondsInput`** (**`client/src/lib/parse-rest-seconds.ts`**) shared for log-set / edit-set rest fields; tests in **`parse-rest-seconds.test.ts`**.
+- **Client:** **`client/src/lib/api-client.ts`** centralizes **`credentials: 'include'`**, Bearer token, JSON defaults, **`fetchJson`**, **`fetchNoContent`**, and **`apiFetch`**; **`workout-api.ts`** delegates to it (CSV download still handles blob + filename). UI primitives **`FieldLabel`** and **`Select`**; **`WorkoutsPage`**, **`ExercisesPage`**, and **`WorkoutDetailPage`** use them. Feature splits: **`features/workouts/WorkoutResumeBanner`**, **`WorkoutListFilters`**, **`SetRowCard`**; **`features/exercises/CustomExerciseRow`**, **`ArchivedExerciseRow`**.
+- **API route wiring:** async handlers use **`asyncHandler`** (**`server/lib/async-handler.ts`**) in **`server/routes/api.ts`**; controllers no longer wrap every action in **`try/catch`**. **`GET /api/auth/oidc/callback`** remains a plain handler (redirect-based errors). Shared **`workoutTypeSchema`** and param schemas live in **`server/lib/domain-zod.ts`** (from **`shared/workout-types`**). **`GET /api/auth/oidc/login`** invalid query params now return the standard validation envelope (same **400** as before) instead of a custom message. Server ESLint allows **`_*`** unused args under **`server/**/\*.ts`\*\*.
 - **`docs/proposals/workout-tracker-build-plan.md`** — §3 migration note through **0007**; **§15** slice 6 (workout types) **Done**; slices 1–6 **Done** overall.
 - **`docs/course-qa-evidence.md`**, **`docs/testing.md`**, **`docs/README.md`** — document **all tests passing** (**`pnpm run ci:local`** + **`pnpm run test:e2e`**); §4 OIDC **Pass** (production Auth0 / split-host); **Tester(s):** Brett Albright; cross-browser §3 optional Firefox/WebKit; sign-off updated.
 - **`docs/deployment/README.md`** — expanded **Verify** into API smoke, browser checklist (guest → workout → set), optional demo/OIDC, and troubleshooting pointer.

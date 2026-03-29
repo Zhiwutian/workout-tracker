@@ -1,11 +1,10 @@
 import { NavLinkButton } from '@/components/app/NavLinkButton';
-import { useToast } from '@/components/app/toast-context';
 import { Card } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthContext';
-import { mondayWeekStartISOInZone } from '@/lib/week';
+import { mondayWeekStartISOInZoneNow } from '@/lib/week';
 import { readWeeklyVolume, type WeeklyVolumeResponse } from '@/lib/workout-api';
-import { DateTime } from 'luxon';
-import { useEffect, useMemo, useState } from 'react';
+import { useAbortableAsyncEffect } from '@/lib/use-abortable-async-effect';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 /**
@@ -14,37 +13,28 @@ import { Link } from 'react-router-dom';
  */
 export function DashboardPage() {
   const { me } = useAuth();
-  const { showToast } = useToast();
   const profileTz = me?.timezone?.trim() || 'UTC';
   const weekStart = useMemo(
-    () => mondayWeekStartISOInZone(profileTz, DateTime.now()),
+    () => mondayWeekStartISOInZoneNow(profileTz),
     [profileTz],
   );
   const [stats, setStats] = useState<WeeklyVolumeResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
+  useAbortableAsyncEffect(
+    async (signal) => {
+      setLoading(true);
       try {
         const data = await readWeeklyVolume(weekStart, profileTz);
-        if (!cancelled) setStats(data);
-      } catch (err) {
-        if (!cancelled) {
-          showToast({
-            title: 'Could not load stats',
-            description: err instanceof Error ? err.message : undefined,
-            variant: 'error',
-          });
-        }
+        if (signal.aborted) return;
+        setStats(data);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!signal.aborted) setLoading(false);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [weekStart, profileTz, showToast]);
+    },
+    [weekStart, profileTz],
+    'Could not load stats',
+  );
 
   const zoneLabel =
     stats?.timezone ??

@@ -1,7 +1,17 @@
+/**
+ * Workouts and logged sets: list/create/patch/delete workouts; list detail; add/patch/delete sets.
+ * Shares **`workoutTypeSchema`** and id param schemas from **`domain-zod`** with **`exercise-controller`**.
+ */
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { ClientError } from '@server/lib/client-error.js';
+import {
+  setIdParams,
+  workoutIdParams,
+  workoutTypeSchema,
+} from '@server/lib/domain-zod.js';
 import { sendSuccess } from '@server/lib/http-response.js';
+import { requireUserId } from '@server/lib/request-user.js';
 import { assertExerciseUsableForWorkout } from '@server/services/exercise-service.js';
 import {
   addSetToWorkout,
@@ -15,27 +25,17 @@ import {
   updateWorkoutForUser,
 } from '@server/services/workout-service.js';
 
-const workoutIdParams = z.object({
-  workoutId: z.coerce.number().int().positive(),
-});
-
-const setIdParams = z.object({
-  setId: z.coerce.number().int().positive(),
-});
-
-const workoutTypeEnum = z.enum(['resistance', 'cardio', 'flexibility']);
-
 const createWorkoutBody = z.object({
   title: z.string().trim().max(200).nullable().optional(),
   notes: z.string().trim().max(4000).nullable().optional(),
-  workoutType: workoutTypeEnum.optional(),
+  workoutType: workoutTypeSchema.optional(),
 });
 
 const patchWorkoutBody = z.object({
   title: z.string().trim().max(200).nullable().optional(),
   notes: z.string().trim().max(4000).nullable().optional(),
   endedAt: z.string().trim().nullable().optional(),
-  workoutType: workoutTypeEnum.optional(),
+  workoutType: workoutTypeSchema.optional(),
 });
 
 const postSetBody = z.object({
@@ -145,154 +145,114 @@ function serializeSet(s: {
 export async function getWorkouts(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const q = listWorkoutsQuery.parse(req.query);
-    const filters: ListWorkoutsFilters = {
-      status: q.status,
-      sort: q.sort,
-    };
-    if (q.from) filters.from = new Date(q.from);
-    if (q.to) filters.to = new Date(q.to);
-    const rows = await listWorkouts(userId, filters);
-    sendSuccess(res, rows.map(serializeWorkout));
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const q = listWorkoutsQuery.parse(req.query);
+  const filters: ListWorkoutsFilters = {
+    status: q.status,
+    sort: q.sort,
+  };
+  if (q.from) filters.from = new Date(q.from);
+  if (q.to) filters.to = new Date(q.to);
+  const rows = await listWorkouts(userId, filters);
+  sendSuccess(res, rows.map(serializeWorkout));
 }
 
 /** POST /api/workouts */
 export async function postWorkout(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const body = createWorkoutBody.parse(req.body);
-    const row = await createWorkout(userId, body);
-    sendSuccess(res, serializeWorkout(row), 201);
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const body = createWorkoutBody.parse(req.body);
+  const row = await createWorkout(userId, body);
+  sendSuccess(res, serializeWorkout(row), 201);
 }
 
 /** GET /api/workouts/:workoutId */
 export async function getWorkout(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const { workoutId } = workoutIdParams.parse(req.params);
-    const data = await getWorkoutForUser(userId, workoutId);
-    if (!data) throw new ClientError(404, 'workout not found');
-    sendSuccess(res, {
-      workout: serializeWorkout(data.workout),
-      sets: data.sets.map(serializeSet),
-    });
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const { workoutId } = workoutIdParams.parse(req.params);
+  const data = await getWorkoutForUser(userId, workoutId);
+  if (!data) throw new ClientError(404, 'workout not found');
+  sendSuccess(res, {
+    workout: serializeWorkout(data.workout),
+    sets: data.sets.map(serializeSet),
+  });
 }
 
 /** PATCH /api/workouts/:workoutId */
 export async function patchWorkout(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const { workoutId } = workoutIdParams.parse(req.params);
-    const body = patchWorkoutBody.parse(req.body);
-    const row = await updateWorkoutForUser(userId, workoutId, body);
-    sendSuccess(res, serializeWorkout(row));
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const { workoutId } = workoutIdParams.parse(req.params);
+  const body = patchWorkoutBody.parse(req.body);
+  const row = await updateWorkoutForUser(userId, workoutId, body);
+  sendSuccess(res, serializeWorkout(row));
 }
 
 /** DELETE /api/workouts/:workoutId */
 export async function removeWorkout(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const { workoutId } = workoutIdParams.parse(req.params);
-    await deleteWorkoutForUser(userId, workoutId);
-    res.sendStatus(204);
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const { workoutId } = workoutIdParams.parse(req.params);
+  await deleteWorkoutForUser(userId, workoutId);
+  res.sendStatus(204);
 }
 
 /** POST /api/workouts/:workoutId/sets */
 export async function postSet(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const { workoutId } = workoutIdParams.parse(req.params);
-    const body = postSetBody.parse(req.body);
-    const session = await getWorkoutForUser(userId, workoutId);
-    if (!session) throw new ClientError(404, 'workout not found');
-    await assertExerciseUsableForWorkout(
-      userId,
-      body.exerciseTypeId,
-      session.workout.workoutType,
-    );
-    const row = await addSetToWorkout(userId, workoutId, body);
-    sendSuccess(res, serializeSet(row), 201);
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const { workoutId } = workoutIdParams.parse(req.params);
+  const body = postSetBody.parse(req.body);
+  const session = await getWorkoutForUser(userId, workoutId);
+  if (!session) throw new ClientError(404, 'workout not found');
+  await assertExerciseUsableForWorkout(
+    userId,
+    body.exerciseTypeId,
+    session.workout.workoutType,
+  );
+  const row = await addSetToWorkout(userId, workoutId, body);
+  sendSuccess(res, serializeSet(row), 201);
 }
 
 /** PATCH /api/sets/:setId */
 export async function patchSet(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const { setId } = setIdParams.parse(req.params);
-    const body = patchSetBody.parse(req.body);
-    const row = await updateSetForUser(userId, setId, body);
-    sendSuccess(res, serializeSet(row));
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const { setId } = setIdParams.parse(req.params);
+  const body = patchSetBody.parse(req.body);
+  const row = await updateSetForUser(userId, setId, body);
+  sendSuccess(res, serializeSet(row));
 }
 
 /** DELETE /api/sets/:setId */
 export async function removeSet(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    const userId = req.user?.userId;
-    if (userId === undefined) throw new Error('auth middleware required');
-    const { setId } = setIdParams.parse(req.params);
-    await deleteSetForUser(userId, setId);
-    res.sendStatus(204);
-  } catch (err) {
-    next(err);
-  }
+  const userId = requireUserId(req);
+  const { setId } = setIdParams.parse(req.params);
+  await deleteSetForUser(userId, setId);
+  res.sendStatus(204);
 }

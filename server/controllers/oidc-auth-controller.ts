@@ -1,3 +1,7 @@
+/**
+ * OpenID Connect: **`/api/auth/options`**, login redirect (PKCE), callback (code exchange + session cookie), logout.
+ * **`getOidcCallback`** is **not** wrapped in **`asyncHandler`**—it redirects to the SPA with human-readable errors instead of JSON.
+ */
 import { NextFunction, Request, Response } from 'express';
 import {
   randomNonce,
@@ -56,53 +60,37 @@ function redirectWithAuthError(res: Response, message: string): void {
 }
 
 /** GET /api/auth/options — public; drives client sign-in UI. */
-export function getAuthOptions(
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
-  try {
-    sendSuccess(res, {
-      oidc: env.AUTH_OIDC_ENABLED,
-      demo: env.AUTH_DEMO_ENABLED,
-    });
-  } catch (err) {
-    next(err);
-  }
+export function getAuthOptions(_req: Request, res: Response): void {
+  sendSuccess(res, {
+    oidc: env.AUTH_OIDC_ENABLED,
+    demo: env.AUTH_DEMO_ENABLED,
+  });
 }
 
 /** GET /api/auth/oidc/login */
 export async function getOidcLogin(
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): Promise<void> {
-  try {
-    assertOidcConfigured();
-    const q = loginQuerySchema.parse(req.query);
-    const returnTo = normalizeReturnTo(q.next);
-    const state = randomState();
-    const nonce = randomNonce();
-    const codeVerifier = randomPKCECodeVerifier();
-    const redirectUrl = await buildOidcAuthorizationRedirect(
-      state,
-      nonce,
-      codeVerifier,
-    );
-    setOidcLoginStateCookie(res, {
-      state,
-      nonce,
-      codeVerifier,
-      returnTo,
-    });
-    res.redirect(302, redirectUrl);
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      next(new ClientError(400, 'invalid login request'));
-      return;
-    }
-    next(err);
-  }
+  assertOidcConfigured();
+  const q = loginQuerySchema.parse(req.query);
+  const returnTo = normalizeReturnTo(q.next);
+  const state = randomState();
+  const nonce = randomNonce();
+  const codeVerifier = randomPKCECodeVerifier();
+  const redirectUrl = await buildOidcAuthorizationRedirect(
+    state,
+    nonce,
+    codeVerifier,
+  );
+  setOidcLoginStateCookie(res, {
+    state,
+    nonce,
+    codeVerifier,
+    returnTo,
+  });
+  res.redirect(302, redirectUrl);
 }
 
 /** GET /api/auth/oidc/callback */
@@ -174,16 +162,8 @@ export async function getOidcCallback(
 }
 
 /** POST /api/auth/logout — clears OIDC session cookie (and client clears JWT). */
-export function postAuthLogout(
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
-  try {
-    clearAppSessionCookie(res);
-    clearOidcLoginStateCookie(res);
-    sendSuccess(res, { ok: true });
-  } catch (err) {
-    next(err);
-  }
+export function postAuthLogout(_req: Request, res: Response): void {
+  clearAppSessionCookie(res);
+  clearOidcLoginStateCookie(res);
+  sendSuccess(res, { ok: true });
 }

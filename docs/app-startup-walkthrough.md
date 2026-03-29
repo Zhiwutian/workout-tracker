@@ -66,7 +66,7 @@ If there is no stored access token:
 
 1. `AuthProvider` stores the JWT (see `client/src/lib/auth-storage.ts`).
 2. `WorkoutsPage` loads inside `ProtectedRoute`.
-3. The page requests **`GET /api/workouts`** with **`Authorization: Bearer <token>`** (via `client/src/lib/workout-api.ts`).
+3. The page requests **`GET /api/workouts`** with **`Authorization: Bearer <token>`** (via `api-client` + `workout-api` barrel).
 4. Server: `authMiddleware` verifies JWT and sets **`req.user.userId`**; `workout-service` returns only that user’s workouts.
 5. UI renders the list.
 
