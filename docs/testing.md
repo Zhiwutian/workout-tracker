@@ -41,6 +41,7 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 - **`e2e/smoke.spec.ts`** — happy path with demo or guest auth; cardio workout row asserts **Cardio** badge and filtered picker has no **Bench press** (skipped when the DB has no global cardio exercises — run **`database/seed-global-exercises-append.sql`** or reset + **`db:seed`**). CI uses a fresh Postgres service so the test runs there.
 - **`e2e/a11y.spec.ts`** — axe scan (critical/serious) on sign-in + guest workouts; keyboard focus check on **Continue as guest**.
 - **`e2e/display-preferences.spec.ts`** — sets display keys in **`localStorage`** on **`/about`**, reloads, asserts **`html`** shell classes (no guest auth / DB required).
+- **Shell:** primary nav is in a **Menu** drawer (`Open menu` / **`overlay-main-menu`**); sign-in flows still use on-page **Sign in** / **Continue as guest** buttons (no menu required for smoke).
 - **Projects:** Default **Chromium** + **Mobile Chrome** (viewport). Set **`PW_FULL_BROWSERS=1`** to add Firefox + WebKit (install host deps first: `pnpm exec playwright install-deps` on Linux).
 - **OIDC in CI:** Only practical if the pipeline can inject IdP secrets and a stable callback URL; otherwise keep OIDC verification manual and document results for the course report.
 

@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes } from 'react';
+import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { cn } from '@/lib';
 
 type ButtonVariant = 'primary' | 'ghost';
@@ -24,15 +24,13 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 /**
  * Shared button primitive for app-level actions.
  */
-export function Button({
-  className,
-  variant = 'primary',
-  size = 'md',
-  type = 'button',
-  ...props
-}: Props) {
+export const Button = forwardRef<HTMLButtonElement, Props>(function Button(
+  { className, variant = 'primary', size = 'md', type = 'button', ...props },
+  ref,
+) {
   return (
     <button
+      ref={ref}
       type={type}
       className={cn(
         'transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
@@ -43,4 +41,5 @@ export function Button({
       {...props}
     />
   );
-}
+});
+Button.displayName = 'Button';

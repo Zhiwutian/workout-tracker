@@ -4,6 +4,7 @@ import { and, eq, like } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { profiles, users } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
+import { getDbFailureHint } from '@server/lib/pg-errors.js';
 import { env } from '@server/config/env.js';
 
 function requireDb(): DbClient {
@@ -15,6 +16,18 @@ function requireDb(): DbClient {
     );
   }
   return db;
+}
+
+async function withDbFailureHint<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    const hint = getDbFailureHint(err);
+    if (hint) {
+      throw new ClientError(503, hint);
+    }
+    throw err;
+  }
 }
 
 export type AuthTokenPayload = { userId: number };
@@ -48,26 +61,28 @@ export async function signUpDemo(displayName: string): Promise<{
     throw new ClientError(409, 'display name already taken');
   }
 
-  return await db.transaction(async (tx) => {
-    const [user] = await tx
-      .insert(users)
-      .values({ authSubject })
-      .returning({ userId: users.userId, authSubject: users.authSubject });
+  return await withDbFailureHint(() =>
+    db.transaction(async (tx) => {
+      const [user] = await tx
+        .insert(users)
+        .values({ authSubject })
+        .returning({ userId: users.userId, authSubject: users.authSubject });
 
-    if (!user) throw new ClientError(500, 'failed to create user');
+      if (!user) throw new ClientError(500, 'failed to create user');
 
-    await tx.insert(profiles).values({
-      userId: user.userId,
-      displayName: trimmed,
-    });
+      await tx.insert(profiles).values({
+        userId: user.userId,
+        displayName: trimmed,
+      });
 
-    return {
-      token: signAccessToken(user.userId),
-      userId: user.userId,
-      authSubject: user.authSubject,
-      displayName: trimmed,
-    };
-  });
+      return {
+        token: signAccessToken(user.userId),
+        userId: user.userId,
+        authSubject: user.authSubject,
+        displayName: trimmed,
+      };
+    }),
+  );
 }
 
 /** Demo sign-in by unique display name. */
@@ -105,26 +120,28 @@ export async function createGuestUser(): Promise<{
   const authSubject = `guest:${id}`;
   const displayName = `Guest ${id}`;
 
-  return await db.transaction(async (tx) => {
-    const [user] = await tx
-      .insert(users)
-      .values({ authSubject })
-      .returning({ userId: users.userId, authSubject: users.authSubject });
+  return await withDbFailureHint(() =>
+    db.transaction(async (tx) => {
+      const [user] = await tx
+        .insert(users)
+        .values({ authSubject })
+        .returning({ userId: users.userId, authSubject: users.authSubject });
 
-    if (!user) throw new ClientError(500, 'failed to create user');
+      if (!user) throw new ClientError(500, 'failed to create user');
 
-    await tx.insert(profiles).values({
-      userId: user.userId,
-      displayName,
-    });
+      await tx.insert(profiles).values({
+        userId: user.userId,
+        displayName,
+      });
 
-    return {
-      token: signAccessToken(user.userId),
-      userId: user.userId,
-      authSubject: user.authSubject,
-      displayName,
-    };
-  });
+      return {
+        token: signAccessToken(user.userId),
+        userId: user.userId,
+        authSubject: user.authSubject,
+        displayName,
+      };
+    }),
+  );
 }
 
 export async function signInByDisplayName(displayName: string): Promise<{
@@ -134,31 +151,33 @@ export async function signInByDisplayName(displayName: string): Promise<{
   displayName: string;
 }> {
   const db = requireDb();
-  const row = await db
-    .select({
-      userId: profiles.userId,
-      displayName: profiles.displayName,
-      authSubject: users.authSubject,
-    })
-    .from(profiles)
-    .innerJoin(users, eq(profiles.userId, users.userId))
-    .where(
-      and(
-        eq(profiles.displayName, displayName.trim()),
-        like(users.authSubject, 'demo:%'),
-      ),
-    )
-    .limit(1);
+  return await withDbFailureHint(async () => {
+    const row = await db
+      .select({
+        userId: profiles.userId,
+        displayName: profiles.displayName,
+        authSubject: users.authSubject,
+      })
+      .from(profiles)
+      .innerJoin(users, eq(profiles.userId, users.userId))
+      .where(
+        and(
+          eq(profiles.displayName, displayName.trim()),
+          like(users.authSubject, 'demo:%'),
+        ),
+      )
+      .limit(1);
 
-  const found = row[0];
-  if (!found) {
-    throw new ClientError(404, 'no account found for that display name');
-  }
+    const found = row[0];
+    if (!found) {
+      throw new ClientError(404, 'no account found for that display name');
+    }
 
-  return {
-    token: signAccessToken(found.userId),
-    userId: found.userId,
-    authSubject: found.authSubject,
-    displayName: found.displayName,
-  };
+    return {
+      token: signAccessToken(found.userId),
+      userId: found.userId,
+      authSubject: found.authSubject,
+      displayName: found.displayName,
+    };
+  });
 }
