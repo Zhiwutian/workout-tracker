@@ -27,7 +27,7 @@ This repo’s global CSS is intentionally minimal compared to larger apps; when 
 
 ## Navigation shell
 
-- **Global header:** **Workout Tracker** title + **Menu** control; **no** inline nav links in the main column. The **drawer** (`id="overlay-main-menu"`) holds **Workouts**, **Exercises**, **Dashboard**, **Profile**, **About** (when signed in) or **Sign in** + **About** (when signed out). **Escape** and backdrop click close the drawer; **`body` overflow** is locked while open. Styling follows **display shell** (light / dark / high contrast) so the panel is never white-on-dark by mistake.
+- **Global header:** **Workout Tracker** title + **Menu** control; **no** inline nav links in the main column. The **drawer** (`id="overlay-main-menu"`) holds **Workouts**, **Exercises**, **Dashboard**, **Tutorial**, **Profile**, **About** (when signed in) or **Sign in** + **About** (when signed out). **Escape** and backdrop click close the drawer; **`body` overflow** is locked while open. Styling follows **display shell** (light / dark / high contrast) so the panel is never white-on-dark by mistake.
 - **Z-index:** drawer `z-[70]`/`z-[80]`; modal `z-[75]`/`z-[85]`; toasts **`z-[100]`** so notifications appear above overlays.
 - **Motion:** modal uses Tailwind **`motion-safe`** / **`motion-reduce`** for transitions; avoid slide animations on the drawer unless they respect **`prefers-reduced-motion`**.
 
@@ -48,6 +48,11 @@ This repo’s global CSS is intentionally minimal compared to larger apps; when 
 | **`Card`**, **`Badge`**, **`EmptyState`**, **`SectionHeader`** | Layout and emphasis.                                                                             |
 
 Page-specific markup stays in **`pages/`** or **`features/`**; reuse these primitives before inventing new class stacks.
+
+## Charts (dashboard)
+
+- **Library:** **[Recharts](https://recharts.org)** (~tens of kB gzipped with tree-shaking — see bundle report when optimizing). Use it for **multi-week** trends on **`DashboardPage`**; keep **one** primary chart on small viewports.
+- **Accessibility:** pair charts with a **visible data table** (or **expandable** / **screen-reader-only** table) carrying the **same numbers**; name the graphic with **`aria-labelledby`** / **`figure`** + heading. Do not rely on **color alone** — tooltips and labels carry values; **`prefers-reduced-motion`** disables bar/line animations via **`isAnimationActive`**.
 
 ## Forms
 

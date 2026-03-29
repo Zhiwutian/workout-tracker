@@ -29,7 +29,17 @@ import {
 } from '@server/controllers/health-controller.js';
 import { readHello } from '@server/controllers/hello-controller.js';
 import { patchProfile } from '@server/controllers/profile-controller.js';
-import { getWeeklyVolume } from '@server/controllers/stats-controller.js';
+import {
+  getGoals,
+  patchGoal,
+  postGoal,
+  removeGoal,
+} from '@server/controllers/goal-controller.js';
+import {
+  getStatsSummary,
+  getVolumeSeries,
+  getWeeklyVolume,
+} from '@server/controllers/stats-controller.js';
 import { getExportWorkoutSetsCsv } from '@server/controllers/export-controller.js';
 import {
   getWorkout,
@@ -113,5 +123,16 @@ apiRouter.get(
   authMiddleware,
   asyncHandler(getWeeklyVolume),
 );
+apiRouter.get(
+  '/stats/volume-series',
+  authMiddleware,
+  asyncHandler(getVolumeSeries),
+);
+apiRouter.get('/stats/summary', authMiddleware, asyncHandler(getStatsSummary));
+
+apiRouter.get('/goals', authMiddleware, asyncHandler(getGoals));
+apiRouter.post('/goals', authMiddleware, asyncHandler(postGoal));
+apiRouter.patch('/goals/:goalId', authMiddleware, asyncHandler(patchGoal));
+apiRouter.delete('/goals/:goalId', authMiddleware, asyncHandler(removeGoal));
 
 export default apiRouter;

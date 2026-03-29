@@ -238,16 +238,25 @@ export function WorkoutsPage() {
           title={emptyTitle}
           description={emptyDescription}
           actions={
-            hasActiveFilters && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setSearchParams(new URLSearchParams(), { replace: true });
-                }}>
-                Clear filters
-              </Button>
-            )
+            <div className="flex flex-wrap gap-3">
+              {!hasActiveFilters ? (
+                <NavLinkButton
+                  to="/tutorial"
+                  className="border border-slate-300 bg-white text-slate-800 hover:bg-slate-50">
+                  Open tutorial
+                </NavLinkButton>
+              ) : null}
+              {hasActiveFilters ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setSearchParams(new URLSearchParams(), { replace: true });
+                  }}>
+                  Clear filters
+                </Button>
+              ) : null}
+            </div>
           }
         />
       )}
@@ -290,6 +299,10 @@ export function WorkoutsPage() {
       <p className="text-sm text-slate-500">
         <Link className="text-indigo-600 underline" to="/dashboard">
           Weekly volume dashboard
+        </Link>
+        {' · '}
+        <Link className="text-indigo-600 underline" to="/tutorial">
+          Tutorial
         </Link>
       </p>
     </div>

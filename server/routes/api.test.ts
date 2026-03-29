@@ -109,4 +109,64 @@ describe('api routes', () => {
       }),
     );
   });
+
+  it('returns 401 from dashboard stats and goals routes without bearer token', async () => {
+    delete process.env.DATABASE_URL;
+
+    for (const path of [
+      '/api/stats/summary',
+      '/api/stats/volume-series?weeks=4',
+      '/api/goals',
+    ]) {
+      const res = await request(app).get(path).expect(401);
+      expect(res.body.error).toEqual(
+        expect.objectContaining({
+          code: 'client_error',
+          message: 'authentication required',
+        }),
+      );
+    }
+  });
+
+  it('returns 503 from dashboard stats and goals when DATABASE_URL missing but token present', async () => {
+    delete process.env.DATABASE_URL;
+    const token = jwt.sign({ userId: 1 }, process.env.TOKEN_SECRET!);
+    const auth = { Authorization: `Bearer ${token}` };
+
+    for (const path of [
+      '/api/stats/summary',
+      '/api/stats/volume-series?weeks=4',
+      '/api/goals',
+    ]) {
+      const res = await request(app).get(path).set(auth).expect(503);
+      expect(res.body.error).toEqual(
+        expect.objectContaining({
+          code: 'client_error',
+          message: expect.stringContaining('database is not configured'),
+        }),
+      );
+    }
+
+    const postGoal = await request(app)
+      .post('/api/goals')
+      .set(auth)
+      .send({ goalType: 'weekly_volume', targetValue: 1000 })
+      .expect(503);
+    expect(postGoal.body.error.message).toContain('database is not configured');
+
+    const patchGoal = await request(app)
+      .patch('/api/goals/1')
+      .set(auth)
+      .send({ isActive: false })
+      .expect(503);
+    expect(patchGoal.body.error.message).toContain(
+      'database is not configured',
+    );
+
+    const delGoal = await request(app)
+      .delete('/api/goals/1')
+      .set(auth)
+      .expect(503);
+    expect(delGoal.body.error.message).toContain('database is not configured');
+  });
 });

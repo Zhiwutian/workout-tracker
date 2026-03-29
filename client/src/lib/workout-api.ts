@@ -4,10 +4,18 @@
  * `import { readWorkouts } from '@/lib/workout-api'`.
  */
 export type {
+  AchievementBadge,
   AuthOptionsResponse,
+  DashboardSummaryPayload,
   Exercise,
+  GoalTypeId,
+  GoalWithProgress,
+  GoalsListResponse,
   MeResponse,
   SetRow,
+  StatsSummaryResponse,
+  VolumeSeriesResponse,
+  VolumeSeriesRow,
   WeeklyVolumeResponse,
   WorkoutSummary,
   WorkoutType,
@@ -43,4 +51,15 @@ export {
   readWorkouts,
 } from '@/lib/api/workouts-api';
 
-export { readWeeklyVolume } from '@/lib/api/stats-api';
+export {
+  readStatsSummary,
+  readVolumeSeries,
+  readWeeklyVolume,
+} from '@/lib/api/stats-api';
+
+export {
+  createGoal,
+  patchGoal,
+  readGoals,
+  removeGoal,
+} from '@/lib/api/goals-api';

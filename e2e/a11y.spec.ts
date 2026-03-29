@@ -42,4 +42,31 @@ test.describe('accessibility sampling (axe)', () => {
         'no violations',
     ).toHaveLength(0);
   });
+
+  test('guest dashboard — axe after load', async ({ page }) => {
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/sign-in$/);
+
+    const guestDash = page.getByRole('button', { name: 'Continue as guest' });
+    await guestDash.scrollIntoViewIfNeeded();
+    await guestDash.click();
+    await expect(page.getByTestId('workouts-page-heading')).toBeVisible({
+      timeout: 30_000,
+    });
+
+    await page.goto('/dashboard');
+    await expect(
+      page.getByRole('heading', { name: 'Dashboard', level: 1 }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    const results = await new AxeBuilder({ page }).analyze();
+    const seriousOrCritical = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    );
+    expect(
+      seriousOrCritical,
+      seriousOrCritical.map((v) => `${v.id}: ${v.help}`).join('; ') ||
+        'no violations',
+    ).toHaveLength(0);
+  });
 });

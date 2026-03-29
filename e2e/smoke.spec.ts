@@ -1,18 +1,57 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function expectSignInPage(page: Page): Promise<void> {
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/sign-in$/);
+}
+
+async function signUpWithDemo(page: Page, displayName: string): Promise<void> {
+  const input = page.getByLabel('Display name');
+  await input.scrollIntoViewIfNeeded();
+  await input.fill(displayName);
+  const create = page.getByRole('button', { name: 'Create account' });
+  await create.scrollIntoViewIfNeeded();
+  const responsePromise = page.waitForResponse(
+    (r) =>
+      r.url().includes('/api/auth/sign-up') && r.request().method() === 'POST',
+    { timeout: 30_000 },
+  );
+  await create.click();
+  const response = await responsePromise;
+  expect(
+    response.status(),
+    `sign-up failed: ${response.status()} ${await response.text().catch(() => '')}`,
+  ).toBe(201);
+}
+
+async function continueGuest(page: Page): Promise<void> {
+  const guest = page.getByRole('button', { name: 'Continue as guest' });
+  await guest.scrollIntoViewIfNeeded();
+  const responsePromise = page.waitForResponse(
+    (r) =>
+      r.url().includes('/api/auth/guest') && r.request().method() === 'POST',
+    { timeout: 30_000 },
+  );
+  await guest.click();
+  const response = await responsePromise;
+  expect(
+    response.status(),
+    `guest session failed: ${response.status()} ${await response.text().catch(() => '')}`,
+  ).toBe(201);
+}
+
+async function expectWorkoutsVisible(page: Page): Promise<void> {
+  await expect(page.getByTestId('workouts-page-heading')).toBeVisible({
+    timeout: 30_000,
+  });
+}
 
 test.describe('workout tracker smoke', () => {
   test('sign up and land on workouts', async ({ page }) => {
     const name = `e2e-${Date.now()}`;
-    await page.goto('/');
-
-    await expect(page).toHaveURL(/\/sign-in$/);
-
-    await page.getByLabel('Display name').fill(name);
-    await page.getByRole('button', { name: 'Create account' }).click();
-
-    await expect(page.getByTestId('workouts-page-heading')).toBeVisible({
-      timeout: 30_000,
-    });
+    await expectSignInPage(page);
+    await signUpWithDemo(page, name);
+    await expectWorkoutsVisible(page);
     await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
 
     await page.getByRole('button', { name: 'Start workout' }).click();
@@ -22,15 +61,9 @@ test.describe('workout tracker smoke', () => {
   });
 
   test('continue as guest and land on workouts', async ({ page }) => {
-    await page.goto('/');
-
-    await expect(page).toHaveURL(/\/sign-in$/);
-
-    await page.getByRole('button', { name: 'Continue as guest' }).click();
-
-    await expect(page.getByTestId('workouts-page-heading')).toBeVisible({
-      timeout: 30_000,
-    });
+    await expectSignInPage(page);
+    await continueGuest(page);
+    await expectWorkoutsVisible(page);
     await expect(page.getByText(/Guest session — workouts save/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Start workout' }).click();
@@ -43,16 +76,9 @@ test.describe('workout tracker smoke', () => {
     page,
   }) => {
     const name = `e2e-cardio-${Date.now()}`;
-    await page.goto('/');
-
-    await expect(page).toHaveURL(/\/sign-in$/);
-
-    await page.getByLabel('Display name').fill(name);
-    await page.getByRole('button', { name: 'Create account' }).click();
-
-    await expect(page.getByTestId('workouts-page-heading')).toBeVisible({
-      timeout: 30_000,
-    });
+    await expectSignInPage(page);
+    await signUpWithDemo(page, name);
+    await expectWorkoutsVisible(page);
 
     await page.getByLabel('Workout type').selectOption('cardio');
     await page.getByRole('button', { name: 'Start workout' }).click();

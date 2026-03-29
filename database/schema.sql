@@ -52,3 +52,35 @@ create table "workout_sets" (
   "restSeconds" integer,
   "createdAt" timestamptz not null default now()
 );
+
+create table "goals" (
+  "goalId" serial primary key,
+  "userId" integer not null references "users" ("userId") on delete cascade,
+  "goalType" text not null,
+  "targetValue" double precision not null,
+  "workoutTypeFilter" text,
+  "timezone" text,
+  "isActive" boolean not null default true,
+  "createdAt" timestamptz not null default now(),
+  "updatedAt" timestamptz not null default now()
+);
+
+create table "goal_periods" (
+  "periodId" serial primary key,
+  "goalId" integer not null references "goals" ("goalId") on delete cascade,
+  "periodStartUtc" timestamptz not null,
+  "periodEndUtc" timestamptz not null,
+  "weekStartYmd" text not null,
+  "status" text not null default 'pending',
+  "progressValue" double precision,
+  constraint "goal_periods_goal_week_unique" unique ("goalId", "periodStartUtc")
+);
+
+create table "user_achievements" (
+  "userId" integer not null references "users" ("userId") on delete cascade,
+  "badgeId" text not null,
+  "unlockedAt" timestamptz not null default now(),
+  primary key ("userId", "badgeId")
+);
+
+create index "idx_workouts_user_started" on "workouts" ("userId", "startedAt");
