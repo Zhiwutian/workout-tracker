@@ -5,8 +5,15 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { sendSuccess } from '@server/lib/http-response.js';
 import { requireUserId } from '@server/lib/request-user.js';
+import { readProfileForUser } from '@server/services/profile-service.js';
 import {
+  tryUnlockAchievements,
+  listAchievementsForUser,
+} from '@server/services/achievement-service.js';
+import {
+  dashboardSummaryForUser,
   resolveWeeklyVolumeWindow,
+  volumeSeriesForUser,
   weeklyVolumeForUser,
 } from '@server/services/stats-service.js';
 
@@ -35,6 +42,45 @@ export async function getWeeklyVolume(
     weekEndUtc: endUtc.toISOString(),
     totalVolume: stats.totalVolume,
     setCount: stats.setCount,
+    workoutCount: stats.workoutCount,
     ...(zoneUsed !== 'utc' ? { timezone: zoneUsed } : {}),
   });
+}
+
+const volumeSeriesQuerySchema = z.object({
+  weeks: z.coerce.number().int().min(1).max(52).optional(),
+  timezone: z.string().min(1).max(120).optional(),
+});
+
+/** GET /api/stats/volume-series?weeks=8&timezone=IANA */
+export async function getVolumeSeries(
+  req: Request,
+  res: Response,
+  _next: NextFunction,
+): Promise<void> {
+  const userId = requireUserId(req);
+  const q = volumeSeriesQuerySchema.parse(req.query);
+  const profile = await readProfileForUser(userId);
+  const tz = q.timezone?.trim() || profile?.timezone?.trim() || 'UTC';
+  const weeks = q.weeks ?? 8;
+  const series = await volumeSeriesForUser(userId, weeks, tz);
+  sendSuccess(res, { weeks, timezone: tz, series });
+}
+
+/** GET /api/stats/summary?timezone=IANA — dashboard aggregates + achievements (unlocks evaluated). */
+export async function getStatsSummary(
+  req: Request,
+  res: Response,
+  _next: NextFunction,
+): Promise<void> {
+  const userId = requireUserId(req);
+  const q = z
+    .object({ timezone: z.string().min(1).max(120).optional() })
+    .parse(req.query);
+  const profile = await readProfileForUser(userId);
+  const tz = q.timezone?.trim() || profile?.timezone?.trim() || 'UTC';
+  const summary = await dashboardSummaryForUser(userId, tz);
+  await tryUnlockAchievements(userId, summary);
+  const achievements = await listAchievementsForUser(userId);
+  sendSuccess(res, { summary, achievements });
 }

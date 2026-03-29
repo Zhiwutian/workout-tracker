@@ -38,6 +38,9 @@ const SignInPage = lazy(async () => ({
 const AboutPage = lazy(async () => ({
   default: (await import('@/pages/AboutPage')).AboutPage,
 }));
+const TutorialPage = lazy(async () => ({
+  default: (await import('@/pages/TutorialPage')).TutorialPage,
+}));
 
 function mainLayoutClassNames(
   highContrast: boolean,
@@ -217,6 +220,13 @@ function AppShellNav() {
                         activeClassName={navActiveDrawer}
                         onClick={() => setMenuOpen(false)}>
                         Dashboard
+                      </NavLinkButton>
+                      <NavLinkButton
+                        to="/tutorial"
+                        className={navLinkDrawer}
+                        activeClassName={navActiveDrawer}
+                        onClick={() => setMenuOpen(false)}>
+                        Tutorial
                       </NavLinkButton>
                       <NavLinkButton
                         to="/profile"
@@ -436,6 +446,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tutorial"
+              element={
+                <ProtectedRoute>
+                  <TutorialPage />
                 </ProtectedRoute>
               }
             />

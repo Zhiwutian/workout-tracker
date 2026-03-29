@@ -64,6 +64,13 @@
       "when": 1774759503336,
       "tag": "0008_profile_ui_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774850000000,
+      "tag": "0009_goals_achievements",
+      "breakpoints": true
     }
   ]
 }

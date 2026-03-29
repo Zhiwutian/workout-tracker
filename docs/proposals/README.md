@@ -10,6 +10,7 @@ Forward-looking plans for **workout-tracker** before or alongside implementation
 | [`optimization-and-abstraction.md`](./optimization-and-abstraction.md)             | **Done** — styleguide parity, `asyncHandler`, `api-client` + `lib/api/*`, domain Zod, UI primitives, `features/*`, `useAbortableAsyncEffect`; see styleguide + CHANGELOG                                                                          |
 | [`display-and-accessibility-settings.md`](./display-and-accessibility-settings.md) | **Done** — display shell + `profiles.uiPreferences` + `PATCH`/`me` for cross-device sync                                                                                                                                                          |
 | [`nav-drawer-filters-modal-url-sync.md`](./nav-drawer-filters-modal-url-sync.md)   | **Done** — overlay nav (Support-style), workouts filters modal, URL query sync for list filters; `prefers-reduced-motion` on modal (see **`ui-styleguide.md`**)                                                                                   |
+| [`dashboard-goals-tutorial-exercises.md`](./dashboard-goals-tutorial-exercises.md) | **Proposed** — dashboard charts + stats API, richer goals (no email), achievements, chart **accessibility** (table fallback, ARIA, contrast, reduced motion), `/tutorial`, exercises catalog UX                                                   |
 
 ## When to add a proposal
 

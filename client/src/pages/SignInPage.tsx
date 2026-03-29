@@ -1,4 +1,4 @@
-import { Button, Input } from '@/components/ui';
+import { Button, FieldLabel, Input } from '@/components/ui';
 import { useToast } from '@/components/app/toast-context';
 import { useAuth } from '@/features/auth/AuthContext';
 import { apiHref } from '@/lib/api-base-url';
@@ -144,15 +144,17 @@ export function SignInPage() {
             void runAuth('sign-in');
           }}>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <FieldLabel
+              className="mb-1 text-sm font-medium text-slate-700"
+              htmlFor="sign-in-display-name">
               Display name
-            </label>
+            </FieldLabel>
             <Input
+              id="sign-in-display-name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               autoComplete="username"
               placeholder="e.g. Alex"
-              aria-label="Display name"
             />
           </div>
           <div className="flex flex-wrap gap-2">

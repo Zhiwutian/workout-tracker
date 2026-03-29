@@ -4,10 +4,12 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   real,
   serial,
   text,
   timestamp,
+  unique,
 } from 'drizzle-orm/pg-core';
 // Note: exercise_types intentionally has no DB unique on (userId,name) because PostgreSQL
 // treats NULL userId oddly in composite uniques; enforce custom names in the service layer.
@@ -95,3 +97,56 @@ export const workoutSets = pgTable('workout_sets', {
     .notNull()
     .defaultNow(),
 });
+
+/** User-defined training goals (weekly periods; evaluated from workouts/sets). */
+export const goals = pgTable('goals', {
+  goalId: serial('goalId').primaryKey(),
+  userId: integer('userId')
+    .notNull()
+    .references(() => users.userId, { onDelete: 'cascade' }),
+  goalType: text('goalType').notNull(),
+  targetValue: real('targetValue').notNull(),
+  workoutTypeFilter: text('workoutTypeFilter'),
+  timezone: text('timezone'),
+  isActive: boolean('isActive').notNull().default(true),
+  createdAt: timestamp('createdAt', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const goalPeriods = pgTable(
+  'goal_periods',
+  {
+    periodId: serial('periodId').primaryKey(),
+    goalId: integer('goalId')
+      .notNull()
+      .references(() => goals.goalId, { onDelete: 'cascade' }),
+    periodStartUtc: timestamp('periodStartUtc', {
+      withTimezone: true,
+    }).notNull(),
+    periodEndUtc: timestamp('periodEndUtc', { withTimezone: true }).notNull(),
+    weekStartYmd: text('weekStartYmd').notNull(),
+    status: text('status').notNull().default('pending'),
+    progressValue: real('progressValue'),
+  },
+  (t) => [
+    unique('goal_periods_goal_week_unique').on(t.goalId, t.periodStartUtc),
+  ],
+);
+
+export const userAchievements = pgTable(
+  'user_achievements',
+  {
+    userId: integer('userId')
+      .notNull()
+      .references(() => users.userId, { onDelete: 'cascade' }),
+    badgeId: text('badgeId').notNull(),
+    unlockedAt: timestamp('unlockedAt', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.badgeId] })],
+);

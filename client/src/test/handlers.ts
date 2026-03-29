@@ -18,10 +18,33 @@ let mockWorkouts: {
   endedAt: string | null;
 }[] = [];
 
+type MockGoal = {
+  id: number;
+  goalType: string;
+  targetValue: number;
+  workoutTypeFilter: string | null;
+  timezone: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  currentPeriod: {
+    periodStartUtc: string;
+    periodEndUtc: string;
+    status: string;
+    progressValue: number | null;
+    progress: number;
+  } | null;
+};
+
+let mockGoals: MockGoal[] = [];
+let nextMockGoalId = 1;
+
 /** Reset in-memory API mock state between tests. */
 export function resetApiMockState(): void {
   mockUiPreferences = null;
   mockProfileWeightUnit = 'lb';
+  mockGoals = [];
+  nextMockGoalId = 1;
   mockWorkouts = [
     {
       workoutId: 1,
@@ -342,11 +365,181 @@ export const handlers = [
       weekEndUtc,
       totalVolume: 1200,
       setCount: 3,
+      workoutCount: 1,
     };
     if (timezone) {
       data.timezone = timezone;
     }
     return HttpResponse.json({ data });
+  }),
+
+  http.get('/api/stats/volume-series', ({ request }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    const url = new URL(request.url);
+    const weeks = Math.min(
+      52,
+      Math.max(1, Number(url.searchParams.get('weeks') ?? '8')),
+    );
+    const series = [];
+    const anchor = new Date('2026-03-23T00:00:00.000Z');
+    for (let i = weeks - 1; i >= 0; i -= 1) {
+      const d = new Date(anchor.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      const weekStart = d.toISOString().slice(0, 10);
+      series.push({
+        weekStart,
+        totalVolume: 100 * (i + 1),
+        setCount: i + 1,
+        workoutCount: 1,
+      });
+    }
+    return HttpResponse.json({
+      data: {
+        weeks,
+        timezone: 'UTC',
+        series,
+      },
+    });
+  }),
+
+  http.get('/api/stats/summary', ({ request }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json({
+      data: {
+        summary: {
+          timezone: 'UTC',
+          currentWeekStart: '2026-03-23',
+          previousWeekStart: '2026-03-16',
+          currentWeek: {
+            totalVolume: 800,
+            setCount: 2,
+            workoutCount: 1,
+          },
+          previousWeek: {
+            totalVolume: 400,
+            setCount: 1,
+            workoutCount: 1,
+          },
+          streakDays: 1,
+          activeDaysThisWeek: 1,
+        },
+        achievements: [
+          { badgeId: 'first_log', unlockedAt: new Date().toISOString() },
+        ],
+      },
+    });
+  }),
+
+  http.get('/api/goals', ({ request }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json({ data: { goals: mockGoals } });
+  }),
+
+  http.post('/api/goals', async ({ request }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    const body = (await request.json()) as {
+      goalType?: string;
+      targetValue?: number;
+      workoutTypeFilter?: string | null;
+      timezone?: string | null;
+    };
+    const now = new Date().toISOString();
+    const id = nextMockGoalId++;
+    const row: MockGoal = {
+      id,
+      goalType: body.goalType ?? 'weekly_volume',
+      targetValue: body.targetValue ?? 1000,
+      workoutTypeFilter: body.workoutTypeFilter ?? null,
+      timezone: body.timezone ?? null,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+      currentPeriod: {
+        periodStartUtc: now,
+        periodEndUtc: now,
+        status: 'pending',
+        progressValue: null,
+        progress: 0,
+      },
+    };
+    mockGoals.push(row);
+    return HttpResponse.json({ data: row }, { status: 201 });
+  }),
+
+  http.patch('/api/goals/:goalId', async ({ request, params }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    const goalId = Number(params.goalId);
+    const body = (await request.json()) as {
+      targetValue?: number;
+      isActive?: boolean;
+      workoutTypeFilter?: string | null;
+      timezone?: string | null;
+    };
+    const idx = mockGoals.findIndex((g) => g.id === goalId);
+    if (idx < 0) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'goal not found' } },
+        { status: 404 },
+      );
+    }
+    const cur = mockGoals[idx];
+    const updated: MockGoal = {
+      ...cur,
+      targetValue:
+        body.targetValue !== undefined ? body.targetValue : cur.targetValue,
+      isActive: body.isActive !== undefined ? body.isActive : cur.isActive,
+      workoutTypeFilter:
+        body.workoutTypeFilter !== undefined
+          ? body.workoutTypeFilter
+          : cur.workoutTypeFilter,
+      timezone: body.timezone !== undefined ? body.timezone : cur.timezone,
+      updatedAt: new Date().toISOString(),
+    };
+    mockGoals[idx] = updated;
+    return HttpResponse.json({ data: updated });
+  }),
+
+  http.delete('/api/goals/:goalId', ({ request, params }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    const goalId = Number(params.goalId);
+    const before = mockGoals.length;
+    mockGoals = mockGoals.filter((g) => g.id !== goalId);
+    if (mockGoals.length === before) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'goal not found' } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({ data: { ok: true } });
   }),
 
   http.patch('/api/profile', async ({ request }) => {

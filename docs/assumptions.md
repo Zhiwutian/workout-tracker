@@ -9,6 +9,11 @@
 
 The dashboard uses **profile `timezone`** when set (otherwise **UTC**), computes the **ISO Monday** of the current week in that zone, and passes **`weekStart`** + **`timezone`** to the API so the server window matches the user’s local week.
 
+**Multi-week dashboard APIs** use the **same** week semantics:
+
+- **`GET /api/stats/volume-series?weeks=N`** — each bucket is a **7-day** window from a **Monday `YYYY-MM-DD`** in the user’s zone (profile timezone or optional **`timezone`** query), via **`resolveWeeklyVolumeWindow`** and **`lastNMondayWeekStarts`**. Set totals **exclude warm-up** sets; **`workoutCount`** is sessions started in the window (all sets, not only non-warmup).
+- **`GET /api/stats/summary`** — **current** and **previous** week volume/set counts use **`weeklyVolumeForUser`** on those same Monday windows; **streak** and **active days** use local calendar days in that zone. Achievements are evaluated from this summary on read (idempotent inserts into **`user_achievements`**).
+
 ## Auth
 
 The server supports **OIDC** (when **`AUTH_OIDC_ENABLED=true`**) and **demo JWT** flows.

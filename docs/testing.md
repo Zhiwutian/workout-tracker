@@ -22,7 +22,9 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 ## What is covered today
 
 - **API routes:** Supertest against the Express app (e.g. health, **`GET /api/auth/options`**, demo auth when enabled).
-- **Client:** Vitest + Testing Library + MSW handlers for `/api/*` (including auth options and logout).
+- **Dashboard / goals auth + DB wiring:** **`server/routes/api.test.ts`** asserts **401** without a Bearer token on **`GET /api/stats/summary`**, **`GET /api/stats/volume-series`**, and **`GET /api/goals`**, and **503** (no **`DATABASE_URL`**) on those reads plus goals **POST** / **PATCH** / **DELETE**.
+- **Week windows (server):** **`server/lib/week-helpers.test.ts`** covers **`mondayWeekStartYmdInZone`** and **`lastNMondayWeekStarts`** (IANA zones, ordering, empty **`n`**). Same Monday-based week family as **`GET /api/stats/weekly-volume`** and the multi-week dashboard stats endpoints (see **`docs/assumptions.md`**).
+- **Client:** Vitest + Testing Library + MSW handlers for `/api/*` (including auth options and logout). **`client/src/lib/api/stats-api.test.ts`** and **`goals-api.test.ts`** lock query strings / methods for **`readVolumeSeries`**, **`readStatsSummary`**, and goals CRUD.
 - **Ownership:** Optional Postgres IDOR suite when **`TEST_DATABASE_URL`** is provided (CI quality job), including workout-type mismatch on log set.
 
 ## OIDC / session
@@ -35,11 +37,12 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 
 - **`GET /api/workouts`** — optional query: **`from`**, **`to`** (ISO 8601), **`status`** (`all` \| `active` \| `completed`), **`sort`** (`startedAt_desc` \| `startedAt_asc`). Used by the workouts list filters.
 - **`GET /api/stats/weekly-volume`** — optional **`timezone`** (IANA); server unit tests cover **`resolveWeeklyVolumeWindow`** (UTC vs zone).
+- **`GET /api/stats/volume-series`**, **`GET /api/stats/summary`**, **`/api/goals`** — covered by Supertest **401/503** wiring tests and client **`stats-api`** / **`goals-api`** unit tests; week alignment documented in **`docs/assumptions.md`**.
 - **`GET/PATCH /api/exercises`** — custom exercise archive, recents, **`category`**, and **`ExercisesPage`**; migrations **`0005`**+.
 - **Set logging / CSV** — migration **`0006`** (`isWarmup`, `restSeconds`); **`0007`** (`workoutType`, exercise **`category`**); **`WorkoutDetailPage`** edit/delete; CSV **`is_warmup`**, **`rest_seconds`**, **`workout_type`**, **`exercise_category`**.
 - **`GET /api/export/workout-sets.csv`** — authenticated CSV download of sets joined with workout + exercise; optional **`from`** / **`to`** filter on **workout `startedAt`** (same idea as list). **`Content-Disposition: attachment`**.
 - **`e2e/smoke.spec.ts`** — happy path with demo or guest auth; cardio workout row asserts **Cardio** badge and filtered picker has no **Bench press** (skipped when the DB has no global cardio exercises — run **`database/seed-global-exercises-append.sql`** or reset + **`db:seed`**). CI uses a fresh Postgres service so the test runs there.
-- **`e2e/a11y.spec.ts`** — axe scan (critical/serious) on sign-in + guest workouts; keyboard focus check on **Continue as guest**.
+- **`e2e/a11y.spec.ts`** — axe scan (critical/serious) on sign-in + guest workouts; keyboard focus check on **Continue as guest**; guest **Dashboard** load after **`/dashboard`** navigation.
 - **`e2e/display-preferences.spec.ts`** — sets display keys in **`localStorage`** on **`/about`**, reloads, asserts **`html`** shell classes (no guest auth / DB required).
 - **Shell:** primary nav is in a **Menu** drawer (`Open menu` / **`overlay-main-menu`**); sign-in flows still use on-page **Sign in** / **Continue as guest** buttons (no menu required for smoke).
 - **Projects:** Default **Chromium** + **Mobile Chrome** (viewport). Set **`PW_FULL_BROWSERS=1`** to add Firefox + WebKit (install host deps first: `pnpm exec playwright install-deps` on Linux).
