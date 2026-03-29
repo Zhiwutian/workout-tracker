@@ -20,6 +20,13 @@ import {
   rangePresetToIsoRange,
 } from '@/lib/date-range-presets';
 import {
+  buildWorkoutListSearchParams,
+  filtersAreDefault,
+  parseRangePreset,
+  parseStatusFilter,
+  sortFromUrlParam,
+} from '@/lib/workout-list-url';
+import {
   createWorkout,
   downloadWorkoutSetsCsv,
   readWorkouts,
@@ -30,7 +37,7 @@ import {
 import { useAbortableAsyncEffect } from '@/lib/use-abortable-async-effect';
 import { WORKOUT_TYPE_LABELS, WORKOUT_TYPES } from '@shared/workout-types';
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 function buildListParams(
   rangePreset: RangePreset,
@@ -51,16 +58,34 @@ function buildListParams(
 export function WorkoutsPage() {
   const { me } = useAuth();
   const { showToast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
   const [activeSessions, setActiveSessions] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const [rangePreset, setRangePreset] = useState<RangePreset>('all');
-  const [statusFilter, setStatusFilter] = useState<WorkoutStatusFilter>('all');
-  const [sortFilter, setSortFilter] =
-    useState<WorkoutSortFilter>('startedAt_desc');
+  const rangePreset = parseRangePreset(searchParams.get('range'));
+  const statusFilter = parseStatusFilter(searchParams.get('status'));
+  const sortFilter = sortFromUrlParam(searchParams.get('sort'));
+
+  const setRangePreset = (v: RangePreset) => {
+    setSearchParams(buildWorkoutListSearchParams(v, statusFilter, sortFilter), {
+      replace: true,
+    });
+  };
+  const setStatusFilter = (v: WorkoutStatusFilter) => {
+    setSearchParams(buildWorkoutListSearchParams(rangePreset, v, sortFilter), {
+      replace: true,
+    });
+  };
+  const setSortFilter = (v: WorkoutSortFilter) => {
+    setSearchParams(
+      buildWorkoutListSearchParams(rangePreset, statusFilter, v),
+      { replace: true },
+    );
+  };
+
   const [newWorkoutType, setNewWorkoutType] =
     useState<WorkoutType>('resistance');
 
@@ -129,14 +154,18 @@ export function WorkoutsPage() {
     workouts.some((w) => w.workoutId === resumeWorkout.workoutId);
   const showResumeBar = !!resumeWorkout && !activeShownInList;
 
-  const emptyTitle =
-    rangePreset !== 'all' || statusFilter !== 'all'
-      ? 'No workouts match these filters'
-      : 'No workouts yet';
-  const emptyDescription =
-    rangePreset !== 'all' || statusFilter !== 'all'
-      ? 'Try widening the date range or setting Status to “All”.'
-      : 'Start a workout to log sets.';
+  const hasActiveFilters = !filtersAreDefault(
+    rangePreset,
+    statusFilter,
+    sortFilter,
+  );
+
+  const emptyTitle = hasActiveFilters
+    ? 'No workouts match these filters'
+    : 'No workouts yet';
+  const emptyDescription = hasActiveFilters
+    ? 'Try widening the date range or setting Status to “All”.'
+    : 'Start a workout to log sets.';
 
   return (
     <div className="space-y-6">
@@ -209,13 +238,12 @@ export function WorkoutsPage() {
           title={emptyTitle}
           description={emptyDescription}
           actions={
-            (rangePreset !== 'all' || statusFilter !== 'all') && (
+            hasActiveFilters && (
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => {
-                  setRangePreset('all');
-                  setStatusFilter('all');
+                  setSearchParams(new URLSearchParams(), { replace: true });
                 }}>
                 Clear filters
               </Button>

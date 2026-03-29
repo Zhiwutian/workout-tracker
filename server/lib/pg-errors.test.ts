@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPgUniqueViolation } from './pg-errors.js';
+import { getDbFailureHint, isPgUniqueViolation } from './pg-errors.js';
 
 describe('isPgUniqueViolation', () => {
   it('returns false for non-errors', () => {
@@ -41,5 +41,28 @@ describe('isPgUniqueViolation', () => {
     expect(isPgUniqueViolation(wrapped, 'profiles_display_name_unique')).toBe(
       false,
     );
+  });
+});
+
+describe('getDbFailureHint', () => {
+  it('returns migrate hint for undefined table (42P01)', () => {
+    const err = { code: '42P01', message: 'relation "users" does not exist' };
+    expect(getDbFailureHint(err)).toContain('db:migrate');
+  });
+
+  it('detects 42P01 on Drizzle cause chain', () => {
+    const err = {
+      name: 'DrizzleQueryError',
+      cause: { code: '42P01' },
+    };
+    expect(getDbFailureHint(err)).toContain('db:migrate');
+  });
+
+  it('returns connection hint for ECONNREFUSED', () => {
+    expect(getDbFailureHint({ code: 'ECONNREFUSED' })).toContain('connect');
+  });
+
+  it('returns undefined for unknown errors', () => {
+    expect(getDbFailureHint(new Error('weird'))).toBeUndefined();
   });
 });

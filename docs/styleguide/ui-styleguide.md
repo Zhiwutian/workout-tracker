@@ -25,11 +25,22 @@ This repo’s global CSS is intentionally minimal compared to larger apps; when 
 - **Global overrides:** **`index.css`** maps Tailwind `text-*` sizes under each scale and adjusts slate / indigo / amber / toast colors under `.app-dark-mode` and `.app-high-contrast`.
 - **User controls:** **Profile → Display and accessibility** — changes **`PATCH`** **`/api/profile`** as **`uiPreferences`** (merged on the server in **`profiles.uiPreferences`**; optional deprecated **`darkMode`** in stored JSON is normalized to **`themeMode`**). **`GET /api/me`** returns the merged object so new sessions/devices match after sign-in (see **`docs/proposals/display-and-accessibility-settings.md`**).
 
+## Navigation shell
+
+- **Global header:** **Workout Tracker** title + **Menu** control; **no** inline nav links in the main column. The **drawer** (`id="overlay-main-menu"`) holds **Workouts**, **Exercises**, **Dashboard**, **Profile**, **About** (when signed in) or **Sign in** + **About** (when signed out). **Escape** and backdrop click close the drawer; **`body` overflow** is locked while open. Styling follows **display shell** (light / dark / high contrast) so the panel is never white-on-dark by mistake.
+- **Z-index:** drawer `z-[70]`/`z-[80]`; modal `z-[75]`/`z-[85]`; toasts **`z-[100]`** so notifications appear above overlays.
+- **Motion:** modal uses Tailwind **`motion-safe`** / **`motion-reduce`** for transitions; avoid slide animations on the drawer unless they respect **`prefers-reduced-motion`**.
+
+## Workouts list URL
+
+- On **`/`**, filters are reflected in the query string: **`range`** (`all` \| `week` \| `month`), **`status`**, **`sort`** (`newest` \| `oldest`). Defaults omit keys. **Clear filters** resets the URL and list state.
+
 ## Components (`client/src/components/ui/`)
 
 | Primitive                                                      | Role                                                                                             |
 | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **`Button`**                                                   | Primary actions, variants (`ghost`, etc.).                                                       |
+| **`Button`**                                                   | Primary actions, variants (`ghost`, etc.); **`forwardRef`** for focus return.                    |
+| **`Modal`**                                                    | Dialog overlay (`role="dialog"`), Escape + overlay close, body scroll lock, focus return.        |
 | **`Input`**                                                    | Single-line text and numeric fields (shared focus ring).                                         |
 | **`Select`**                                                   | Native `<select>` with the same visual baseline as **`Input`**.                                  |
 | **`FieldLabel`**                                               | Consistent label styling; override with **`className`** for larger form sections (e.g. profile). |

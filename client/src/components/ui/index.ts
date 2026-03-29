@@ -1,5 +1,6 @@
 export { Badge } from './Badge';
 export { Button } from './Button';
+export { Modal } from './Modal';
 export { Card } from './Card';
 export { EmptyState } from './EmptyState';
 export { FieldLabel } from './FieldLabel';

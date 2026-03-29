@@ -67,4 +67,13 @@ describe('App', () => {
       await screen.findByRole('heading', { name: 'Workout Tracker' }),
     ).toBeInTheDocument();
   });
+
+  it('opens menu and shows Sign in link on about (unauthenticated)', async () => {
+    const user = userEvent.setup();
+    renderApp(['/about']);
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+    expect(screen.getByRole('link', { name: 'Sign in' })).toBeInTheDocument();
+    expect(document.getElementById('overlay-main-menu')).toBeInTheDocument();
+  });
 });
