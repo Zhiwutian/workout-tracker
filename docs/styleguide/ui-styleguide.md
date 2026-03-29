@@ -21,7 +21,7 @@ This repo’s global CSS is intentionally minimal compared to larger apps; when 
 - **State:** `textScale` (`sm`–`xl`), `darkMode`, `highContrast` live in **`client/src/state/app-state-store.ts`** and persist with **`DISPLAY_STORAGE_KEYS`** (`wt-text-scale`, `wt-dark-mode`, `wt-high-contrast`).
 - **Shell classes:** **`App.tsx`** applies `app-text-scale-*` plus either default light (`bg-slate-50`), `app-dark-mode`, or `app-high-contrast`. If both contrast toggles are on, **high contrast wins** for the shell (see Profile copy).
 - **Global overrides:** **`index.css`** maps Tailwind `text-*` sizes under each scale and adjusts slate / indigo / amber / toast colors under `.app-dark-mode` and `.app-high-contrast`.
-- **User controls:** **Profile → Display and accessibility**; Phase 2 may sync to the server (see **`docs/proposals/display-and-accessibility-settings.md`**).
+- **User controls:** **Profile → Display and accessibility** — changes **`PATCH`** **`/api/profile`** as **`uiPreferences`** (merged on the server in **`profiles.uiPreferences`**). **`GET /api/me`** returns the merged object so new sessions/devices match after sign-in (see **`docs/proposals/display-and-accessibility-settings.md`**).
 
 ## Components (`client/src/components/ui/`)
 

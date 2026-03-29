@@ -1,13 +1,17 @@
 /** Wire shapes shared by `api/*` modules; keep in sync with `shared/` and server responses. */
+import type { UiPreferences } from '@shared/ui-preferences';
 import type { WorkoutType } from '@shared/workout-types';
 
 export type { WorkoutType };
+export type { UiPreferences };
 
 export type MeResponse = {
   userId: number;
   displayName: string;
   weightUnit: string;
   timezone: string | null;
+  /** Merged display shell prefs from `profiles.uiPreferences`; omit or null if unset. */
+  uiPreferences?: UiPreferences | null;
   updatedAt: string;
   /** Server user created via Continue as guest (`POST /api/auth/guest`). */
   isGuest?: boolean;

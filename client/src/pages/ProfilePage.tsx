@@ -2,10 +2,15 @@ import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { useToast } from '@/components/app/toast-context';
 import { Button, FieldLabel, Select } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthContext';
+import type { UiPreferences } from '@/lib/api/types';
 import { patchProfile } from '@/lib/workout-api';
-import type { TextScale } from '@/state';
-import { useAppDispatch, useAppState } from '@/state';
-import { FormEvent, useEffect, useState } from 'react';
+import {
+  initialDisplayState,
+  type TextScale,
+  useAppDispatch,
+  useAppState,
+} from '@/state';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 const TEXT_SCALE_OPTIONS: { value: TextScale; label: string }[] = [
   { value: 'sm', label: 'Small' },
@@ -27,6 +32,22 @@ export function ProfilePage() {
     }
   }, [me]);
   const [busy, setBusy] = useState(false);
+
+  const persistUiPreferences = useCallback(
+    async (partial: UiPreferences) => {
+      try {
+        await patchProfile({ uiPreferences: partial });
+        await refreshMe();
+      } catch (err) {
+        showToast({
+          title: 'Could not save display settings',
+          description: err instanceof Error ? err.message : undefined,
+          variant: 'error',
+        });
+      }
+    },
+    [refreshMe, showToast],
+  );
 
   async function handleSubmit(e: FormEvent): Promise<void> {
     e.preventDefault();
@@ -70,9 +91,10 @@ export function ProfilePage() {
           Display and accessibility
         </h2>
         <p className="text-sm text-slate-600">
-          These settings apply on this device. If both{' '}
-          <strong>High contrast</strong> and <strong>Dark mode</strong> are on,
-          high contrast takes precedence for the page shell.
+          Choices apply immediately and are saved to your account (same as
+          weight unit). If both <strong>High contrast</strong> and{' '}
+          <strong>Dark mode</strong> are on, high contrast takes precedence for
+          the page shell.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-800">
@@ -80,12 +102,11 @@ export function ProfilePage() {
               type="checkbox"
               className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               checked={display.darkMode}
-              onChange={(e) =>
-                dispatchDisplay({
-                  type: 'darkMode/set',
-                  payload: e.target.checked,
-                })
-              }
+              onChange={(e) => {
+                const checked = e.target.checked;
+                dispatchDisplay({ type: 'darkMode/set', payload: checked });
+                void persistUiPreferences({ darkMode: checked });
+              }}
             />
             Dark mode
           </label>
@@ -94,12 +115,14 @@ export function ProfilePage() {
               type="checkbox"
               className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               checked={display.highContrast}
-              onChange={(e) =>
+              onChange={(e) => {
+                const checked = e.target.checked;
                 dispatchDisplay({
                   type: 'highContrast/set',
-                  payload: e.target.checked,
-                })
-              }
+                  payload: checked,
+                });
+                void persistUiPreferences({ highContrast: checked });
+              }}
             />
             High contrast
           </label>
@@ -122,9 +145,10 @@ export function ProfilePage() {
                   value={value}
                   className="size-4 border-slate-300 text-indigo-600 focus:ring-indigo-500"
                   checked={display.textScale === value}
-                  onChange={() =>
-                    dispatchDisplay({ type: 'textScale/set', payload: value })
-                  }
+                  onChange={() => {
+                    dispatchDisplay({ type: 'textScale/set', payload: value });
+                    void persistUiPreferences({ textScale: value });
+                  }}
                 />
                 {label}
               </label>
@@ -135,7 +159,14 @@ export function ProfilePage() {
           type="button"
           variant="ghost"
           className="text-slate-700"
-          onClick={() => dispatchDisplay({ type: 'display/reset' })}>
+          onClick={() => {
+            dispatchDisplay({ type: 'display/reset' });
+            void persistUiPreferences({
+              textScale: initialDisplayState.textScale,
+              highContrast: initialDisplayState.highContrast,
+              darkMode: initialDisplayState.darkMode,
+            });
+          }}>
           Reset display settings
         </Button>
       </section>

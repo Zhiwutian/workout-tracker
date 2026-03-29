@@ -1,6 +1,10 @@
 /** Sign-in flows, session, `/api/me`, `/api/profile`, and the demo hello endpoint. */
 import { fetchJson, fetchNoContent } from '@/lib/api-client';
-import type { AuthOptionsResponse, MeResponse } from '@/lib/api/types';
+import type {
+  AuthOptionsResponse,
+  MeResponse,
+  UiPreferences,
+} from '@/lib/api/types';
 
 export async function readHelloMessage(): Promise<string> {
   const helloData = await fetchJson<{ message: string }>('/api/hello');
@@ -43,6 +47,7 @@ export async function patchProfile(body: {
   displayName?: string;
   weightUnit?: 'lb' | 'kg';
   timezone?: string | null;
+  uiPreferences?: UiPreferences;
 }): Promise<MeResponse> {
   return fetchJson<MeResponse>('/api/profile', {
     method: 'PATCH',

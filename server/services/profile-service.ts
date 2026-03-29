@@ -1,7 +1,12 @@
+import type { UiPreferences } from '@shared/ui-preferences.js';
 import { eq, sql } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { profiles } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
+import {
+  mergeUiPreferences,
+  parseStoredUiPreferences,
+} from '@server/lib/ui-preferences.js';
 
 function requireDb(): DbClient {
   const db = getDrizzleDb();
@@ -19,6 +24,7 @@ export type ProfileRecord = {
   displayName: string;
   weightUnit: string;
   timezone: string | null;
+  uiPreferences: UiPreferences | null;
   updatedAt: Date;
 };
 
@@ -32,12 +38,17 @@ export async function readProfileForUser(
       displayName: profiles.displayName,
       weightUnit: profiles.weightUnit,
       timezone: profiles.timezone,
+      uiPreferences: profiles.uiPreferences,
       updatedAt: profiles.updatedAt,
     })
     .from(profiles)
     .where(eq(profiles.userId, userId))
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+  return {
+    ...row,
+    uiPreferences: parseStoredUiPreferences(row.uiPreferences),
+  };
 }
 
 export async function updateProfileForUser(
@@ -46,6 +57,7 @@ export async function updateProfileForUser(
     displayName?: string;
     weightUnit?: 'lb' | 'kg';
     timezone?: string | null;
+    uiPreferences?: UiPreferences;
   },
 ): Promise<ProfileRecord> {
   const db = requireDb();
@@ -54,6 +66,17 @@ export async function updateProfileForUser(
     updates.displayName = patch.displayName.trim();
   if (patch.weightUnit !== undefined) updates.weightUnit = patch.weightUnit;
   if (patch.timezone !== undefined) updates.timezone = patch.timezone;
+
+  if (patch.uiPreferences !== undefined) {
+    const [existingRow] = await db
+      .select({ uiPreferences: profiles.uiPreferences })
+      .from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
+    if (!existingRow) throw new ClientError(404, 'profile not found');
+    const existing = parseStoredUiPreferences(existingRow.uiPreferences);
+    updates.uiPreferences = mergeUiPreferences(existing, patch.uiPreferences);
+  }
 
   const [row] = await db
     .update(profiles)
@@ -64,9 +87,13 @@ export async function updateProfileForUser(
       displayName: profiles.displayName,
       weightUnit: profiles.weightUnit,
       timezone: profiles.timezone,
+      uiPreferences: profiles.uiPreferences,
       updatedAt: profiles.updatedAt,
     });
 
   if (!row) throw new ClientError(404, 'profile not found');
-  return row;
+  return {
+    ...row,
+    uiPreferences: parseStoredUiPreferences(row.uiPreferences),
+  };
 }

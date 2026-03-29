@@ -1,6 +1,6 @@
 # Proposal: Display and accessibility settings
 
-**Status:** **In progress** — Phase 1 (local shell + Profile) underway; Phase 2 (server-backed) pending.
+**Status:** **Done** (Phase 1 + 2). Local shell + **`profiles.uiPreferences`** + **`PATCH` / `me`**; see **`CHANGELOG.md`** and **`ui-styleguide.md`**.
 
 **Audience:** maintainers, Cursor agents  
 **Related app:** [workout-tracker](../../README.md) (repo root)  
@@ -92,7 +92,7 @@ flowchart LR
 - **Validation:** Zod on the server; consistent handling of unknown keys.
 - **API:** Extend **`PATCH /api/profile`** with optional `uiPreferences` (document **merge vs replace**; merge is usually better). Return `uiPreferences` on **`GET /api/me`** (or existing profile payload).
 - **Client:** After `me` loads, dispatch into app state; optionally mirror to `localStorage`. PATCH on change (debounced or Apply); toast on failure.
-- **Guests:** Either same as named users or local-only for guests — **document the choice**.
+- **Guests:** Same as named users — **`PATCH /api/profile`** persists **`uiPreferences`** for guest rows too (device follows account after re-auth).
 - **Tests:** API merge + GET; E2E or integration for cross-session consistency.
 
 ## 7. Optional later
@@ -101,8 +101,8 @@ flowchart LR
 
 ## 8. Execution checklist
 
-- [ ] Phase 1: state + `localStorage` + shell + nav + CSS + Profile UI
-- [ ] Phase 1: `color-scheme`, focus pass, Sign-in QA
-- [ ] Phase 1: Vitest + ci:local + CHANGELOG + styleguide (+ optional Playwright)
-- [ ] Phase 2: migration + Drizzle + Zod + PATCH/me + client merge
-- [ ] Phase 2: tests + docs for cross-device behavior
+- [x] Phase 1: state + `localStorage` + shell + nav + CSS + Profile UI
+- [x] Phase 1: `color-scheme`, focus pass, Sign-in QA (spot-check; optional Playwright deferred)
+- [x] Phase 1: Vitest + ci:local + CHANGELOG + styleguide
+- [x] Phase 2: migration + Drizzle + Zod + PATCH/me + client merge
+- [x] Phase 2: tests + docs for cross-device behavior

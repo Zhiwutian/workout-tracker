@@ -24,6 +24,7 @@ import {
   signIn as apiSignIn,
   signUp as apiSignUp,
 } from '@/lib/workout-api';
+import { useAppDispatch } from '@/state';
 
 type AuthContextValue = {
   token: string | null;
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * after guest login completes and would otherwise clear the new JWT from storage.
    */
   const refreshGeneration = useRef(0);
+  const dispatchDisplay = useAppDispatch();
 
   const refreshMe = useCallback(async () => {
     const gen = ++refreshGeneration.current;
@@ -72,6 +74,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refreshMe();
   }, [token, refreshMe]);
+
+  const meUiPrefsKey = useMemo(
+    () => JSON.stringify(me?.uiPreferences ?? null),
+    [me?.uiPreferences],
+  );
+  const meRef = useRef(me);
+  meRef.current = me;
+
+  useEffect(() => {
+    if (loading) return;
+    const current = meRef.current;
+    if (!current) return;
+    const raw = current.uiPreferences;
+    if (raw == null || typeof raw !== 'object') return;
+    if (Object.keys(raw).length === 0) return;
+    if (raw.textScale !== undefined) {
+      dispatchDisplay({ type: 'textScale/set', payload: raw.textScale });
+    }
+    if (raw.highContrast !== undefined) {
+      dispatchDisplay({
+        type: 'highContrast/set',
+        payload: raw.highContrast,
+      });
+    }
+    if (raw.darkMode !== undefined) {
+      dispatchDisplay({ type: 'darkMode/set', payload: raw.darkMode });
+    }
+  }, [dispatchDisplay, loading, meUiPrefsKey]);
 
   const setSessionToken = useCallback((t: string | null) => {
     setStoredToken(t);

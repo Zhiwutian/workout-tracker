@@ -9,6 +9,7 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 ### Added
 
 - **Display and accessibility (Phase 1):** app shell **text size**, **dark mode**, and **high contrast** via **`client/src/state/`** (`AppStateProvider` + **`DISPLAY_STORAGE_KEYS`** `wt-*` in **`localStorage`**); global CSS in **`client/src/index.css`** (`.app-text-scale-*`, `.app-dark-mode`, `.app-high-contrast`, indigo/amber/toast tuning); **Profile** controls and reset; **`color-scheme`** on `<html>`. Tests: **`app-state-store.test.ts`**, **`App.display-shell.test.tsx`**. Proposal: **`docs/proposals/display-and-accessibility-settings.md`**.
+- **Display and accessibility (Phase 2):** **`profiles.uiPreferences`** **`jsonb`** (migration **`0008_profile_ui_preferences`**); **`PATCH /api/profile`** and **`GET /api/me`** include merged **`uiPreferences`** (`shared/ui-preferences.ts`, **`server/lib/ui-preferences.ts`** Zod + merge). Client: **`AuthContext`** applies server prefs when **`me.uiPreferences`** changes; **Profile** PATCHes on each control + reset. **`database/schema.sql`** parity. Server tests **`ui-preferences.test.ts`**.
 
 ### Documentation
 

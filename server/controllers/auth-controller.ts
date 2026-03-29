@@ -78,6 +78,7 @@ export async function getMe(
     displayName: profile.displayName,
     weightUnit: profile.weightUnit,
     timezone: profile.timezone,
+    uiPreferences: profile.uiPreferences,
     updatedAt: profile.updatedAt.toISOString(),
     isGuest,
   });
