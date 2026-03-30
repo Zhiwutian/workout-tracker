@@ -49,6 +49,11 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(200),
   RATE_LIMIT_WRITE_MAX: z.coerce.number().int().positive().default(60),
+  /**
+   * When true, `/api` rate limiters are not applied (Playwright `webServer` sets this for E2E).
+   * Do not enable in production.
+   */
+  E2E_RELAX_RATE_LIMIT: parseBooleanEnv(false),
   DATABASE_URL: z.string().optional().default(''),
   /** Max connections in the shared `pg` pool (optional tuning for hosted Postgres limits). */
   PG_POOL_MAX: z.coerce.number().int().positive().max(100).default(10),
@@ -94,6 +99,11 @@ const envSchema = z.object({
     .max(2592000)
     .default(604800),
   SESSION_COOKIE_SAME_SITE: sessionSameSiteSchema.default('lax'),
+});
+
+/** Subset for Vitest: boolean coercion matches full `env` parse for this flag. */
+export const e2eRelaxRateLimitFieldSchema = envSchema.pick({
+  E2E_RELAX_RATE_LIMIT: true,
 });
 
 /** Format zod issues into a single startup error string. */

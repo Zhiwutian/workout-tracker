@@ -1,4 +1,4 @@
-import { Button, FieldLabel, Input } from '@/components/ui';
+import { Button, ContextualHelp, FieldLabel, Input } from '@/components/ui';
 import { useToast } from '@/components/app/toast-context';
 import { useAuth } from '@/features/auth/AuthContext';
 import { apiHref } from '@/lib/api-base-url';
@@ -32,7 +32,7 @@ export function SignInPage() {
     const err = searchParams.get('auth_error');
     if (err) {
       showToast({
-        title: 'Sign-in failed',
+        title: 'Sign-in error',
         description: err,
         variant: 'error',
       });
@@ -54,11 +54,11 @@ export function SignInPage() {
     setBusy(true);
     try {
       await continueAsGuest();
-      showToast({ title: 'Continuing as guest', variant: 'success' });
+      showToast({ title: 'Guest session started', variant: 'success' });
       navigate('/', { replace: true });
     } catch (err) {
       showToast({
-        title: 'Could not start guest session',
+        title: 'Guest session failed',
         description: err instanceof Error ? err.message : 'Unknown error',
         variant: 'error',
       });
@@ -71,7 +71,7 @@ export function SignInPage() {
     const name = displayName.trim();
     if (!name) {
       showToast({
-        title: 'Display name required',
+        title: 'Name required',
         variant: 'error',
       });
       return;
@@ -84,7 +84,7 @@ export function SignInPage() {
       navigate('/', { replace: true });
     } catch (err) {
       showToast({
-        title: mode === 'sign-up' ? 'Sign up failed' : 'Sign in failed',
+        title: mode === 'sign-up' ? 'Sign up error' : 'Sign in error',
         description: err instanceof Error ? err.message : 'Unknown error',
         variant: 'error',
       });
@@ -107,11 +107,29 @@ export function SignInPage() {
   const showDemo = authOpt.demo;
 
   return (
-    <section className="mx-auto max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
-      <h1 className="text-xl font-semibold text-slate-900">Workout Tracker</h1>
+    <section className="mx-auto max-w-md min-w-0 rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h1 className="text-xl font-semibold text-slate-900">
+          Workout Tracker
+        </h1>
+        <ContextualHelp label="About sign-in options" title="Sign-in options">
+          <p>
+            <strong>OpenID Connect</strong> sends you to your course IdP (e.g.
+            Auth0) when enabled on the server.
+          </p>
+          <p className="mt-2">
+            <strong>Demo</strong> uses a display name and a JWT for local
+            development.
+          </p>
+          <p className="mt-2">
+            <strong>Guest</strong> creates a server-backed session tied to this
+            browser until you sign out. Use a named account or OIDC to use
+            another device.
+          </p>
+        </ContextualHelp>
+      </div>
       <p className="mt-2 text-sm text-slate-600">
-        Sign in with your course identity provider, use a demo display name, or
-        continue as a guest.
+        OIDC, demo name, or guest — tap ? for details.
       </p>
 
       {showOidc ? (
@@ -122,9 +140,6 @@ export function SignInPage() {
             onClick={() => setSessionToken(null)}>
             Sign in with OpenID Connect
           </a>
-          <p className="text-center text-xs text-slate-500">
-            Redirects to Auth0 or another OIDC host configured on the server.
-          </p>
         </div>
       ) : null}
 
@@ -143,7 +158,7 @@ export function SignInPage() {
             e.preventDefault();
             void runAuth('sign-in');
           }}>
-          <div>
+          <div className="min-w-0">
             <FieldLabel
               className="mb-1 text-sm font-medium text-slate-700"
               htmlFor="sign-in-display-name">
@@ -191,9 +206,7 @@ export function SignInPage() {
           Continue as guest
         </Button>
         <p className="mt-2 text-center text-xs text-slate-500">
-          Guest data is stored on the server for this browser until you sign out
-          or clear the site. Create an account or use OIDC to sign in from
-          another device.
+          Guest: this browser until sign-out. See ? for more.
         </p>
       </div>
       <p className="mt-4 text-center text-sm text-slate-500">

@@ -52,10 +52,10 @@ test.describe('workout tracker smoke', () => {
     await expectSignInPage(page);
     await signUpWithDemo(page, name);
     await expectWorkoutsVisible(page);
-    await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
+    await expect(page.locator('header').getByText(name)).toBeVisible();
 
     await page.getByRole('button', { name: 'Start workout' }).click();
-    await expect(page.getByRole('link', { name: 'Open' })).toBeVisible({
+    await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -64,10 +64,10 @@ test.describe('workout tracker smoke', () => {
     await expectSignInPage(page);
     await continueGuest(page);
     await expectWorkoutsVisible(page);
-    await expect(page.getByText(/Guest session — workouts save/)).toBeVisible();
+    await expect(page.getByText(/Guest — saved on this device/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Start workout' }).click();
-    await expect(page.getByRole('link', { name: 'Open' })).toBeVisible({
+    await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -75,18 +75,17 @@ test.describe('workout tracker smoke', () => {
   test('cardio workout shows only cardio exercises in log-a-set picker', async ({
     page,
   }) => {
-    const name = `e2e-cardio-${Date.now()}`;
     await expectSignInPage(page);
-    await signUpWithDemo(page, name);
+    await continueGuest(page);
     await expectWorkoutsVisible(page);
 
     await page.getByLabel('Workout type').selectOption('cardio');
     await page.getByRole('button', { name: 'Start workout' }).click();
-    await expect(page.getByRole('link', { name: 'Open' })).toBeVisible({
+    await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible({
       timeout: 15_000,
     });
 
-    await page.getByRole('link', { name: 'Open' }).click();
+    await page.getByRole('link', { name: 'Continue' }).click();
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible({
       timeout: 15_000,
@@ -106,5 +105,45 @@ test.describe('workout tracker smoke', () => {
     const labels = await exerciseSelect.locator('option').allInnerTexts();
     expect(labels.some((t) => t.trim().length > 0)).toBe(true);
     expect(labels.some((t) => /Bench press/i.test(t))).toBe(false);
+  });
+
+  test('finish workout from detail', async ({ page }) => {
+    await expectSignInPage(page);
+    await continueGuest(page);
+    await expectWorkoutsVisible(page);
+
+    await page.getByRole('button', { name: 'Start workout' }).click();
+    await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByRole('link', { name: 'Continue' }).click();
+
+    await expect(
+      page.getByRole('button', { name: 'Finish workout' }),
+    ).toBeVisible({ timeout: 15_000 });
+
+    const patchPromise = page.waitForResponse(
+      (r) =>
+        /\/api\/workouts\/\d+$/.test(r.url()) &&
+        r.request().method() === 'PATCH',
+      { timeout: 15_000 },
+    );
+    await page.getByRole('button', { name: 'Finish workout' }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Confirm finish' })
+      .click();
+    const patchRes = await patchPromise;
+    expect(patchRes.ok()).toBeTruthy();
+
+    await expect(page.getByText('Completed')).toBeVisible({ timeout: 15_000 });
+
+    await page.goto('/');
+    await expectWorkoutsVisible(page);
+    await expect(
+      page
+        .getByRole('list', { name: 'Workout list' })
+        .getByRole('link', { name: 'Open' }),
+    ).toBeVisible({ timeout: 15_000 });
   });
 });

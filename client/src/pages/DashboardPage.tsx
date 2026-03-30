@@ -3,6 +3,7 @@ import { useToast } from '@/components/app/toast-context';
 import {
   Button,
   Card,
+  ContextualHelp,
   EmptyState,
   FieldLabel,
   Input,
@@ -169,7 +170,7 @@ export function DashboardPage() {
     e.preventDefault();
     const raw = Number(newTarget);
     if (!Number.isFinite(raw) || raw <= 0) {
-      showToast({ title: 'Enter a positive target', variant: 'error' });
+      showToast({ title: 'Target must be greater than 0', variant: 'error' });
       return;
     }
     setSavingGoal(true);
@@ -179,11 +180,11 @@ export function DashboardPage() {
         targetValue: raw,
         workoutTypeFilter: newTypeFilter.trim() || null,
       });
-      showToast({ title: 'Goal added', variant: 'success' });
+      showToast({ title: 'Goal saved', variant: 'success' });
       await refreshGoals();
     } catch (err) {
       showToast({
-        title: 'Could not add goal',
+        title: 'Goal not saved',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -198,7 +199,7 @@ export function DashboardPage() {
       await refreshGoals();
     } catch (err) {
       showToast({
-        title: 'Could not update goal',
+        title: 'Goal update failed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -212,7 +213,7 @@ export function DashboardPage() {
       showToast({ title: 'Goal removed', variant: 'success' });
     } catch (err) {
       showToast({
-        title: 'Could not remove goal',
+        title: 'Remove failed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -227,17 +228,54 @@ export function DashboardPage() {
     <div className="space-y-8">
       <NavLinkButton to="/">← Workouts</NavLinkButton>
 
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-600">
-          Week starting <time dateTime={weekStart}>{weekStart}</time> (
-          {zoneLabel}
-          ). Timezone comes from{' '}
-          <Link to="/profile" className="text-indigo-600 underline">
-            Profile
-          </Link>
-          . Volume uses non-warmup sets only (same idea as CSV export).
-        </p>
+      <header className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
+          <p className="text-sm text-slate-600">
+            Week of <time dateTime={weekStart}>{weekStart}</time>
+            {zoneLabel !== 'UTC' && zoneLabel !== 'Etc/UTC'
+              ? ` · ${zoneLabel}`
+              : ''}
+          </p>
+        </div>
+        <ContextualHelp
+          label="About dashboard metrics"
+          title="How the dashboard works">
+          <div>
+            <h3 className="font-semibold">Week and timezone</h3>
+            <p className="mt-1">
+              Weeks start on Monday. Timezone comes from{' '}
+              <Link to="/profile" className="text-indigo-600 underline">
+                Profile
+              </Link>
+              .
+            </p>
+          </div>
+          <div>
+            <h3 className="mt-3 font-semibold">Volume</h3>
+            <p className="mt-1">
+              Volume is reps × weight, excluding warm-up sets—the same rules as
+              CSV export.
+            </p>
+          </div>
+          <div>
+            <h3 className="mt-3 font-semibold">Chart and table</h3>
+            <p className="mt-1">
+              Bar height is total volume per week. The table lists the same
+              numbers for screen readers and exact values.
+            </p>
+          </div>
+          <div>
+            <h3 className="mt-3 font-semibold">Goals</h3>
+            <p className="mt-1">
+              Goals use your profile week. Past weeks are marked met or missed
+              when you open the dashboard.
+              {me?.isGuest
+                ? ' Guest data stays on this device until you sign out.'
+                : ''}
+            </p>
+          </div>
+        </ContextualHelp>
       </header>
 
       {loading && <p className="text-sm text-slate-600">Loading…</p>}
@@ -245,7 +283,7 @@ export function DashboardPage() {
       {!loading && empty ? (
         <EmptyState
           title="No training data this week yet"
-          description="Log a workout and add sets to see volume, streaks, and charts here."
+          description="Log sets on a workout to see volume and trends here."
           actions={
             <div className="flex flex-wrap gap-3">
               <NavLinkButton
@@ -356,13 +394,12 @@ export function DashboardPage() {
                 className="text-lg font-semibold text-slate-900">
                 Weekly volume trend
               </h2>
-              <p id="volume-chart-desc" className="mt-1 text-sm text-slate-600">
-                Bar height is total volume per week; numeric values are in the
-                table below for screen readers and exact figures.
+              <p id="volume-chart-desc" className="sr-only">
+                Weekly volume by week; values also appear in the table below.
               </p>
               <figure className="mt-4 rounded-lg border border-slate-200 bg-white p-2">
                 <div
-                  className="h-64 w-full min-h-[16rem]"
+                  className="h-64 w-full min-h-[16rem] min-w-0"
                   role="img"
                   aria-labelledby="volume-chart-heading"
                   aria-describedby="volume-chart-desc">
@@ -475,15 +512,11 @@ export function DashboardPage() {
               Weekly goals
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Goals use your profile week (Monday start). Past weeks finalize as
-              met or missed when you open the dashboard.
-              {me?.isGuest
-                ? ' Guest data stays on this device until you sign out.'
-                : ''}
+              Monday–Sunday weeks. Details in the dashboard help (?).
             </p>
 
             <form
-              className="mt-4 max-w-xl space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4"
+              className="mt-4 max-w-xl min-w-0 space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4"
               onSubmit={(e) => void handleAddGoal(e)}>
               <p className="text-sm font-medium text-slate-800">Add a goal</p>
               <div>
@@ -514,8 +547,7 @@ export function DashboardPage() {
                 <p
                   id="goal-target-hint"
                   className="mt-1 text-xs text-slate-600">
-                  Volume goals use reps × weight (non-warmup). Count goals use
-                  whole numbers.
+                  Volume: reps × weight (no warm-ups). Counts: whole numbers.
                 </p>
               </div>
               <div>

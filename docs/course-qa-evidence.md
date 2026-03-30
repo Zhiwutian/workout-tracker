@@ -23,13 +23,13 @@
 
 Recorded **2026-03-27** with Postgres at **`DATABASE_URL`**, **`pnpm run db:migrate`**, **`pnpm run db:seed`** before E2E.
 
-| Command             | Result | Notes                                                                                                                                        |
-| ------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm run ci:local` | Pass   | **lint** → **tsc** → **test** → **build** (same core gate as pre-push / local parity)                                                        |
-| `pnpm run lint`     | Pass   | Client + server ESLint                                                                                                                       |
-| `pnpm run tsc`      | Pass   | Client + server TypeScript                                                                                                                   |
-| `pnpm run test`     | Pass   | Vitest: client 11 tests; server 28 passed, 6 skipped (IDOR suite without **`TEST_DATABASE_URL`**)                                            |
-| `pnpm run test:e2e` | Pass   | **8** Playwright tests: **`e2e/smoke.spec.ts`** + **`e2e/a11y.spec.ts`** × **chromium** + **mobile-chrome** (see **`playwright.config.ts`**) |
+| Command             | Result | Notes                                                                                                                                                                                                                                                                          |
+| ------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm run ci:local` | Pass   | **lint** → **tsc** → **test** → **build** (same core gate as pre-push / local parity)                                                                                                                                                                                          |
+| `pnpm run lint`     | Pass   | Client + server ESLint                                                                                                                                                                                                                                                         |
+| `pnpm run tsc`      | Pass   | Client + server TypeScript                                                                                                                                                                                                                                                     |
+| `pnpm run test`     | Pass   | Vitest: client + server (IDOR suite skipped without **`TEST_DATABASE_URL`**) — see command output for counts.                                                                                                                                                                  |
+| `pnpm run test:e2e` | Pass   | **18** Playwright runs (**chromium** + **mobile-chrome**): smoke + a11y specs. **`dev:e2e`** disables API rate limits via **`E2E_RELAX_RATE_LIMIT`**; Vite uses **`--strictPort`** on **5188** so tests do not attach to a stale dev server. Production still enforces limits. |
 
 Replace or extend this block when your CI or local run differs.
 
@@ -48,7 +48,7 @@ Replace or extend this block when your CI or local run differs.
 
 **Tools (examples):** axe DevTools, Lighthouse accessibility category, VoiceOver / NVDA.
 
-**Implementation note:** **`e2e/a11y.spec.ts`** uses **`@axe-core/playwright`** (critical + serious only). Playwright smoke tests use **`getByRole`** / **`getByLabel`** — aligns with accessible names.
+**Implementation note:** **`e2e/a11y.spec.ts`** uses **`@axe-core/playwright`** (critical + serious only). Playwright smoke tests use **`getByRole`** / **`getByLabel`** — aligns with accessible names. **Catalog** drill-down exposes **`aria-live`** step status and **`aria-label`** on category/subgroup controls (**`ExerciseCatalogNav`**).
 
 ---
 
@@ -60,10 +60,10 @@ Replace or extend this block when your CI or local run differs.
 
 **UI mapping (see `WorkoutDetailPage`):** exercise **select** → **reps** / **weight** inputs → **Save set** button. Defaults pre-fill first exercise, reps **8**, weight **0** — a user can log a set with **one** submit if defaults are acceptable; the **three-tap** story matches changing exercise + reps/weight + save when instructors count discrete controls.
 
-| Session | Pass / Fail | Steps taken (short)                                                                                         | Friction notes                                                                             |
-| ------- | ----------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 1       | **Pass**    | Guest: **Continue as guest** → **Start workout** → **Open** → **Save set** on workout detail (defaults OK). | Align rubric wording with **Exercise / Reps / Weight / Save** if “tap” means each control. |
-| 2       | **Pass**    | Demo account: **Create account** on sign-in → same **Start workout** → **Open** → **Save set**.             | Same form; demo path verified in **`e2e/smoke.spec.ts`**.                                  |
+| Session | Pass / Fail | Steps taken (short)                                                                                                              | Friction notes                                                                             |
+| ------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1       | **Pass**    | Guest: **Continue as guest** → **Start workout** → **Continue** (active workout) → **Save set** on workout detail (defaults OK). | Align rubric wording with **Exercise / Reps / Weight / Save** if “tap” means each control. |
+| 2       | **Pass**    | Demo account: **Create account** on sign-in → same **Start workout** → **Continue** → **Save set**.                              | Same form; at least one demo sign-up path remains in **`e2e/smoke.spec.ts`**.              |
 
 ---
 
@@ -84,7 +84,7 @@ Replace or extend this block when your CI or local run differs.
 | OIDC on production URL (session / fragment handoff per **`docs/deployment/auth0-setup.md`**) | **Pass**              | Production OIDC enabled on the API host; sign-in redirect → IdP → **`/api/auth/oidc/callback`** → session cookie and/or **`#oidc_token=`** fragment to Vercel per split-host docs; **`GET /api/me`** succeeds after login. Verified **2026-03-27** against **`docs/deployment/auth0-setup.md`**. |
 | No secrets in client bundle — only non-secret **`VITE_*`** (see **`docs/configuration.md`**) | **Pass (static)**     | Client exposes only **`VITE_API_BASE_URL`** (optional); secrets remain **`server/.env`**.                                                                                                                                                                                                        |
 | CORS / API behavior matches deployment docs                                                  | **Pass (doc review)** | **`docs/deployment/README.md`**: **`CORS_ORIGIN`** lists Vercel origin(s); split-host **`VITE_API_BASE_URL`** pattern matches **`docs/configuration.md`**.                                                                                                                                       |
-| HTTPS on public hosts; rate limits active (default server config)                            | **Pass**              | **Rate limits:** **`ratelimit-*`** headers on API responses (verified in dev/e2e). **HTTPS:** required for Vercel + Render in production; local dev uses **http** by design.                                                                                                                     |
+| HTTPS on public hosts; rate limits active (default server config)                            | **Pass**              | **Rate limits:** **`ratelimit-*`** headers on a normal dev/prod API (E2E **`webServer`** may set **`E2E_RELAX_RATE_LIMIT`** — limits off for that process only). **HTTPS:** required for Vercel + Render in production; local dev uses **http** by design.                                       |
 | **`docs/troubleshooting.md`** reviewed for accuracy after any last-minute deploy change      | **Pass**              | Reviewed **2026-03-27** against **`docs/deployment/README.md`** and **`docs/configuration.md`** — symptom → doc cross-links consistent; no stale callback/CORS guidance detected.                                                                                                                |
 
 ---

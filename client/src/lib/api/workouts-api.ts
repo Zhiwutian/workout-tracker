@@ -89,6 +89,21 @@ export async function createWorkout(input?: {
   });
 }
 
+export async function patchWorkout(
+  workoutId: number,
+  body: {
+    title?: string | null;
+    notes?: string | null;
+    endedAt?: string | null;
+    workoutType?: WorkoutType;
+  },
+): Promise<WorkoutSummary> {
+  return fetchJson<WorkoutSummary>(`/api/workouts/${workoutId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
 export async function readWorkoutDetail(workoutId: number): Promise<{
   workout: WorkoutSummary;
   sets: SetRow[];
