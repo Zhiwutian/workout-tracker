@@ -56,7 +56,7 @@ describe('App', () => {
       await screen.findByRole('heading', { name: 'Workouts' }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByText(/Guest session — workouts save on this device/),
+      await screen.findByText(/Guest — saved on this device/),
     ).toBeInTheDocument();
   });
 

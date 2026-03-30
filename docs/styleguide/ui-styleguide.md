@@ -37,17 +37,18 @@ This repo’s global CSS is intentionally minimal compared to larger apps; when 
 
 ## Components (`client/src/components/ui/`)
 
-| Primitive                                                      | Role                                                                                             |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **`Button`**                                                   | Primary actions, variants (`ghost`, etc.); **`forwardRef`** for focus return.                    |
-| **`Modal`**                                                    | Dialog overlay (`role="dialog"`), Escape + overlay close, body scroll lock, focus return.        |
-| **`Input`**                                                    | Single-line text and numeric fields (shared focus ring).                                         |
-| **`Select`**                                                   | Native `<select>` with the same visual baseline as **`Input`**.                                  |
-| **`FieldLabel`**                                               | Consistent label styling; override with **`className`** for larger form sections (e.g. profile). |
-| **`Textarea`**                                                 | Multi-line notes (e.g. set notes); matches **`Input`** border/focus.                             |
-| **`Card`**, **`Badge`**, **`EmptyState`**, **`SectionHeader`** | Layout and emphasis.                                                                             |
+| Primitive                                                      | Role                                                                                                                                                                  |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`Button`**                                                   | Primary actions, variants (`ghost`, etc.); **`forwardRef`** for focus return.                                                                                         |
+| **`Modal`**                                                    | Dialog overlay (`role="dialog"`), Escape + overlay close, body scroll lock, focus return.                                                                             |
+| **`Input`**                                                    | Single-line text and numeric fields (shared focus ring). Uses **`w-full max-w-full min-w-0 box-border`** so fields shrink inside grids/flex rows on narrow viewports. |
+| **`Select`**                                                   | Native `<select>` with the same visual baseline and width constraints as **`Input`**.                                                                                 |
+| **`ContextualHelp`**                                           | Compact **?** trigger (~**44×44px** tap target) opening **`Modal`** for long explanatory copy; keep page headers minimal.                                             |
+| **`FieldLabel`**                                               | Consistent label styling; override with **`className`** for larger form sections (e.g. profile).                                                                      |
+| **`Textarea`**                                                 | Multi-line notes (e.g. set notes); matches **`Input`** border/focus.                                                                                                  |
+| **`Card`**, **`Badge`**, **`EmptyState`**, **`SectionHeader`** | Layout and emphasis.                                                                                                                                                  |
 
-Page-specific markup stays in **`pages/`** or **`features/`**; reuse these primitives before inventing new class stacks.
+Page-specific markup stays in **`pages/`** or **`features/`**; reuse these primitives before inventing new class stacks. **`features/exercises/ExerciseCatalogNav`** — drill-down for read-only globals (category → subgroup → list); subgroup logic in **`client/src/lib/exercise-catalog.ts`**.
 
 ## Charts (dashboard)
 

@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   Card,
+  ContextualHelp,
   EmptyState,
   FieldLabel,
   Select,
@@ -122,7 +123,7 @@ export function WorkoutsPage() {
       showToast({ title: 'Workout started', variant: 'success' });
     } catch (err) {
       showToast({
-        title: 'Could not start workout',
+        title: 'Start failed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -136,10 +137,10 @@ export function WorkoutsPage() {
     try {
       const range = rangePresetToIsoRange(rangePreset);
       await downloadWorkoutSetsCsv(range);
-      showToast({ title: 'CSV downloaded', variant: 'success' });
+      showToast({ title: 'Export ready', variant: 'success' });
     } catch (err) {
       showToast({
-        title: 'Could not export CSV',
+        title: 'Export failed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -169,34 +170,68 @@ export function WorkoutsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1
-            className="text-2xl font-semibold text-slate-900"
-            data-testid="workouts-page-heading">
-            Workouts
-          </h1>
-          <p className="text-sm text-slate-600">
-            {me?.isGuest ? (
-              <>
-                Guest session — workouts save on this device until you sign out.{' '}
-                <Link className="text-indigo-600 underline" to="/sign-in">
-                  Create an account
-                </Link>{' '}
-                to sign in by name later.
-              </>
-            ) : (
-              <>
-                Signed in as <strong>{me?.displayName}</strong>
-              </>
-            )}
-          </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start gap-2">
+            <div className="min-w-0">
+              <h1
+                className="text-2xl font-semibold text-slate-900"
+                data-testid="workouts-page-heading">
+                Workouts
+              </h1>
+              <p className="text-sm text-slate-600">
+                {me?.isGuest ? (
+                  <>
+                    Guest — saved on this device.{' '}
+                    <Link className="text-indigo-600 underline" to="/sign-in">
+                      Sign in
+                    </Link>{' '}
+                    for a named account.
+                  </>
+                ) : (
+                  <>{me?.displayName}</>
+                )}
+              </p>
+            </div>
+            <ContextualHelp
+              label="About the workouts list"
+              title="Workouts list">
+              <div>
+                <h3 className="font-semibold">Guest sessions</h3>
+                <p className="mt-1">
+                  Guest workouts stay in this browser until you sign out. Use{' '}
+                  <Link to="/sign-in" className="text-indigo-600 underline">
+                    Sign in
+                  </Link>{' '}
+                  to keep access across devices with a named account.
+                </p>
+              </div>
+              <div>
+                <h3 className="mt-3 font-semibold">Finishing a workout</h3>
+                <p className="mt-1">
+                  Open an active workout and tap <strong>Finish workout</strong>{' '}
+                  when you are done, then <strong>Confirm finish</strong> in the
+                  dialog. Use <strong>Resume editing</strong> if you need to add
+                  sets after that.
+                </p>
+              </div>
+              <div>
+                <h3 className="mt-3 font-semibold">CSV export</h3>
+                <p className="mt-1">
+                  The CSV includes sets for workouts whose{' '}
+                  <strong>start time</strong> falls in the date range you pick.
+                  Status filters (active / completed) do not affect the export.
+                </p>
+              </div>
+            </ContextualHelp>
+          </div>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <div>
-            <FieldLabel htmlFor="new-workout-type">Workout type</FieldLabel>
+        <div className="flex min-w-0 flex-wrap items-end gap-2">
+          <div className="min-w-0">
+            <FieldLabel htmlFor="new-workout-type">Type</FieldLabel>
             <Select
               id="new-workout-type"
+              className="w-full min-w-[9rem]"
               value={newWorkoutType}
               onChange={(e) => setNewWorkoutType(e.target.value as WorkoutType)}
               aria-label="Workout type">
@@ -285,10 +320,17 @@ export function WorkoutsPage() {
                       Active
                     </Badge>
                   )}
+                  {!w.endedAt ? (
+                    <NavLinkButton
+                      to={`/workouts/${w.workoutId}#finish`}
+                      className="border border-slate-300 bg-white text-slate-800 hover:bg-slate-50">
+                      Finish
+                    </NavLinkButton>
+                  ) : null}
                   <NavLinkButton
                     to={`/workouts/${w.workoutId}`}
                     className="bg-indigo-600 text-white hover:bg-indigo-500 hover:text-white">
-                    Open
+                    {w.endedAt ? 'Open' : 'Continue'}
                   </NavLinkButton>
                 </div>
               </div>
@@ -298,7 +340,7 @@ export function WorkoutsPage() {
       </ul>
       <p className="text-sm text-slate-500">
         <Link className="text-indigo-600 underline" to="/dashboard">
-          Weekly volume dashboard
+          Dashboard
         </Link>
         {' · '}
         <Link className="text-indigo-600 underline" to="/tutorial">

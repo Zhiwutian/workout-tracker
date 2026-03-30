@@ -76,6 +76,8 @@ pnpm run db:migrate
 pnpm run db:seed
 ```
 
+**Existing databases** that already have global exercises but need updated cardio subgroup labels (**Standard** / **HIIT**) can run **`database/update-cardio-catalog-subgroups.sql`** once (see **`docs/development-workflow.md`**).
+
 ### 5) Start local development
 
 Make sure PostgreSQL is running before starting the app:

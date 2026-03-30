@@ -171,6 +171,40 @@ export const handlers = [
     });
   }),
 
+  http.patch('/api/workouts/:workoutId', async ({ request, params }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    const id = Number(params.workoutId);
+    const body = (await request.json().catch(() => ({}))) as {
+      endedAt?: string | null;
+    };
+    const idx = mockWorkouts.findIndex((x) => x.workoutId === id);
+    if (idx < 0) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'workout not found' } },
+        { status: 404 },
+      );
+    }
+    const prev = mockWorkouts[idx]!;
+    const endedAt =
+      body.endedAt === undefined
+        ? prev.endedAt
+        : body.endedAt === null || body.endedAt === ''
+          ? null
+          : body.endedAt;
+    const row = { ...prev, endedAt };
+    mockWorkouts = [
+      ...mockWorkouts.slice(0, idx),
+      row,
+      ...mockWorkouts.slice(idx + 1),
+    ];
+    return HttpResponse.json({ data: row });
+  }),
+
   http.get('/api/exercises', ({ request }) => {
     if (!requireAuth(request)) {
       return HttpResponse.json(
@@ -193,7 +227,15 @@ export const handlers = [
         exerciseTypeId: 2,
         userId: null as number | null,
         name: 'Running',
-        muscleGroup: null as string | null,
+        muscleGroup: 'Standard' as string | null,
+        category: 'cardio',
+        archivedAt: null,
+      },
+      {
+        exerciseTypeId: 201,
+        userId: null as number | null,
+        name: 'Jump rope',
+        muscleGroup: 'HIIT' as string | null,
         category: 'cardio',
         archivedAt: null,
       },
@@ -224,7 +266,15 @@ export const handlers = [
         exerciseTypeId: 2,
         userId: null as number | null,
         name: 'Running',
-        muscleGroup: null as string | null,
+        muscleGroup: 'Standard' as string | null,
+        category: 'cardio',
+        archivedAt: null,
+      },
+      {
+        exerciseTypeId: 201,
+        userId: null as number | null,
+        name: 'Jump rope',
+        muscleGroup: 'HIIT' as string | null,
         category: 'cardio',
         archivedAt: null,
       },

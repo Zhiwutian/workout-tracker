@@ -30,6 +30,9 @@ export function CustomExerciseRow({
     setCategory(ex.category ?? 'resistance');
   }, [ex.exerciseTypeId, ex.name, ex.muscleGroup, ex.category]);
 
+  const muscleLabel =
+    category === 'cardio' ? 'Type (e.g. Standard, HIIT)' : 'Muscle group';
+
   async function save(): Promise<void> {
     setBusy(true);
     try {
@@ -38,11 +41,11 @@ export function CustomExerciseRow({
         muscleGroup: muscleGroup.trim() || null,
         category,
       });
-      showToast({ title: 'Exercise updated', variant: 'success' });
+      showToast({ title: 'Saved', variant: 'success' });
       onChanged();
     } catch (err) {
       showToast({
-        title: 'Could not update',
+        title: 'Save failed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -55,11 +58,11 @@ export function CustomExerciseRow({
     setBusy(true);
     try {
       await patchExercise(ex.exerciseTypeId, { archived: true });
-      showToast({ title: 'Exercise archived', variant: 'success' });
+      showToast({ title: 'Archived', variant: 'success' });
       onChanged();
     } catch (err) {
       showToast({
-        title: 'Could not archive',
+        title: 'Archive failed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -88,13 +91,13 @@ export function CustomExerciseRow({
           <FieldLabel
             className="text-sm font-medium text-slate-700"
             htmlFor={`ex-${ex.exerciseTypeId}-muscle`}>
-            Muscle group
+            {muscleLabel}
           </FieldLabel>
           <Input
             id={`ex-${ex.exerciseTypeId}-muscle`}
             value={muscleGroup}
             onChange={(e) => setMuscleGroup(e.target.value)}
-            aria-label={`Muscle group for ${ex.name}`}
+            aria-label={`${muscleLabel} for ${ex.name}`}
           />
         </div>
         <div className="sm:col-span-2">

@@ -36,5 +36,10 @@ export default defineConfig({
     timeout: 120_000,
     stdout: 'pipe',
     stderr: 'pipe',
+    env: {
+      ...process.env,
+      /** Avoid 429 when many auth + workout requests run back-to-back across projects. */
+      E2E_RELAX_RATE_LIMIT: 'true',
+    },
   },
 });

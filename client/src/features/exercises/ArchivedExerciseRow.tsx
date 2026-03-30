@@ -19,11 +19,11 @@ export function ArchivedExerciseRow({
     setBusy(true);
     try {
       await patchExercise(ex.exerciseTypeId, { archived: false });
-      showToast({ title: 'Exercise restored', variant: 'success' });
+      showToast({ title: 'Restored', variant: 'success' });
       onChanged();
     } catch (err) {
       showToast({
-        title: 'Could not restore',
+        title: 'Restore failed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });

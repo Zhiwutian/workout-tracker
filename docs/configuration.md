@@ -21,6 +21,7 @@ Do not commit real secrets.
    - **`AUTH_DEMO_ENABLED`** — default **`true`**. Set **`false`** in production to disable **`POST /api/auth/sign-up`**, **`sign-in`**, and return **403** for those paths while keeping **`POST /api/auth/guest`** if you still want anonymous try-out (see **`docs/assumptions.md`**).
    - **`CORS_ORIGIN`** — dev client origin (e.g. `http://localhost:5173`); comma-separated list of allowed origins
    - Rate limit tunables if needed (`RATE_LIMIT_*`)
+   - **`E2E_RELAX_RATE_LIMIT`** — when **`true`**, `/api` rate limiters are disabled (intended for Playwright only: **`playwright.config.ts`** injects this into **`webServer`**). **Never** set in production.
 
 3. Optional client **`client/.env.local`** (see **`client/.env.example`**):
    - **`VITE_API_BASE_URL`** — when the API is not same-origin (e.g. Vercel + Render); must not contain secrets

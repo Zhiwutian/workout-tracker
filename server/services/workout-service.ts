@@ -2,6 +2,7 @@ import { and, asc, desc, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { workoutSets, workouts } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
+import { assertWorkoutAcceptsNewSets } from '@server/lib/workout-logging-guards.js';
 import { isWorkoutType, type WorkoutType } from '@shared/workout-types';
 
 function requireDb(): DbClient {
@@ -191,6 +192,7 @@ export async function addSetToWorkout(
   const db = requireDb();
   const existing = await getWorkoutForUser(userId, workoutId);
   if (!existing) throw new ClientError(404, 'workout not found');
+  assertWorkoutAcceptsNewSets(existing.workout.endedAt);
 
   let setIndex = input.setIndex;
   if (setIndex === undefined) {

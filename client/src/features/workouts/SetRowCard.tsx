@@ -48,7 +48,7 @@ export function SetRowCard({
     const r = Number(reps);
     const w = Number(weight);
     if (!Number.isFinite(r) || !Number.isFinite(w)) {
-      showToast({ title: 'Invalid numbers', variant: 'error' });
+      showToast({ title: 'Check reps and weight', variant: 'error' });
       return;
     }
     const rest = parseRestSecondsInput(restSeconds);
@@ -63,10 +63,10 @@ export function SetRowCard({
       });
       onPatched(row);
       setEditing(false);
-      showToast({ title: 'Set updated', variant: 'success' });
+      showToast({ title: 'Set saved', variant: 'success' });
     } catch (err) {
       showToast({
-        title: 'Could not update set',
+        title: 'Set not saved',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -81,10 +81,10 @@ export function SetRowCard({
     try {
       await deleteSet(s.setId);
       onRemoved();
-      showToast({ title: 'Set deleted', variant: 'success' });
+      showToast({ title: 'Set removed', variant: 'success' });
     } catch (err) {
       showToast({
-        title: 'Could not delete set',
+        title: 'Set not removed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });

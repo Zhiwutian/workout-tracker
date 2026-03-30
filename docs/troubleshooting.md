@@ -19,12 +19,12 @@ Quick fixes for common local and hosted issues. For deployment env, see **`docs/
 
 ## API / dev server
 
-| Symptom                                | What to check                                                                                                                                                                         |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `401` on `/api/me` after sign-in       | **Split deploy:** token handoff and cookies — see **`docs/deployment/auth0-setup.md`**, **`docs/deployment/vercel-render.md`**. Local: same-origin Vite proxy vs `VITE_API_BASE_URL`. |
-| `403` / CORS errors in browser console | `CORS_ORIGIN` must list the **exact** SPA origin (scheme + host, no trailing slash mismatch).                                                                                         |
-| `429` Too Many Requests                | Rate limits in `server/config/env.ts`; wait or tune `RATE_LIMIT_*` for local dev only.                                                                                                |
-| Port already in use (`5173`, `8080`)   | `pnpm run dev:clean` or **`docs/development-workflow.md`**.                                                                                                                           |
+| Symptom                                | What to check                                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `401` on `/api/me` after sign-in       | **Split deploy:** token handoff and cookies — see **`docs/deployment/auth0-setup.md`**, **`docs/deployment/vercel-render.md`**. Local: same-origin Vite proxy vs `VITE_API_BASE_URL`.                                                                                                                                                               |
+| `403` / CORS errors in browser console | `CORS_ORIGIN` must list the **exact** SPA origin (scheme + host, no trailing slash mismatch).                                                                                                                                                                                                                                                       |
+| `429` Too Many Requests                | Rate limits in `server/config/env.ts`; wait or tune `RATE_LIMIT_*` for local dev only. Playwright normally sets **`E2E_RELAX_RATE_LIMIT=true`** on the **`webServer`** API; if you attach E2E to a server you started by hand, set the same env (or relax **`RATE_LIMIT_*`**) so smoke tests do not flake. **Do not** disable limits in production. |
+| Port already in use (`5173`, `8080`)   | `pnpm run dev:clean` or **`docs/development-workflow.md`**.                                                                                                                                                                                                                                                                                         |
 
 ---
 
@@ -50,10 +50,10 @@ Quick fixes for common local and hosted issues. For deployment env, see **`docs/
 
 ## Tests
 
-| Symptom            | What to check                                                                           |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| IDOR tests skipped | Set **`TEST_DATABASE_URL`** to a disposable Postgres URL — **`docs/testing.md`**.       |
-| E2E fails          | **`DATABASE_URL`**, Playwright browsers installed — **`docs/development-workflow.md`**. |
+| Symptom            | What to check                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| IDOR tests skipped | Set **`TEST_DATABASE_URL`** to a disposable Postgres URL — **`docs/testing.md`**.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| E2E fails          | **`DATABASE_URL`**, migrate + seed, Playwright browsers installed — **`docs/development-workflow.md`**. **`Port 5188 is in use`**: stop other Vite instances (`pnpm run dev:clean`) — with **`--strictPort`**, the E2E client will not silently move to another port (which would leave Playwright talking to a stale app/API and cause confusing **429**s). Intermittent **429** otherwise: ensure **`pnpm run dev:e2e`** runs the API with **`E2E_RELAX_RATE_LIMIT`** (set in that script) or lower traffic in specs. |
 
 ---
 

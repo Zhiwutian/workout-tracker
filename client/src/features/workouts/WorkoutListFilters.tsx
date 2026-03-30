@@ -101,8 +101,8 @@ export function WorkoutListFilters({
         </div>
       </div>
       <p className="text-xs text-slate-500">
-        CSV includes every set for workouts that <strong>started</strong> in the
-        selected date range (independent of status filters).
+        CSV uses workout <strong>start</strong> dates in this range (status
+        filters do not apply).
       </p>
 
       <Modal

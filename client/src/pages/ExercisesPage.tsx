@@ -1,8 +1,15 @@
 import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { useToast } from '@/components/app/toast-context';
-import { Button, FieldLabel, Input, Select } from '@/components/ui';
+import {
+  Button,
+  ContextualHelp,
+  FieldLabel,
+  Input,
+  Select,
+} from '@/components/ui';
 import { ArchivedExerciseRow } from '@/features/exercises/ArchivedExerciseRow';
 import { CustomExerciseRow } from '@/features/exercises/CustomExerciseRow';
+import { ExerciseCatalogNav } from '@/features/exercises/ExerciseCatalogNav';
 import { cn } from '@/lib';
 import {
   createExercise,
@@ -40,7 +47,7 @@ function exerciseMatchesFilters(
 }
 
 /**
- * Catalog-first exercises browser: filters, tabs, collapsible add-custom.
+ * Catalog-first exercises browser: drill-down catalog, tabs, collapsible add-custom.
  */
 export function ExercisesPage() {
   const { showToast } = useToast();
@@ -54,6 +61,8 @@ export function ExercisesPage() {
   const [loadKey, setLoadKey] = useState(0);
 
   const [tab, setTab] = useState<ExercisesTab>('catalog');
+  /** Remount catalog drill-down when returning from another tab. */
+  const [catalogMountKey, setCatalogMountKey] = useState(0);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<WorkoutType | ''>('');
   const [muscleFilter, setMuscleFilter] = useState('');
@@ -80,14 +89,6 @@ export function ExercisesPage() {
   const globals = active.filter((e) => e.userId === null);
   const custom = active.filter((e) => e.userId !== null);
 
-  const globalsFiltered = useMemo(
-    () =>
-      globals.filter((e) =>
-        exerciseMatchesFilters(e, search, typeFilter, muscleFilter),
-      ),
-    [globals, search, typeFilter, muscleFilter],
-  );
-
   const customFiltered = useMemo(
     () =>
       custom.filter((e) =>
@@ -108,7 +109,7 @@ export function ExercisesPage() {
     e.preventDefault();
     const name = newName.trim();
     if (!name) {
-      showToast({ title: 'Name is required', variant: 'error' });
+      showToast({ title: 'Name required', variant: 'error' });
       return;
     }
     setCreating(true);
@@ -117,11 +118,11 @@ export function ExercisesPage() {
       setNewName('');
       setNewMuscle('');
       setNewCategory('resistance');
-      showToast({ title: 'Exercise created', variant: 'success' });
+      showToast({ title: 'Exercise added', variant: 'success' });
       setLoadKey((k) => k + 1);
     } catch (err) {
       showToast({
-        title: 'Could not create',
+        title: 'Exercise not created',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -142,71 +143,99 @@ export function ExercisesPage() {
           ? 'border-indigo-600 bg-indigo-600 text-white'
           : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50',
       )}
-      onClick={() => setTab(id)}>
+      onClick={() => {
+        if (id === 'catalog' && tab !== 'catalog') {
+          setCatalogMountKey((k) => k + 1);
+        }
+        setTab(id);
+      }}>
       {label}
     </button>
   );
 
+  const muscleFieldLabel =
+    newCategory === 'cardio'
+      ? 'Type (e.g. Standard, HIIT)'
+      : 'Muscle group (optional)';
+
   return (
     <div className="space-y-8">
       <NavLinkButton to="/">← Workouts</NavLinkButton>
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Exercises</h1>
-        <p className="text-sm text-slate-600">
-          Browse the catalog first, then switch to yours or archived. Filters
-          apply to the active tab. Custom exercises match the workout type you
-          start so the set picker stays relevant.
-        </p>
+      <header className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-semibold text-slate-900">Exercises</h1>
+          <p className="text-sm text-slate-600">
+            Catalog (drill-down), your customs, and archived.
+          </p>
+        </div>
+        <ContextualHelp
+          label="About the exercise library"
+          title="Exercise library">
+          <p>
+            <strong>Catalog</strong> — pick <strong>Resistance</strong> /{' '}
+            <strong>Cardio</strong> / <strong>Flexibility</strong>, then a
+            muscle group or cardio type (<strong>Standard</strong> vs{' '}
+            <strong>HIIT</strong>), then the exercise.
+          </p>
+          <p className="mt-2">
+            <strong>Yours</strong> — custom exercises. <strong>Archived</strong>{' '}
+            — hidden from pickers until restored.
+          </p>
+        </ContextualHelp>
       </header>
 
       {loading ? (
         <p className="text-sm text-slate-600">Loading…</p>
       ) : (
         <>
-          <section aria-label="Exercise filters" className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div>
-                <FieldLabel htmlFor="ex-filter-search">Search name</FieldLabel>
-                <Input
-                  id="ex-filter-search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="e.g. squat"
-                  autoComplete="off"
-                />
+          {tab !== 'catalog' ? (
+            <section aria-label="Exercise filters" className="space-y-3">
+              <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+                <div className="min-w-0">
+                  <FieldLabel htmlFor="ex-filter-search">
+                    Search name
+                  </FieldLabel>
+                  <Input
+                    id="ex-filter-search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="e.g. squat"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <FieldLabel htmlFor="ex-filter-type">Type</FieldLabel>
+                  <Select
+                    id="ex-filter-type"
+                    className="w-full"
+                    value={typeFilter}
+                    onChange={(e) =>
+                      setTypeFilter(e.target.value as WorkoutType | '')
+                    }
+                    aria-label="Filter by workout type">
+                    <option value="">All types</option>
+                    {WORKOUT_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {WORKOUT_TYPE_LABELS[t]}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="min-w-0">
+                  <FieldLabel htmlFor="ex-filter-muscle">
+                    Muscle / type contains
+                  </FieldLabel>
+                  <Input
+                    id="ex-filter-muscle"
+                    value={muscleFilter}
+                    onChange={(e) => setMuscleFilter(e.target.value)}
+                    placeholder="Optional"
+                    autoComplete="off"
+                  />
+                </div>
               </div>
-              <div>
-                <FieldLabel htmlFor="ex-filter-type">Type</FieldLabel>
-                <Select
-                  id="ex-filter-type"
-                  className="w-full"
-                  value={typeFilter}
-                  onChange={(e) =>
-                    setTypeFilter(e.target.value as WorkoutType | '')
-                  }
-                  aria-label="Filter by workout type">
-                  <option value="">All types</option>
-                  {WORKOUT_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {WORKOUT_TYPE_LABELS[t]}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <FieldLabel htmlFor="ex-filter-muscle">
-                  Muscle contains
-                </FieldLabel>
-                <Input
-                  id="ex-filter-muscle"
-                  value={muscleFilter}
-                  onChange={(e) => setMuscleFilter(e.target.value)}
-                  placeholder="Optional"
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-          </section>
+            </section>
+          ) : null}
 
           <details className="rounded-lg border border-slate-200 bg-slate-50/80 p-4">
             <summary className="cursor-pointer text-sm font-semibold text-slate-900">
@@ -232,13 +261,13 @@ export function ExercisesPage() {
                 <FieldLabel
                   className="text-sm font-medium text-slate-700"
                   htmlFor="new-exercise-muscle">
-                  Muscle group (optional)
+                  {muscleFieldLabel}
                 </FieldLabel>
                 <Input
                   id="new-exercise-muscle"
                   value={newMuscle}
                   onChange={(e) => setNewMuscle(e.target.value)}
-                  aria-label="New exercise muscle group"
+                  aria-label={muscleFieldLabel}
                 />
               </div>
               <div>
@@ -278,37 +307,7 @@ export function ExercisesPage() {
           </div>
 
           {tab === 'catalog' ? (
-            <section role="tabpanel" aria-label="Catalog">
-              <h2 className="text-lg font-medium text-slate-900">Catalog</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Seeded exercises (read-only).
-              </p>
-              {globalsFiltered.length === 0 ? (
-                <p className="mt-3 text-sm text-slate-600">
-                  No exercises match these filters.
-                </p>
-              ) : (
-                <ul className="mt-3 divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
-                  {globalsFiltered.map((ex) => (
-                    <li key={ex.exerciseTypeId} className="px-3 py-2 text-sm">
-                      <span className="font-medium text-slate-900">
-                        {ex.name}
-                      </span>
-                      <span className="text-slate-500">
-                        {' '}
-                        · {WORKOUT_TYPE_LABELS[ex.category ?? 'resistance']}
-                      </span>
-                      {ex.muscleGroup ? (
-                        <span className="text-slate-600">
-                          {' '}
-                          · {ex.muscleGroup}
-                        </span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <ExerciseCatalogNav key={catalogMountKey} globals={globals} />
           ) : null}
 
           {tab === 'yours' ? (
@@ -318,8 +317,7 @@ export function ExercisesPage() {
               </h2>
               {customFiltered.length === 0 ? (
                 <p className="mt-2 text-sm text-slate-600">
-                  No custom exercises match these filters yet. Expand{' '}
-                  <strong>Add custom exercise</strong> above to create one.
+                  No matches. Expand <strong>Add custom exercise</strong> above.
                 </p>
               ) : (
                 <ul className="mt-3 space-y-3">
@@ -340,9 +338,7 @@ export function ExercisesPage() {
             <section role="tabpanel" aria-label="Archived exercises">
               <h2 className="text-lg font-medium text-slate-900">Archived</h2>
               {archivedFiltered.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-600">
-                  None match these filters.
-                </p>
+                <p className="mt-2 text-sm text-slate-600">No matches.</p>
               ) : (
                 <ul className="mt-3 space-y-2">
                   {archivedFiltered.map((ex) => (
