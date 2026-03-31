@@ -23,8 +23,10 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 
 - **API routes:** Supertest against the Express app (e.g. health, **`GET /api/auth/options`**, demo auth when enabled).
 - **Dashboard / goals auth + DB wiring:** **`server/routes/api.test.ts`** asserts **401** without a Bearer token on **`GET /api/stats/summary`**, **`GET /api/stats/volume-series`**, and **`GET /api/goals`**, and **503** (no **`DATABASE_URL`**) on those reads plus goals **POST** / **PATCH** / **DELETE**.
+- **Superset API payload + integration coverage:** **`server/routes/api-envelope.test.ts`** table-tests set payload variants (`createGroup`, `groupId`, invalid combination) and **`server/routes/api-idor.test.ts`** covers create-group success plus valid/invalid group assignment on **POST**/**PATCH** set routes.
 - **Week windows (server):** **`server/lib/week-helpers.test.ts`** covers **`mondayWeekStartYmdInZone`** and **`lastNMondayWeekStarts`** (IANA zones, ordering, empty **`n`**). Same Monday-based week family as **`GET /api/stats/weekly-volume`** and the multi-week dashboard stats endpoints (see **`docs/assumptions.md`**).
 - **Client:** Vitest + Testing Library + MSW handlers for `/api/*` (including auth options and logout). **`client/src/lib/api/stats-api.test.ts`** and **`goals-api.test.ts`** lock query strings / methods for **`readVolumeSeries`**, **`readStatsSummary`**, and goals CRUD.
+- **Workout detail supersets (client):** **`client/src/pages/WorkoutDetailPage.test.tsx`** verifies local grouped rendering and superset compose actions (`Start new superset`, `Add in superset`, pending group badge state) against MSW set handlers.
 - **Ownership:** Optional Postgres IDOR suite when **`TEST_DATABASE_URL`** is provided (CI quality job), including workout-type mismatch on log set.
 
 ## OIDC / session
@@ -42,6 +44,7 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 - **Set logging / CSV** — migration **`0006`** (`isWarmup`, `restSeconds`); **`0007`** (`workoutType`, exercise **`category`**); **`WorkoutDetailPage`** edit/delete; CSV **`is_warmup`**, **`rest_seconds`**, **`workout_type`**, **`exercise_category`**.
 - **`GET /api/export/workout-sets.csv`** — authenticated CSV download of sets joined with workout + exercise; optional **`from`** / **`to`** filter on **workout `startedAt`** (same idea as list). **`Content-Disposition: attachment`**.
 - **`e2e/smoke.spec.ts`** — happy path with demo or guest auth; cardio workout row asserts **Cardio** badge and filtered picker has no **Bench press** (skipped when the DB has no global cardio exercises — run **`database/seed-global-exercises-append.sql`** or reset + **`db:seed`**). CI uses a fresh Postgres service so the test runs there.
+- **Superset smoke:** **`e2e/smoke.spec.ts`** includes a grouped-set flow that starts a superset, adds another set in the same group, and asserts CSV export includes **`superset_group_id`** with grouped rows.
 - **`e2e/a11y.spec.ts`** — axe scan (critical/serious) on sign-in + guest workouts; keyboard focus check on **Continue as guest**; guest **Dashboard** load after **`/dashboard`** navigation.
 - **`e2e/display-preferences.spec.ts`** — sets display keys in **`localStorage`** on **`/about`**, reloads, asserts **`html`** shell classes (no guest auth / DB required).
 - **Shell:** primary nav is in a **Menu** drawer (`Open menu` / **`overlay-main-menu`**); sign-in flows still use on-page **Sign in** / **Continue as guest** buttons (no menu required for smoke).

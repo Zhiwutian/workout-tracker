@@ -18,6 +18,7 @@ import {
   createWorkout,
   deleteSetForUser,
   deleteWorkoutForUser,
+  getWorkoutSessionForSetWrite,
   getWorkoutForUser,
   listWorkouts,
   type ListWorkoutsFilters,
@@ -241,12 +242,11 @@ export async function postSet(
   const userId = requireUserId(req);
   const { workoutId } = workoutIdParams.parse(req.params);
   const body = postSetBody.parse(req.body);
-  const session = await getWorkoutForUser(userId, workoutId);
-  if (!session) throw new ClientError(404, 'workout not found');
+  const session = await getWorkoutSessionForSetWrite(userId, workoutId);
   await assertExerciseUsableForWorkout(
     userId,
     body.exerciseTypeId,
-    session.workout.workoutType,
+    session.workoutType,
   );
   const row = await addSetToWorkout(userId, workoutId, body);
   sendSuccess(res, serializeSet(row), 201);

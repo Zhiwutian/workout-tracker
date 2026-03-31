@@ -10,6 +10,7 @@ import {
   Textarea,
 } from '@/components/ui';
 import { SetRowCard } from '@/features/workouts/SetRowCard';
+import { useSupersetComposer } from '@/features/workouts/useSupersetComposer';
 import { parseRestSecondsInput } from '@/lib/parse-rest-seconds';
 import { useAbortableAsyncEffect } from '@/lib/use-abortable-async-effect';
 import {
@@ -43,10 +44,14 @@ export function WorkoutDetailPage() {
   const [notes, setNotes] = useState('');
   const [isWarmup, setIsWarmup] = useState(false);
   const [restSeconds, setRestSeconds] = useState('');
-  const [pendingSupersetGroupId, setPendingSupersetGroupId] = useState<
-    number | null
-  >(null);
-  const [startNewSuperset, setStartNewSuperset] = useState(false);
+  const {
+    pendingSupersetGroupId,
+    startNewSuperset,
+    handleStartNewSupersetChange,
+    handleSetCreated,
+    addInSuperset,
+    stopGrouping,
+  } = useSupersetComposer();
   const [loading, setLoading] = useState(true);
 
   const prevExerciseTypeId = useRef<string>('');
@@ -150,10 +155,7 @@ export function WorkoutDetailPage() {
         createGroup: startNewSuperset,
       });
       setSets((prev) => [...prev, row].sort((a, b) => a.setIndex - b.setIndex));
-      if (startNewSuperset) {
-        setPendingSupersetGroupId(row.groupId);
-        setStartNewSuperset(false);
-      }
+      handleSetCreated(row);
       try {
         const wt = workout?.workoutType ?? 'resistance';
         setRecents(await readExerciseRecents(8, wt));
@@ -357,12 +359,9 @@ export function WorkoutDetailPage() {
                 <input
                   type="checkbox"
                   checked={startNewSuperset}
-                  onChange={(e) => {
-                    setStartNewSuperset(e.target.checked);
-                    if (e.target.checked) {
-                      setPendingSupersetGroupId(null);
-                    }
-                  }}
+                  onChange={(e) =>
+                    handleStartNewSupersetChange(e.target.checked)
+                  }
                   className="rounded border-slate-300"
                 />
                 <span className="text-sm text-slate-700">
@@ -378,7 +377,7 @@ export function WorkoutDetailPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setPendingSupersetGroupId(null)}>
+                    onClick={() => stopGrouping()}>
                     Stop grouping
                   </Button>
                 </>
@@ -408,8 +407,7 @@ export function WorkoutDetailPage() {
                             s={s}
                             exerciseLabel={exerciseName(s.exerciseTypeId)}
                             onAddInSuperset={(groupId) => {
-                              setPendingSupersetGroupId(groupId);
-                              setStartNewSuperset(false);
+                              addInSuperset(groupId);
                             }}
                             onPatched={(row) => {
                               setSets((prev) =>

@@ -41,8 +41,28 @@ All access: **`userId`** must match **`req.user.userId`** (service layer).
 | `weight`         | number 0–99999               | `real` NOT NULL                           |
 | `setIndex`       | int 0–9999 (optional create) | `integer` NOT NULL                        |
 | `notes`          | optional, max 2000           | nullable `text`                           |
+| `groupId`        | optional positive int/null   | nullable FK → `workout_set_groups`        |
 
 Access only through a **workout** owned by the current user.
+
+## `workout_set_groups`
+
+| Field / rule | Zod / service                                               | DB                                 |
+| ------------ | ----------------------------------------------------------- | ---------------------------------- |
+| `workoutId`  | always derived from the target set/workout write operation  | FK → `workouts` (`CASCADE` delete) |
+| `label`      | optional (currently service-created groups use null labels) | nullable `text`                    |
+
+`groupId` must belong to the same workout as the target set/write; otherwise set create/patch returns **400** (`invalid superset group`).
+
+## `exercise_recent_clears`
+
+| Field / rule | Zod / service                       | DB                              |
+| ------------ | ----------------------------------- | ------------------------------- |
+| `userId`     | current authenticated user          | FK → `users` (`CASCADE` delete) |
+| `scope`      | workout type scope key              | `text` NOT NULL                 |
+| `clearedAt`  | updated on clear-recents operations | `timestamptz` default `now()`   |
+
+Service writes use upsert semantics on unique `(userId, scope)` so clear-recents cutoffs persist across restarts/deploys.
 
 ## `users`
 

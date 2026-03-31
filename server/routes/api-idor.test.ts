@@ -38,6 +38,30 @@ describe.skipIf(!hasTestDb)('api IDOR (integration)', () => {
     return token!;
   }
 
+  async function createWorkoutForToken(
+    token: string,
+    body?: Record<string, unknown>,
+  ): Promise<number> {
+    const created = await request(app)
+      .post('/api/workouts')
+      .set('Authorization', `Bearer ${token}`)
+      .send(body ?? {})
+      .expect(201);
+    return created.body.data.workoutId as number;
+  }
+
+  async function firstExerciseTypeId(token: string): Promise<number> {
+    const exRes = await request(app)
+      .get('/api/exercises')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    const exerciseTypeId = exRes.body.data[0]?.exerciseTypeId as
+      | number
+      | undefined;
+    expect(exerciseTypeId).toBeDefined();
+    return exerciseTypeId!;
+  }
+
   it('returns 404 when user B reads user A workout by id', async () => {
     const t = suffix();
     const tokenA = await signUp(`idor-a-${t}`);
@@ -208,5 +232,128 @@ describe.skipIf(!hasTestDb)('api IDOR (integration)', () => {
       .expect(200);
     expect(me.body.data.isGuest).toBe(true);
     expect(me.body.data.displayName).toMatch(/^Guest /);
+  });
+
+  it('creates a superset group when createGroup=true and returns non-null groupId', async () => {
+    const t = suffix();
+    const token = await signUp(`superset-create-${t}`);
+    const exerciseTypeId = await firstExerciseTypeId(token);
+    const workoutId = await createWorkoutForToken(token);
+
+    const res = await request(app)
+      .post(`/api/workouts/${workoutId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        exerciseTypeId,
+        reps: 8,
+        weight: 100,
+        createGroup: true,
+      })
+      .expect(201);
+
+    expect(typeof res.body.data.groupId).toBe('number');
+    expect(res.body.data.groupId).toBeGreaterThan(0);
+  });
+
+  it('returns 400 for foreign superset group id', async () => {
+    const t = suffix();
+    const token = await signUp(`superset-foreign-${t}`);
+    const exerciseTypeId = await firstExerciseTypeId(token);
+
+    const workoutAId = await createWorkoutForToken(token);
+    const workoutBId = await createWorkoutForToken(token);
+
+    const grouped = await request(app)
+      .post(`/api/workouts/${workoutAId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        exerciseTypeId,
+        reps: 8,
+        weight: 100,
+        createGroup: true,
+      })
+      .expect(201);
+    const foreignGroupId = grouped.body.data.groupId as number;
+
+    const res = await request(app)
+      .post(`/api/workouts/${workoutBId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        exerciseTypeId,
+        reps: 6,
+        weight: 80,
+        groupId: foreignGroupId,
+      })
+      .expect(400);
+
+    expect(res.body.error).toEqual(
+      expect.objectContaining({
+        code: 'client_error',
+        message: 'invalid superset group',
+      }),
+    );
+  });
+
+  it('patch /api/sets/:setId moves set to valid group and rejects foreign group', async () => {
+    const t = suffix();
+    const token = await signUp(`superset-patch-${t}`);
+    const exerciseTypeId = await firstExerciseTypeId(token);
+
+    const workoutAId = await createWorkoutForToken(token);
+    const workoutBId = await createWorkoutForToken(token);
+
+    const plainSet = await request(app)
+      .post(`/api/workouts/${workoutAId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        exerciseTypeId,
+        reps: 8,
+        weight: 100,
+      })
+      .expect(201);
+    const setId = plainSet.body.data.setId as number;
+
+    const groupASet = await request(app)
+      .post(`/api/workouts/${workoutAId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        exerciseTypeId,
+        reps: 6,
+        weight: 90,
+        createGroup: true,
+      })
+      .expect(201);
+    const validGroupId = groupASet.body.data.groupId as number;
+
+    const moveOk = await request(app)
+      .patch(`/api/sets/${setId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ groupId: validGroupId })
+      .expect(200);
+    expect(moveOk.body.data.groupId).toBe(validGroupId);
+
+    const groupBSet = await request(app)
+      .post(`/api/workouts/${workoutBId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        exerciseTypeId,
+        reps: 5,
+        weight: 70,
+        createGroup: true,
+      })
+      .expect(201);
+    const invalidGroupId = groupBSet.body.data.groupId as number;
+
+    const moveBad = await request(app)
+      .patch(`/api/sets/${setId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ groupId: invalidGroupId })
+      .expect(400);
+    expect(moveBad.body.error).toEqual(
+      expect.objectContaining({
+        code: 'client_error',
+        message: 'invalid superset group',
+      }),
+    );
   });
 });

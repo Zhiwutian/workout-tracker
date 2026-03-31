@@ -1,4 +1,14 @@
-import { and, asc, desc, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+  lte,
+  max,
+} from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { workoutSetGroups, workoutSets, workouts } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
@@ -37,6 +47,13 @@ export type SetRecord = {
   isWarmup: boolean;
   restSeconds: number | null;
   createdAt: Date;
+};
+
+export type WorkoutSetWriteSession = {
+  workoutId: number;
+  userId: number;
+  workoutType: string;
+  nextSetIndex: number;
 };
 
 /** Optional filters for GET /api/workouts (date range uses `startedAt`). */
@@ -192,33 +209,13 @@ export async function addSetToWorkout(
   },
 ): Promise<SetRecord> {
   const db = requireDb();
-  const existing = await getWorkoutForUser(userId, workoutId);
-  if (!existing) throw new ClientError(404, 'workout not found');
+  const session = await getWorkoutSessionForSetWrite(userId, workoutId);
 
-  let setIndex = input.setIndex;
-  if (setIndex === undefined) {
-    const last = existing.sets.at(-1);
-    setIndex = last ? last.setIndex + 1 : 0;
-  }
-
-  let resolvedGroupId: number | null = input.groupId ?? null;
-  if (input.createGroup) {
-    const [group] = await db
-      .insert(workoutSetGroups)
-      .values({ workoutId })
-      .returning();
-    if (!group) throw new ClientError(500, 'failed to create superset group');
-    resolvedGroupId = group.groupId;
-  } else if (resolvedGroupId !== null) {
-    const [group] = await db
-      .select()
-      .from(workoutSetGroups)
-      .where(eq(workoutSetGroups.groupId, resolvedGroupId))
-      .limit(1);
-    if (!group || group.workoutId !== workoutId) {
-      throw new ClientError(400, 'invalid superset group');
-    }
-  }
+  const setIndex = input.setIndex ?? session.nextSetIndex;
+  const resolvedGroupId = await resolveGroupForWorkout(db, workoutId, {
+    groupId: input.groupId ?? null,
+    createGroup: input.createGroup ?? false,
+  });
 
   const [row] = await db
     .insert(workoutSets)
@@ -272,19 +269,10 @@ export async function updateSetForUser(
   if (patch.isWarmup !== undefined) updates.isWarmup = patch.isWarmup;
   if (patch.restSeconds !== undefined) updates.restSeconds = patch.restSeconds;
   if (patch.groupId !== undefined) {
-    if (patch.groupId === null) {
-      updates.groupId = null;
-    } else {
-      const [group] = await db
-        .select()
-        .from(workoutSetGroups)
-        .where(eq(workoutSetGroups.groupId, patch.groupId))
-        .limit(1);
-      if (!group || group.workoutId !== s.workoutId) {
-        throw new ClientError(400, 'invalid superset group');
-      }
-      updates.groupId = patch.groupId;
-    }
+    updates.groupId = await resolveGroupForWorkout(db, s.workoutId, {
+      groupId: patch.groupId,
+      createGroup: false,
+    });
   }
 
   const [row] = await db
@@ -310,4 +298,70 @@ export async function deleteSetForUser(
   const parent = await getWorkoutForUser(userId, s.workoutId);
   if (!parent) throw new ClientError(404, 'set not found');
   await db.delete(workoutSets).where(eq(workoutSets.setId, setId));
+}
+
+export async function getWorkoutSessionForSetWrite(
+  userId: number,
+  workoutId: number,
+): Promise<WorkoutSetWriteSession> {
+  const db = requireDb();
+  const [workout] = await db
+    .select({
+      workoutId: workouts.workoutId,
+      userId: workouts.userId,
+      workoutType: workouts.workoutType,
+    })
+    .from(workouts)
+    .where(and(eq(workouts.workoutId, workoutId), eq(workouts.userId, userId)))
+    .limit(1);
+  if (!workout) throw new ClientError(404, 'workout not found');
+
+  const [maxRow] = await db
+    .select({ maxSetIndex: max(workoutSets.setIndex) })
+    .from(workoutSets)
+    .where(eq(workoutSets.workoutId, workoutId));
+  const maxSetIndex = maxRow?.maxSetIndex ?? null;
+
+  return {
+    workoutId: workout.workoutId,
+    userId: workout.userId,
+    workoutType: workout.workoutType,
+    nextSetIndex: maxSetIndex === null ? 0 : maxSetIndex + 1,
+  };
+}
+
+async function resolveGroupForWorkout(
+  db: DbClient,
+  workoutId: number,
+  input: { groupId: number | null; createGroup: boolean },
+): Promise<number | null> {
+  if (input.createGroup) {
+    if (input.groupId !== null) {
+      throw new ClientError(
+        400,
+        'groupId cannot be sent when createGroup is true',
+      );
+    }
+    const [group] = await db
+      .insert(workoutSetGroups)
+      .values({ workoutId })
+      .returning();
+    if (!group) throw new ClientError(500, 'failed to create superset group');
+    return group.groupId;
+  }
+
+  if (input.groupId === null) return null;
+
+  const [group] = await db
+    .select()
+    .from(workoutSetGroups)
+    .where(
+      and(
+        eq(workoutSetGroups.groupId, input.groupId),
+        eq(workoutSetGroups.workoutId, workoutId),
+      ),
+    )
+    .limit(1);
+  if (!group) throw new ClientError(400, 'invalid superset group');
+  return input.groupId;
 }

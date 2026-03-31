@@ -38,6 +38,7 @@ type MockGoal = {
 
 let mockGoals: MockGoal[] = [];
 let nextMockGoalId = 1;
+let nextMockSetId = 1_000;
 
 /** Reset in-memory API mock state between tests. */
 export function resetApiMockState(): void {
@@ -45,6 +46,7 @@ export function resetApiMockState(): void {
   mockProfileWeightUnit = 'lb';
   mockGoals = [];
   nextMockGoalId = 1;
+  nextMockSetId = 1_000;
   mockWorkouts = [
     {
       workoutId: 1,
@@ -302,7 +304,7 @@ export const handlers = [
         ? Number(String(Date.now()).slice(-6))
         : (body.groupId ?? null);
     const row = {
-      setId: Date.now(),
+      setId: nextMockSetId++,
       workoutId,
       exerciseTypeId: body.exerciseTypeId,
       groupId: resolvedGroupId,
