@@ -233,6 +233,16 @@ export const handlers = [
     return HttpResponse.json({ data });
   }),
 
+  http.delete('/api/exercises/recents', ({ request }) => {
+    if (!requireAuth(request)) {
+      return HttpResponse.json(
+        { error: { code: 'client_error', message: 'authentication required' } },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json({ data: { cleared: true } });
+  }),
+
   http.get('/api/exercises/archived', ({ request }) => {
     if (!requireAuth(request)) {
       return HttpResponse.json(

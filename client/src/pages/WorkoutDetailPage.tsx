@@ -14,6 +14,7 @@ import { parseRestSecondsInput } from '@/lib/parse-rest-seconds';
 import { useAbortableAsyncEffect } from '@/lib/use-abortable-async-effect';
 import {
   addSet,
+  clearExerciseRecents,
   readExercises,
   readExerciseRecents,
   readWorkoutDetail,
@@ -108,6 +109,21 @@ export function WorkoutDetailPage() {
     applyDefaultsForExercise(exerciseTypeId, sets);
   }
 
+  async function clearRecents(): Promise<void> {
+    if (!workout?.workoutType) return;
+    try {
+      await clearExerciseRecents(workout.workoutType);
+      setRecents([]);
+      showToast({ title: 'Recent exercises cleared', variant: 'success' });
+    } catch (err) {
+      showToast({
+        title: 'Could not clear recents',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'error',
+      });
+    }
+  }
+
   async function handleAddSet(e: FormEvent): Promise<void> {
     e.preventDefault();
     const et = Number(exerciseTypeId);
@@ -190,7 +206,16 @@ export function WorkoutDetailPage() {
             </FieldLabel>
             {recents.length > 0 ? (
               <div className="mb-2">
-                <p className="mb-1 text-xs text-slate-500">Recent</p>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-xs text-slate-500">Recent</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void clearRecents()}>
+                    Clear recents
+                  </Button>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {recents.map((ex) => (
                     <button

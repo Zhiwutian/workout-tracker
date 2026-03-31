@@ -37,6 +37,7 @@ export function createApp(): express.Express {
     standardHeaders: true,
     legacyHeaders: false,
   });
+  const applyApiRateLimits = !env.E2E_RELAX_RATE_LIMIT;
 
   // Create paths for static directories.
   const reactStaticDir = new URL('../client/dist', import.meta.url).pathname;
@@ -60,14 +61,16 @@ export function createApp(): express.Express {
   app.use(express.static(uploadsStaticDir));
   app.use(httpLogger);
   app.use(express.json());
-  app.use('/api', apiReadRateLimiter);
-  app.use('/api', (req, res, next) => {
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-      apiWriteRateLimiter(req, res, next);
-      return;
-    }
-    next();
-  });
+  if (applyApiRateLimits) {
+    app.use('/api', apiReadRateLimiter);
+    app.use('/api', (req, res, next) => {
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        apiWriteRateLimiter(req, res, next);
+        return;
+      }
+      next();
+    });
+  }
 
   app.use('/api', apiRouter);
 

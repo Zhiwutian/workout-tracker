@@ -79,13 +79,14 @@ export function ExercisesPage() {
 
   const globals = active.filter((e) => e.userId === null);
   const custom = active.filter((e) => e.userId !== null);
+  const catalog = useMemo(() => [...globals, ...custom], [globals, custom]);
 
-  const globalsFiltered = useMemo(
+  const catalogFiltered = useMemo(
     () =>
-      globals.filter((e) =>
+      catalog.filter((e) =>
         exerciseMatchesFilters(e, search, typeFilter, muscleFilter),
       ),
-    [globals, search, typeFilter, muscleFilter],
+    [catalog, search, typeFilter, muscleFilter],
   );
 
   const customFiltered = useMemo(
@@ -107,13 +108,18 @@ export function ExercisesPage() {
   async function handleCreate(e: FormEvent): Promise<void> {
     e.preventDefault();
     const name = newName.trim();
+    const muscleGroup = newMuscle.trim();
     if (!name) {
       showToast({ title: 'Name is required', variant: 'error' });
       return;
     }
+    if (!muscleGroup) {
+      showToast({ title: 'Muscle group is required', variant: 'error' });
+      return;
+    }
     setCreating(true);
     try {
-      await createExercise(name, newMuscle.trim() || null, newCategory);
+      await createExercise(name, muscleGroup, newCategory);
       setNewName('');
       setNewMuscle('');
       setNewCategory('resistance');
@@ -227,7 +233,7 @@ export function ExercisesPage() {
                 <FieldLabel
                   className="text-sm font-medium text-slate-700"
                   htmlFor="new-exercise-muscle">
-                  Muscle group (optional)
+                  Muscle group
                 </FieldLabel>
                 <Input
                   id="new-exercise-muscle"
@@ -275,29 +281,38 @@ export function ExercisesPage() {
           {tab === 'catalog' ? (
             <section role="tabpanel" aria-label="Catalog">
               <h2 className="text-lg font-medium text-slate-900">Catalog</h2>
-              {globalsFiltered.length === 0 ? (
+              {catalogFiltered.length === 0 ? (
                 <p className="mt-3 text-sm text-slate-600">
                   No exercises match these filters.
                 </p>
               ) : (
                 <ul className="mt-3 divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
-                  {globalsFiltered.map((ex) => (
-                    <li key={ex.exerciseTypeId} className="px-3 py-2 text-sm">
-                      <span className="font-medium text-slate-900">
-                        {ex.name}
-                      </span>
-                      <span className="text-slate-500">
-                        {' '}
-                        · {WORKOUT_TYPE_LABELS[ex.category ?? 'resistance']}
-                      </span>
-                      {ex.muscleGroup ? (
-                        <span className="text-slate-600">
-                          {' '}
-                          · {ex.muscleGroup}
+                  {catalogFiltered.map((ex) =>
+                    ex.userId ? (
+                      <li key={ex.exerciseTypeId}>
+                        <CustomExerciseRow
+                          ex={ex}
+                          onChanged={() => setLoadKey((k) => k + 1)}
+                        />
+                      </li>
+                    ) : (
+                      <li key={ex.exerciseTypeId} className="px-3 py-2 text-sm">
+                        <span className="font-medium text-slate-900">
+                          {ex.name}
                         </span>
-                      ) : null}
-                    </li>
-                  ))}
+                        <span className="text-slate-500">
+                          {' '}
+                          · {WORKOUT_TYPE_LABELS[ex.category ?? 'resistance']}
+                        </span>
+                        {ex.muscleGroup ? (
+                          <span className="text-slate-600">
+                            {' '}
+                            · {ex.muscleGroup}
+                          </span>
+                        ) : null}
+                      </li>
+                    ),
+                  )}
                 </ul>
               )}
             </section>
@@ -314,7 +329,7 @@ export function ExercisesPage() {
                   <strong>Add custom exercise</strong> above to create one.
                 </p>
               ) : (
-                <ul className="mt-3 space-y-3">
+                <ul className="mt-3 divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
                   {customFiltered.map((ex) => (
                     <li key={ex.exerciseTypeId}>
                       <CustomExerciseRow

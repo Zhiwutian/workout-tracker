@@ -11,6 +11,7 @@ import {
 import { sendSuccess } from '@server/lib/http-response.js';
 import { requireUserId } from '@server/lib/request-user.js';
 import {
+  clearRecentExercisesForUser,
   createCustomExercise,
   listArchivedCustomExercisesForUser,
   listExercisesForUser,
@@ -20,7 +21,7 @@ import {
 
 const createBodySchema = z.object({
   name: z.string().trim().min(1).max(120),
-  muscleGroup: z.string().trim().max(80).nullable().optional(),
+  muscleGroup: z.string().trim().min(1).max(80),
   category: workoutTypeSchema.optional(),
 });
 
@@ -86,6 +87,24 @@ export async function getExerciseRecents(
   sendSuccess(res, rows.map(serializeExercise));
 }
 
+/** DELETE /api/exercises/recents?workoutType=resistance|cardio|flexibility */
+export async function deleteExerciseRecents(
+  req: Request,
+  res: Response,
+  _next: NextFunction,
+): Promise<void> {
+  const userId = requireUserId(req);
+  const q = z
+    .object({
+      workoutType: workoutTypeSchema.optional(),
+    })
+    .parse(req.query);
+  await clearRecentExercisesForUser(userId, {
+    workoutType: q.workoutType,
+  });
+  sendSuccess(res, { cleared: true });
+}
+
 /** GET /api/exercises/archived */
 export async function getArchivedExercises(
   req: Request,
@@ -117,7 +136,7 @@ export async function postExercise(
 const patchBodySchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
-    muscleGroup: z.string().trim().max(80).nullable().optional(),
+    muscleGroup: z.string().trim().min(1).max(80).optional(),
     category: workoutTypeSchema.optional(),
     archived: z.boolean().optional(),
   })

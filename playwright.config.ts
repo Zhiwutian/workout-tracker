@@ -36,5 +36,9 @@ export default defineConfig({
     timeout: 120_000,
     stdout: 'pipe',
     stderr: 'pipe',
+    env: {
+      ...process.env,
+      E2E_RELAX_RATE_LIMIT: 'true',
+    },
   },
 });

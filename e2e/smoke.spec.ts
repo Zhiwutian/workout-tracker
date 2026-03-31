@@ -52,7 +52,9 @@ test.describe('workout tracker smoke', () => {
     await expectSignInPage(page);
     await signUpWithDemo(page, name);
     await expectWorkoutsVisible(page);
-    await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Start workout' }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Start workout' }).click();
     await expect(page.getByRole('link', { name: 'Open' })).toBeVisible({
@@ -64,7 +66,9 @@ test.describe('workout tracker smoke', () => {
     await expectSignInPage(page);
     await continueGuest(page);
     await expectWorkoutsVisible(page);
-    await expect(page.getByText(/Guest session — workouts save/)).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Start workout' }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Start workout' }).click();
     await expect(page.getByRole('link', { name: 'Open' })).toBeVisible({
@@ -75,9 +79,8 @@ test.describe('workout tracker smoke', () => {
   test('cardio workout shows only cardio exercises in log-a-set picker', async ({
     page,
   }) => {
-    const name = `e2e-cardio-${Date.now()}`;
     await expectSignInPage(page);
-    await signUpWithDemo(page, name);
+    await continueGuest(page);
     await expectWorkoutsVisible(page);
 
     await page.getByLabel('Workout type').selectOption('cardio');

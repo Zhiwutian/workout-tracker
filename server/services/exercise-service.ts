@@ -3,6 +3,7 @@ import {
   asc,
   desc,
   eq,
+  gte,
   inArray,
   isNotNull,
   isNull,
@@ -34,6 +35,9 @@ export type ExerciseTypeRecord = {
   category: string;
   archivedAt: Date | null;
 };
+
+const RECENTS_SCOPE_ALL = 'all';
+const recentsClearedAtByUser = new Map<number, Map<string, Date>>();
 
 function toRecord(row: typeof exerciseTypes.$inferSelect): ExerciseTypeRecord {
   return {
@@ -78,6 +82,7 @@ export async function listRecentExercisesForUser(
 ): Promise<ExerciseTypeRecord[]> {
   const db = requireDb();
   const lim = Math.min(Math.max(1, limit), 50);
+  const cutoff = await readRecentCutoff(userId, options?.workoutType);
   const exerciseScope = or(
     isNull(exerciseTypes.userId),
     and(eq(exerciseTypes.userId, userId), isNull(exerciseTypes.archivedAt)),
@@ -96,7 +101,13 @@ export async function listRecentExercisesForUser(
       exerciseTypes,
       eq(workoutSets.exerciseTypeId, exerciseTypes.exerciseTypeId),
     )
-    .where(and(eq(workouts.userId, userId), typeFilter))
+    .where(
+      and(
+        eq(workouts.userId, userId),
+        typeFilter,
+        cutoff ? gte(workoutSets.createdAt, cutoff) : undefined,
+      ),
+    )
     .groupBy(workoutSets.exerciseTypeId)
     .orderBy(desc(max(workoutSets.createdAt)))
     .limit(lim);
@@ -113,6 +124,36 @@ export async function listRecentExercisesForUser(
     .map((id) => byId.get(id))
     .filter((r): r is (typeof rows)[0] => r !== undefined)
     .map(toRecord);
+}
+
+async function readRecentCutoff(
+  userId: number,
+  workoutType?: WorkoutType,
+): Promise<Date | null> {
+  const scoped = recentsClearedAtByUser.get(userId);
+  if (!scoped) return null;
+  const scopes = workoutType
+    ? [RECENTS_SCOPE_ALL, workoutType]
+    : [RECENTS_SCOPE_ALL];
+  return scopes.reduce(
+    (latest, scope) => {
+      const clearedAt = scoped.get(scope);
+      if (!clearedAt) return latest;
+      if (!latest) return clearedAt;
+      return clearedAt > latest ? clearedAt : latest;
+    },
+    null as Date | null,
+  );
+}
+
+export async function clearRecentExercisesForUser(
+  userId: number,
+  options?: { workoutType?: WorkoutType },
+): Promise<void> {
+  const scope = options?.workoutType ?? RECENTS_SCOPE_ALL;
+  const scoped = recentsClearedAtByUser.get(userId) ?? new Map<string, Date>();
+  scoped.set(scope, new Date());
+  recentsClearedAtByUser.set(userId, scoped);
 }
 
 /** User's archived custom exercises (newest archive first). */
@@ -145,6 +186,10 @@ export async function createCustomExercise(
   if (!isWorkoutType(category)) {
     throw new ClientError(400, 'invalid exercise category');
   }
+  const normalizedMuscle = muscleGroup?.trim() ?? '';
+  if (!normalizedMuscle) {
+    throw new ClientError(400, 'muscle group is required');
+  }
 
   const existing = await db
     .select({ exerciseTypeId: exerciseTypes.exerciseTypeId })
@@ -166,7 +211,7 @@ export async function createCustomExercise(
     .values({
       userId,
       name: trimmed,
-      muscleGroup: muscleGroup?.trim() || null,
+      muscleGroup: normalizedMuscle,
       category,
     })
     .returning();
@@ -177,7 +222,7 @@ export async function createCustomExercise(
 
 export type PatchCustomExerciseInput = {
   name?: string;
-  muscleGroup?: string | null;
+  muscleGroup?: string;
   category?: WorkoutType;
   archived?: boolean;
 };
@@ -235,7 +280,19 @@ export async function patchCustomExercise(
   }
 
   if (patch.muscleGroup !== undefined) {
-    muscleGroup = patch.muscleGroup?.trim() || null;
+    const normalizedMuscle = patch.muscleGroup.trim();
+    if (!normalizedMuscle) {
+      throw new ClientError(400, 'muscle group is required');
+    }
+    muscleGroup = normalizedMuscle;
+  }
+
+  const editingMetadata =
+    patch.name !== undefined ||
+    patch.category !== undefined ||
+    patch.muscleGroup !== undefined;
+  if (editingMetadata && !muscleGroup?.trim()) {
+    throw new ClientError(400, 'muscle group is required');
   }
 
   if (patch.archived === true) {

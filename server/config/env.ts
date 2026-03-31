@@ -49,6 +49,8 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(200),
   RATE_LIMIT_WRITE_MAX: z.coerce.number().int().positive().default(60),
+  /** Playwright-only switch to bypass /api rate-limit middleware during local E2E. */
+  E2E_RELAX_RATE_LIMIT: parseBooleanEnv(false),
   DATABASE_URL: z.string().optional().default(''),
   /** Max connections in the shared `pg` pool (optional tuning for hosted Postgres limits). */
   PG_POOL_MAX: z.coerce.number().int().positive().max(100).default(10),
