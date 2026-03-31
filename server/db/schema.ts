@@ -62,6 +62,27 @@ export const exerciseTypes = pgTable('exercise_types', {
   archivedAt: timestamp('archivedAt', { withTimezone: true }),
 });
 
+/**
+ * "Clear recents" cutoffs per user and scope.
+ * scope: all | resistance | cardio | flexibility
+ */
+export const exerciseRecentClears = pgTable(
+  'exercise_recent_clears',
+  {
+    clearId: serial('clearId').primaryKey(),
+    userId: integer('userId')
+      .notNull()
+      .references(() => users.userId, { onDelete: 'cascade' }),
+    scope: text('scope').notNull(),
+    clearedAt: timestamp('clearedAt', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('exercise_recent_clears_user_scope_unique').on(t.userId, t.scope),
+  ],
+);
+
 export const workouts = pgTable('workouts', {
   workoutId: serial('workoutId').primaryKey(),
   userId: integer('userId')

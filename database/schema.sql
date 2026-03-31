@@ -30,6 +30,14 @@ create table "exercise_types" (
   "archivedAt" timestamptz
 );
 
+create table "exercise_recent_clears" (
+  "clearId" serial primary key,
+  "userId" integer not null references "users" ("userId") on delete cascade,
+  "scope" text not null,
+  "clearedAt" timestamptz not null default now(),
+  constraint "exercise_recent_clears_user_scope_unique" unique ("userId", "scope")
+);
+
 create table "workouts" (
   "workoutId" serial primary key,
   "userId" integer not null references "users" ("userId") on delete cascade,

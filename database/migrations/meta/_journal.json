@@ -71,6 +71,13 @@
       "when": 1774850000000,
       "tag": "0009_goals_achievements",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1774980312866,
+      "tag": "0010_nappy_iron_monger",
+      "breakpoints": true
     }
   ]
 }

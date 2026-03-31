@@ -11,7 +11,12 @@ import {
   or,
 } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
-import { exerciseTypes, workoutSets, workouts } from '@server/db/schema.js';
+import {
+  exerciseRecentClears,
+  exerciseTypes,
+  workoutSets,
+  workouts,
+} from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
 import { isWorkoutType, type WorkoutType } from '@shared/workout-types';
 
@@ -37,7 +42,6 @@ export type ExerciseTypeRecord = {
 };
 
 const RECENTS_SCOPE_ALL = 'all';
-const recentsClearedAtByUser = new Map<number, Map<string, Date>>();
 
 function toRecord(row: typeof exerciseTypes.$inferSelect): ExerciseTypeRecord {
   return {
@@ -130,30 +134,42 @@ async function readRecentCutoff(
   userId: number,
   workoutType?: WorkoutType,
 ): Promise<Date | null> {
-  const scoped = recentsClearedAtByUser.get(userId);
-  if (!scoped) return null;
+  const db = requireDb();
   const scopes = workoutType
     ? [RECENTS_SCOPE_ALL, workoutType]
     : [RECENTS_SCOPE_ALL];
-  return scopes.reduce(
-    (latest, scope) => {
-      const clearedAt = scoped.get(scope);
-      if (!clearedAt) return latest;
-      if (!latest) return clearedAt;
-      return clearedAt > latest ? clearedAt : latest;
-    },
-    null as Date | null,
-  );
+  const rows = await db
+    .select({ clearedAt: exerciseRecentClears.clearedAt })
+    .from(exerciseRecentClears)
+    .where(
+      and(
+        eq(exerciseRecentClears.userId, userId),
+        inArray(exerciseRecentClears.scope, scopes),
+      ),
+    )
+    .orderBy(desc(exerciseRecentClears.clearedAt))
+    .limit(1);
+  return rows[0]?.clearedAt ?? null;
 }
 
 export async function clearRecentExercisesForUser(
   userId: number,
   options?: { workoutType?: WorkoutType },
 ): Promise<void> {
+  const db = requireDb();
   const scope = options?.workoutType ?? RECENTS_SCOPE_ALL;
-  const scoped = recentsClearedAtByUser.get(userId) ?? new Map<string, Date>();
-  scoped.set(scope, new Date());
-  recentsClearedAtByUser.set(userId, scoped);
+  await db
+    .insert(exerciseRecentClears)
+    .values({
+      userId,
+      scope,
+    })
+    .onConflictDoUpdate({
+      target: [exerciseRecentClears.userId, exerciseRecentClears.scope],
+      set: {
+        clearedAt: new Date(),
+      },
+    });
 }
 
 /** User's archived custom exercises (newest archive first). */
