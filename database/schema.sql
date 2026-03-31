@@ -48,10 +48,18 @@ create table "workouts" (
   "endedAt" timestamptz
 );
 
+create table "workout_set_groups" (
+  "groupId" serial primary key,
+  "workoutId" integer not null references "workouts" ("workoutId") on delete cascade,
+  "label" text,
+  "createdAt" timestamptz not null default now()
+);
+
 create table "workout_sets" (
   "setId" serial primary key,
   "workoutId" integer not null references "workouts" ("workoutId") on delete cascade,
   "exerciseTypeId" integer not null references "exercise_types" ("exerciseTypeId") on delete restrict,
+  "groupId" integer references "workout_set_groups" ("groupId") on delete set null,
   "setIndex" integer not null,
   "reps" integer not null,
   "weight" real not null,

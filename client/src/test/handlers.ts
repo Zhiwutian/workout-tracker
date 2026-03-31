@@ -294,11 +294,18 @@ export const handlers = [
       notes?: string | null;
       isWarmup?: boolean;
       restSeconds?: number | null;
+      groupId?: number | null;
+      createGroup?: boolean;
     };
+    const resolvedGroupId =
+      body.createGroup === true
+        ? Number(String(Date.now()).slice(-6))
+        : (body.groupId ?? null);
     const row = {
       setId: Date.now(),
       workoutId,
       exerciseTypeId: body.exerciseTypeId,
+      groupId: resolvedGroupId,
       setIndex: 0,
       reps: body.reps,
       weight: body.weight,
@@ -325,6 +332,7 @@ export const handlers = [
       notes?: string | null;
       isWarmup?: boolean;
       restSeconds?: number | null;
+      groupId?: number | null;
     };
     const reps = body.reps ?? 8;
     const weight = body.weight ?? 0;
@@ -333,6 +341,7 @@ export const handlers = [
         setId,
         workoutId: 1,
         exerciseTypeId: 1,
+        groupId: body.groupId ?? null,
         setIndex: 0,
         reps,
         weight,

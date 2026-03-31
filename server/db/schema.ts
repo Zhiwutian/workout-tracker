@@ -98,6 +98,21 @@ export const workouts = pgTable('workouts', {
   endedAt: timestamp('endedAt', { withTimezone: true }),
 });
 
+/**
+ * Optional grouping container for superset workflows inside one workout.
+ * Sets can reference a group via `workout_sets.groupId`.
+ */
+export const workoutSetGroups = pgTable('workout_set_groups', {
+  groupId: serial('groupId').primaryKey(),
+  workoutId: integer('workoutId')
+    .notNull()
+    .references(() => workouts.workoutId, { onDelete: 'cascade' }),
+  label: text('label'),
+  createdAt: timestamp('createdAt', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const workoutSets = pgTable('workout_sets', {
   setId: serial('setId').primaryKey(),
   workoutId: integer('workoutId')
@@ -106,6 +121,9 @@ export const workoutSets = pgTable('workout_sets', {
   exerciseTypeId: integer('exerciseTypeId')
     .notNull()
     .references(() => exerciseTypes.exerciseTypeId, { onDelete: 'restrict' }),
+  groupId: integer('groupId').references(() => workoutSetGroups.groupId, {
+    onDelete: 'set null',
+  }),
   setIndex: integer('setIndex').notNull(),
   reps: integer('reps').notNull(),
   weight: real('weight').notNull(),

@@ -78,13 +78,15 @@ Primary outcomes:
   - [server/services/exercise-service.ts](../../server/services/exercise-service.ts)
   - [client/src/pages/WorkoutDetailPage.tsx](../../client/src/pages/WorkoutDetailPage.tsx)
 
-### Phase 3: Dashboard and tutorial
+### Phase 3: Dashboard, tutorial, and about page
 
 - Put weekly trend and stats in one tabbed container with accessible tab semantics:
   - [client/src/pages/DashboardPage.tsx](../../client/src/pages/DashboardPage.tsx)
 - Remove goals subheading text in dashboard.
 - Expand tutorial with robust walkthrough and FAQ:
   - [client/src/pages/TutorialPage.tsx](../../client/src/pages/TutorialPage.tsx)
+- Update About page content so it aligns with the expanded tutorial and current UX:
+  - [client/src/pages/AboutPage.tsx](../../client/src/pages/AboutPage.tsx)
 
 ### Phase 4: Superset data model and workflow
 
@@ -139,6 +141,7 @@ This contract should be settled before coding phase 4 to avoid UI and backend dr
   - trend/stats tabs pass keyboard navigation and screen reader checks
   - goals subheading removed
   - tutorial includes robust FAQ and complete task walkthrough
+  - about page copy reflects current app flow and points users to tutorial for task-based guidance
 - Phase 4:
   - migration applies cleanly with legacy data intact
   - grouped set CRUD works end-to-end

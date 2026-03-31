@@ -43,6 +43,10 @@ export function WorkoutDetailPage() {
   const [notes, setNotes] = useState('');
   const [isWarmup, setIsWarmup] = useState(false);
   const [restSeconds, setRestSeconds] = useState('');
+  const [pendingSupersetGroupId, setPendingSupersetGroupId] = useState<
+    number | null
+  >(null);
+  const [startNewSuperset, setStartNewSuperset] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const prevExerciseTypeId = useRef<string>('');
@@ -142,8 +146,14 @@ export function WorkoutDetailPage() {
         notes: notes.trim() || null,
         isWarmup,
         restSeconds: rest,
+        groupId: pendingSupersetGroupId,
+        createGroup: startNewSuperset,
       });
       setSets((prev) => [...prev, row].sort((a, b) => a.setIndex - b.setIndex));
+      if (startNewSuperset) {
+        setPendingSupersetGroupId(row.groupId);
+        setStartNewSuperset(false);
+      }
       try {
         const wt = workout?.workoutType ?? 'resistance';
         setRecents(await readExerciseRecents(8, wt));
@@ -170,6 +180,25 @@ export function WorkoutDetailPage() {
 
   const exerciseName = (id: number) =>
     exercises.find((x) => x.exerciseTypeId === id)?.name ?? `Exercise ${id}`;
+  const groupedSetEntries = sets.reduce<
+    Array<{ key: string; groupId: number | null; rows: SetRow[] }>
+  >((acc, s) => {
+    if (s.groupId === null) {
+      acc.push({ key: `set-${s.setId}`, groupId: null, rows: [s] });
+      return acc;
+    }
+    const last = acc[acc.length - 1];
+    if (last && last.groupId === s.groupId) {
+      last.rows.push(s);
+      return acc;
+    }
+    acc.push({
+      key: `group-${s.groupId}-${s.setId}`,
+      groupId: s.groupId,
+      rows: [s],
+    });
+    return acc;
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -322,6 +351,40 @@ export function WorkoutDetailPage() {
           <div className="sm:col-span-2">
             <Button type="submit">Save set</Button>
           </div>
+          <div className="sm:col-span-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={startNewSuperset}
+                  onChange={(e) => {
+                    setStartNewSuperset(e.target.checked);
+                    if (e.target.checked) {
+                      setPendingSupersetGroupId(null);
+                    }
+                  }}
+                  className="rounded border-slate-300"
+                />
+                <span className="text-sm text-slate-700">
+                  Start new superset group with this set
+                </span>
+              </label>
+              {pendingSupersetGroupId !== null ? (
+                <>
+                  <Badge className="bg-indigo-100 text-indigo-800">
+                    Adding to superset #{pendingSupersetGroupId}
+                  </Badge>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPendingSupersetGroupId(null)}>
+                    Stop grouping
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </div>
         </form>
       </Card>
 
@@ -331,22 +394,61 @@ export function WorkoutDetailPage() {
           <p className="mt-2 text-sm text-slate-600">No sets yet.</p>
         ) : (
           <ul className="mt-2 space-y-2" aria-label="Logged sets">
-            {sets.map((s) => (
-              <li key={s.setId}>
-                <SetRowCard
-                  s={s}
-                  exerciseLabel={exerciseName(s.exerciseTypeId)}
-                  onPatched={(row) => {
-                    setSets((prev) =>
-                      prev
-                        .map((x) => (x.setId === row.setId ? row : x))
-                        .sort((a, b) => a.setIndex - b.setIndex),
-                    );
-                  }}
-                  onRemoved={() => {
-                    setSets((prev) => prev.filter((x) => x.setId !== s.setId));
-                  }}
-                />
+            {groupedSetEntries.map((entry) => (
+              <li key={entry.key}>
+                {entry.groupId !== null ? (
+                  <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-2">
+                    <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-indigo-800">
+                      Superset #{entry.groupId}
+                    </p>
+                    <ul className="space-y-2">
+                      {entry.rows.map((s) => (
+                        <li key={s.setId}>
+                          <SetRowCard
+                            s={s}
+                            exerciseLabel={exerciseName(s.exerciseTypeId)}
+                            onAddInSuperset={(groupId) => {
+                              setPendingSupersetGroupId(groupId);
+                              setStartNewSuperset(false);
+                            }}
+                            onPatched={(row) => {
+                              setSets((prev) =>
+                                prev
+                                  .map((x) => (x.setId === row.setId ? row : x))
+                                  .sort((a, b) => a.setIndex - b.setIndex),
+                              );
+                            }}
+                            onRemoved={() => {
+                              setSets((prev) =>
+                                prev.filter((x) => x.setId !== s.setId),
+                              );
+                            }}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  entry.rows.map((s) => (
+                    <SetRowCard
+                      key={s.setId}
+                      s={s}
+                      exerciseLabel={exerciseName(s.exerciseTypeId)}
+                      onPatched={(row) => {
+                        setSets((prev) =>
+                          prev
+                            .map((x) => (x.setId === row.setId ? row : x))
+                            .sort((a, b) => a.setIndex - b.setIndex),
+                        );
+                      }}
+                      onRemoved={() => {
+                        setSets((prev) =>
+                          prev.filter((x) => x.setId !== s.setId),
+                        );
+                      }}
+                    />
+                  ))
+                )}
               </li>
             ))}
           </ul>

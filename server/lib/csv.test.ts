@@ -25,6 +25,7 @@ describe('buildWorkoutSetsCsv', () => {
       workoutEndedAt: null,
       exerciseName: 'Squat',
       exerciseCategory: 'resistance',
+      groupId: 4,
       setIndex: 0,
       reps: 8,
       weight: 135,

@@ -41,6 +41,7 @@ export type SetRow = {
   setId: number;
   workoutId: number;
   exerciseTypeId: number;
+  groupId: number | null;
   setIndex: number;
   reps: number;
   weight: number;

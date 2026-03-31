@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
-import { workoutSets, workouts } from '@server/db/schema.js';
+import { workoutSetGroups, workoutSets, workouts } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
 import { isWorkoutType, type WorkoutType } from '@shared/workout-types';
 
@@ -29,6 +29,7 @@ export type SetRecord = {
   setId: number;
   workoutId: number;
   exerciseTypeId: number;
+  groupId: number | null;
   setIndex: number;
   reps: number;
   weight: number;
@@ -186,6 +187,8 @@ export async function addSetToWorkout(
     isWarmup?: boolean;
     restSeconds?: number | null;
     setIndex?: number;
+    groupId?: number | null;
+    createGroup?: boolean;
   },
 ): Promise<SetRecord> {
   const db = requireDb();
@@ -198,11 +201,31 @@ export async function addSetToWorkout(
     setIndex = last ? last.setIndex + 1 : 0;
   }
 
+  let resolvedGroupId: number | null = input.groupId ?? null;
+  if (input.createGroup) {
+    const [group] = await db
+      .insert(workoutSetGroups)
+      .values({ workoutId })
+      .returning();
+    if (!group) throw new ClientError(500, 'failed to create superset group');
+    resolvedGroupId = group.groupId;
+  } else if (resolvedGroupId !== null) {
+    const [group] = await db
+      .select()
+      .from(workoutSetGroups)
+      .where(eq(workoutSetGroups.groupId, resolvedGroupId))
+      .limit(1);
+    if (!group || group.workoutId !== workoutId) {
+      throw new ClientError(400, 'invalid superset group');
+    }
+  }
+
   const [row] = await db
     .insert(workoutSets)
     .values({
       workoutId,
       exerciseTypeId: input.exerciseTypeId,
+      groupId: resolvedGroupId,
       setIndex,
       reps: input.reps,
       weight: input.weight,
@@ -228,6 +251,7 @@ export async function updateSetForUser(
     setIndex: number;
     isWarmup: boolean;
     restSeconds: number | null;
+    groupId: number | null;
   }>,
 ): Promise<SetRecord> {
   const db = requireDb();
@@ -247,6 +271,21 @@ export async function updateSetForUser(
   if (patch.notes !== undefined) updates.notes = patch.notes?.trim() || null;
   if (patch.isWarmup !== undefined) updates.isWarmup = patch.isWarmup;
   if (patch.restSeconds !== undefined) updates.restSeconds = patch.restSeconds;
+  if (patch.groupId !== undefined) {
+    if (patch.groupId === null) {
+      updates.groupId = null;
+    } else {
+      const [group] = await db
+        .select()
+        .from(workoutSetGroups)
+        .where(eq(workoutSetGroups.groupId, patch.groupId))
+        .limit(1);
+      if (!group || group.workoutId !== s.workoutId) {
+        throw new ClientError(400, 'invalid superset group');
+      }
+      updates.groupId = patch.groupId;
+    }
+  }
 
   const [row] = await db
     .update(workoutSets)
