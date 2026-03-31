@@ -29,7 +29,14 @@ import {
 } from '@/lib/workout-api';
 import { useAppState } from '@/state';
 import { WORKOUT_TYPE_LABELS, WORKOUT_TYPES } from '@shared/workout-types';
-import { type FormEvent, useMemo, useState } from 'react';
+import {
+  type FormEvent,
+  KeyboardEvent,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Bar,
   BarChart,
@@ -54,6 +61,7 @@ const BADGE_LABELS: Record<string, string> = {
 };
 
 const SERIES_WEEKS = 8;
+type InsightsTabId = 'weekly-stats' | 'volume-trend';
 
 function isDashboardEmpty(
   summary: StatsSummaryResponse['summary'],
@@ -105,6 +113,15 @@ export function DashboardPage() {
   const [newTarget, setNewTarget] = useState('5000');
   const [newTypeFilter, setNewTypeFilter] = useState('');
   const [savingGoal, setSavingGoal] = useState(false);
+  const [activeInsightsTab, setActiveInsightsTab] =
+    useState<InsightsTabId>('weekly-stats');
+  const insightsTablistLabelId = useId();
+  const insightsTabRefs = useRef<
+    Record<InsightsTabId, HTMLButtonElement | null>
+  >({
+    'weekly-stats': null,
+    'volume-trend': null,
+  });
 
   useAbortableAsyncEffect(
     async (signal) => {
@@ -213,6 +230,27 @@ export function DashboardPage() {
     }
   }
 
+  function handleInsightsTabKeyDown(
+    e: KeyboardEvent<HTMLButtonElement>,
+    currentTab: InsightsTabId,
+  ): void {
+    const tabs: InsightsTabId[] = ['weekly-stats', 'volume-trend'];
+    const idx = tabs.indexOf(currentTab);
+    if (idx < 0) return;
+
+    let nextIdx: number | null = null;
+    if (e.key === 'ArrowRight') nextIdx = (idx + 1) % tabs.length;
+    if (e.key === 'ArrowLeft') nextIdx = (idx - 1 + tabs.length) % tabs.length;
+    if (e.key === 'Home') nextIdx = 0;
+    if (e.key === 'End') nextIdx = tabs.length - 1;
+    if (nextIdx === null) return;
+
+    e.preventDefault();
+    const nextTab = tabs[nextIdx];
+    setActiveInsightsTab(nextTab);
+    insightsTabRefs.current[nextTab]?.focus();
+  }
+
   return (
     <div className="space-y-8">
       <NavLinkButton to="/">← Workouts</NavLinkButton>
@@ -246,52 +284,248 @@ export function DashboardPage() {
 
       {!loading && summary ? (
         <>
-          <section aria-labelledby="dash-summary-heading">
-            <h2
-              id="dash-summary-heading"
-              className="text-lg font-semibold text-slate-900">
-              This week vs last
-            </h2>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <Card className="p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  This week
-                </p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">
-                  {summary.currentWeek.totalVolume.toLocaleString()}
-                </p>
-                <p className="text-sm text-slate-600">
-                  volume · {summary.currentWeek.setCount} sets ·{' '}
-                  {summary.currentWeek.workoutCount} sessions
-                </p>
-              </Card>
-              <Card className="p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Previous week
-                </p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">
-                  {summary.previousWeek.totalVolume.toLocaleString()}
-                </p>
-                <p className="text-sm text-slate-600">
-                  volume · {summary.previousWeek.setCount} sets ·{' '}
-                  {summary.previousWeek.workoutCount} sessions
-                </p>
-              </Card>
-            </div>
-            <dl className="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
-              <div>
-                <dt className="font-medium text-slate-600">
-                  Workout day streak
-                </dt>
-                <dd>{summary.streakDays} days</dd>
+          <section aria-labelledby="dash-insights-heading">
+            <Card className="p-4">
+              <h2
+                id="dash-insights-heading"
+                className="text-lg font-semibold text-slate-900">
+                Weekly insights
+              </h2>
+              <p
+                id={insightsTablistLabelId}
+                className="mt-1 text-sm text-slate-600">
+                Use tabs to switch between this-week stats and the multi-week
+                trend.
+              </p>
+              <div
+                className="mt-3 inline-flex rounded-lg border border-slate-200 bg-white p-1"
+                role="tablist"
+                aria-labelledby={insightsTablistLabelId}>
+                <button
+                  ref={(el) => {
+                    insightsTabRefs.current['weekly-stats'] = el;
+                  }}
+                  type="button"
+                  role="tab"
+                  id="dash-tab-weekly-stats"
+                  aria-controls="dash-panel-weekly-stats"
+                  aria-selected={activeInsightsTab === 'weekly-stats'}
+                  tabIndex={activeInsightsTab === 'weekly-stats' ? 0 : -1}
+                  className={cn(
+                    'rounded-md px-3 py-1.5 text-sm font-medium',
+                    activeInsightsTab === 'weekly-stats'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-700 hover:bg-slate-100',
+                  )}
+                  onClick={() => setActiveInsightsTab('weekly-stats')}
+                  onKeyDown={(e) =>
+                    handleInsightsTabKeyDown(e, 'weekly-stats')
+                  }>
+                  Weekly stats
+                </button>
+                <button
+                  ref={(el) => {
+                    insightsTabRefs.current['volume-trend'] = el;
+                  }}
+                  type="button"
+                  role="tab"
+                  id="dash-tab-volume-trend"
+                  aria-controls="dash-panel-volume-trend"
+                  aria-selected={activeInsightsTab === 'volume-trend'}
+                  tabIndex={activeInsightsTab === 'volume-trend' ? 0 : -1}
+                  className={cn(
+                    'rounded-md px-3 py-1.5 text-sm font-medium',
+                    activeInsightsTab === 'volume-trend'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-700 hover:bg-slate-100',
+                  )}
+                  onClick={() => setActiveInsightsTab('volume-trend')}
+                  onKeyDown={(e) =>
+                    handleInsightsTabKeyDown(e, 'volume-trend')
+                  }>
+                  Volume trend
+                </button>
               </div>
-              <div>
-                <dt className="font-medium text-slate-600">
-                  Active days this week
-                </dt>
-                <dd>{summary.activeDaysThisWeek} days</dd>
+
+              <div
+                id="dash-panel-weekly-stats"
+                role="tabpanel"
+                aria-labelledby="dash-tab-weekly-stats"
+                hidden={activeInsightsTab !== 'weekly-stats'}
+                className="mt-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Card className="p-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      This week
+                    </p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">
+                      {summary.currentWeek.totalVolume.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      volume · {summary.currentWeek.setCount} sets ·{' '}
+                      {summary.currentWeek.workoutCount} sessions
+                    </p>
+                  </Card>
+                  <Card className="p-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Previous week
+                    </p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">
+                      {summary.previousWeek.totalVolume.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      volume · {summary.previousWeek.setCount} sets ·{' '}
+                      {summary.previousWeek.workoutCount} sessions
+                    </p>
+                  </Card>
+                </div>
+                <dl className="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+                  <div>
+                    <dt className="font-medium text-slate-600">
+                      Workout day streak
+                    </dt>
+                    <dd>{summary.streakDays} days</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-slate-600">
+                      Active days this week
+                    </dt>
+                    <dd>{summary.activeDaysThisWeek} days</dd>
+                  </div>
+                </dl>
               </div>
-            </dl>
+
+              <div
+                id="dash-panel-volume-trend"
+                role="tabpanel"
+                aria-labelledby="dash-tab-volume-trend"
+                hidden={activeInsightsTab !== 'volume-trend'}
+                className="mt-4">
+                {volumeSeries && chartData.length > 0 ? (
+                  <>
+                    <p
+                      id="volume-chart-desc"
+                      className="text-sm text-slate-600">
+                      Bar height is total volume per week; numeric values are in
+                      the table below for screen readers and exact figures.
+                    </p>
+                    <figure className="mt-4 rounded-lg border border-slate-200 bg-white p-2">
+                      <div
+                        className="h-64 w-full min-h-[16rem]"
+                        role="img"
+                        aria-label="Weekly training volume chart"
+                        aria-describedby="volume-chart-desc">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={chartData}
+                            margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                            <CartesianGrid
+                              stroke={gridStroke}
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="weekLabel"
+                              tick={{ fill: axisStroke, fontSize: 12 }}
+                              tickLine={{ stroke: axisStroke }}
+                            />
+                            <YAxis
+                              tick={{ fill: axisStroke, fontSize: 12 }}
+                              tickLine={{ stroke: axisStroke }}
+                              width={48}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                background: tooltipBg,
+                                color: tooltipFg,
+                                border: `1px solid ${gridStroke}`,
+                              }}
+                              formatter={(value) => {
+                                const n =
+                                  typeof value === 'number'
+                                    ? value
+                                    : Number(value ?? 0);
+                                return [
+                                  Number.isFinite(n) ? n.toLocaleString() : '—',
+                                  'Volume',
+                                ];
+                              }}
+                              labelFormatter={(_label, payload) => {
+                                const p = payload?.[0]?.payload as
+                                  | { weekStart?: string }
+                                  | undefined;
+                                return p?.weekStart ?? '';
+                              }}
+                            />
+                            <Bar
+                              dataKey="totalVolume"
+                              fill={barFill}
+                              name="Volume"
+                              isAnimationActive={!reducedMotion}
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <figcaption className="sr-only">
+                        Weekly training volume by week start date. Same numbers
+                        appear in the data table following this figure.
+                      </figcaption>
+                    </figure>
+
+                    <div
+                      className="mt-4 overflow-x-auto rounded-lg border border-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                      role="region"
+                      tabIndex={0}
+                      aria-labelledby="volume-series-table-caption">
+                      <table className="w-full min-w-[28rem] text-left text-sm text-slate-800">
+                        <caption
+                          id="volume-series-table-caption"
+                          className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm font-medium text-slate-700">
+                          Weekly stats (same series as the chart)
+                        </caption>
+                        <thead className="bg-slate-50 text-xs uppercase text-slate-600">
+                          <tr>
+                            <th scope="col" className="px-3 py-2">
+                              Week start
+                            </th>
+                            <th scope="col" className="px-3 py-2">
+                              Volume
+                            </th>
+                            <th scope="col" className="px-3 py-2">
+                              Sets
+                            </th>
+                            <th scope="col" className="px-3 py-2">
+                              Sessions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {chartData.map((row) => (
+                            <tr
+                              key={row.weekStart}
+                              className="border-t border-slate-100">
+                              <th scope="row" className="px-3 py-2 font-medium">
+                                {row.weekStart}
+                              </th>
+                              <td className="px-3 py-2">
+                                {row.totalVolume.toLocaleString()}
+                              </td>
+                              <td className="px-3 py-2">{row.setCount}</td>
+                              <td className="px-3 py-2">{row.workoutCount}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-600">
+                    No weekly trend data yet. Log workouts and sets to populate
+                    this chart.
+                  </p>
+                )}
+              </div>
+            </Card>
           </section>
 
           {achievements.length > 0 ? (
@@ -330,125 +564,6 @@ export function DashboardPage() {
             </section>
           ) : null}
 
-          {volumeSeries && chartData.length > 0 ? (
-            <section aria-labelledby="volume-chart-heading">
-              <h2
-                id="volume-chart-heading"
-                className="text-lg font-semibold text-slate-900">
-                Weekly volume trend
-              </h2>
-              <p id="volume-chart-desc" className="mt-1 text-sm text-slate-600">
-                Bar height is total volume per week; numeric values are in the
-                table below for screen readers and exact figures.
-              </p>
-              <figure className="mt-4 rounded-lg border border-slate-200 bg-white p-2">
-                <div
-                  className="h-64 w-full min-h-[16rem]"
-                  role="img"
-                  aria-labelledby="volume-chart-heading"
-                  aria-describedby="volume-chart-desc">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                      <CartesianGrid stroke={gridStroke} vertical={false} />
-                      <XAxis
-                        dataKey="weekLabel"
-                        tick={{ fill: axisStroke, fontSize: 12 }}
-                        tickLine={{ stroke: axisStroke }}
-                      />
-                      <YAxis
-                        tick={{ fill: axisStroke, fontSize: 12 }}
-                        tickLine={{ stroke: axisStroke }}
-                        width={48}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          background: tooltipBg,
-                          color: tooltipFg,
-                          border: `1px solid ${gridStroke}`,
-                        }}
-                        formatter={(value) => {
-                          const n =
-                            typeof value === 'number'
-                              ? value
-                              : Number(value ?? 0);
-                          return [
-                            Number.isFinite(n) ? n.toLocaleString() : '—',
-                            'Volume',
-                          ];
-                        }}
-                        labelFormatter={(_label, payload) => {
-                          const p = payload?.[0]?.payload as
-                            | { weekStart?: string }
-                            | undefined;
-                          return p?.weekStart ?? '';
-                        }}
-                      />
-                      <Bar
-                        dataKey="totalVolume"
-                        fill={barFill}
-                        name="Volume"
-                        isAnimationActive={!reducedMotion}
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <figcaption className="sr-only">
-                  Weekly training volume by week start date. Same numbers appear
-                  in the data table following this figure.
-                </figcaption>
-              </figure>
-
-              <div
-                className="mt-4 overflow-x-auto rounded-lg border border-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-                role="region"
-                tabIndex={0}
-                aria-labelledby="volume-series-table-caption">
-                <table className="w-full min-w-[28rem] text-left text-sm text-slate-800">
-                  <caption
-                    id="volume-series-table-caption"
-                    className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm font-medium text-slate-700">
-                    Weekly stats (same series as the chart)
-                  </caption>
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-600">
-                    <tr>
-                      <th scope="col" className="px-3 py-2">
-                        Week start
-                      </th>
-                      <th scope="col" className="px-3 py-2">
-                        Volume
-                      </th>
-                      <th scope="col" className="px-3 py-2">
-                        Sets
-                      </th>
-                      <th scope="col" className="px-3 py-2">
-                        Sessions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chartData.map((row) => (
-                      <tr
-                        key={row.weekStart}
-                        className="border-t border-slate-100">
-                        <th scope="row" className="px-3 py-2 font-medium">
-                          {row.weekStart}
-                        </th>
-                        <td className="px-3 py-2">
-                          {row.totalVolume.toLocaleString()}
-                        </td>
-                        <td className="px-3 py-2">{row.setCount}</td>
-                        <td className="px-3 py-2">{row.workoutCount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          ) : null}
-
           <section aria-labelledby="dash-goals-heading">
             <h2
               id="dash-goals-heading"
@@ -459,7 +574,6 @@ export function DashboardPage() {
             <form
               className="mt-4 max-w-xl space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4"
               onSubmit={(e) => void handleAddGoal(e)}>
-              <p className="text-sm font-medium text-slate-800">Add a goal</p>
               <div>
                 <FieldLabel htmlFor="goal-type">Type</FieldLabel>
                 <Select
