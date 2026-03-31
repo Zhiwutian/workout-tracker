@@ -25,9 +25,11 @@ Commands and layers for **workout-tracker**. Aligns with **`docs/proposals/worko
 - **Dashboard / goals auth + DB wiring:** **`server/routes/api.test.ts`** asserts **401** without a Bearer token on **`GET /api/stats/summary`**, **`GET /api/stats/volume-series`**, and **`GET /api/goals`**, and **503** (no **`DATABASE_URL`**) on those reads plus goals **POST** / **PATCH** / **DELETE**.
 - **Superset API payload + integration coverage:** **`server/routes/api-envelope.test.ts`** table-tests set payload variants (`createGroup`, `groupId`, invalid combination) and **`server/routes/api-idor.test.ts`** covers create-group success plus valid/invalid group assignment on **POST**/**PATCH** set routes.
 - **Set ordering conflict coverage:** Postgres-backed integration tests also assert **409** when duplicate **`setIndex`** is posted for the same workout (DB unique constraint + client-safe error path).
+- **Set reorder safety:** Postgres-backed integration tests assert that **`PATCH /api/sets/:id`** can move a set to a new index while the workout is reindexed transactionally (`0..n-1`) without uniqueness collisions.
 - **Week windows (server):** **`server/lib/week-helpers.test.ts`** covers **`mondayWeekStartYmdInZone`** and **`lastNMondayWeekStarts`** (IANA zones, ordering, empty **`n`**). Same Monday-based week family as **`GET /api/stats/weekly-volume`** and the multi-week dashboard stats endpoints (see **`docs/assumptions.md`**).
 - **Client:** Vitest + Testing Library + MSW handlers for `/api/*` (including auth options and logout). **`client/src/lib/api/stats-api.test.ts`** and **`goals-api.test.ts`** lock query strings / methods for **`readVolumeSeries`**, **`readStatsSummary`**, and goals CRUD.
 - **Workout detail supersets (client):** **`client/src/pages/WorkoutDetailPage.test.tsx`** verifies local grouped rendering and superset compose actions (`Start new superset`, `Add in superset`, pending group badge state) against MSW set handlers.
+- **Non-contiguous superset rendering:** client tests also cover grouped-set rendering when members of the same superset are separated by other rows in `setIndex`.
 - **Ownership:** Optional Postgres IDOR suite when **`TEST_DATABASE_URL`** is provided (CI quality job), including workout-type mismatch on log set.
 
 ## OIDC / session

@@ -8,6 +8,7 @@ import {
   isNull,
   lte,
   max,
+  sql,
 } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { workoutSetGroups, workoutSets, workouts } from '@server/db/schema.js';
@@ -58,8 +59,10 @@ export type WorkoutSetWriteSession = {
 };
 
 const WORKOUT_SET_INDEX_UNIQUE = 'workout_sets_workout_set_index_unique';
+const SET_INDEX_SHIFT_OFFSET = 100_000;
 type DbReadExecutor = Pick<DbClient, 'select'>;
 type DbWriteExecutor = Pick<DbClient, 'select' | 'insert'>;
+type DbReorderExecutor = Pick<DbClient, 'select' | 'update'>;
 
 /** Optional filters for GET /api/workouts (date range uses `startedAt`). */
 export type ListWorkoutsFilters = {
@@ -272,36 +275,58 @@ export async function updateSetForUser(
   }>,
 ): Promise<SetRecord> {
   const db = requireDb();
-  const [s] = await db
-    .select()
-    .from(workoutSets)
-    .where(eq(workoutSets.setId, setId))
-    .limit(1);
-  if (!s) throw new ClientError(404, 'set not found');
-  const parent = await getWorkoutForUser(userId, s.workoutId);
-  if (!parent) throw new ClientError(404, 'set not found');
+  return db.transaction(async (tx) => {
+    const [s] = await tx
+      .select()
+      .from(workoutSets)
+      .where(eq(workoutSets.setId, setId))
+      .limit(1);
+    if (!s) throw new ClientError(404, 'set not found');
+    const [ownedWorkout] = await tx
+      .select({ workoutId: workouts.workoutId })
+      .from(workouts)
+      .where(
+        and(eq(workouts.workoutId, s.workoutId), eq(workouts.userId, userId)),
+      )
+      .limit(1);
+    if (!ownedWorkout) throw new ClientError(404, 'set not found');
 
-  const updates: Partial<typeof workoutSets.$inferInsert> = {};
-  if (patch.reps !== undefined) updates.reps = patch.reps;
-  if (patch.weight !== undefined) updates.weight = patch.weight;
-  if (patch.setIndex !== undefined) updates.setIndex = patch.setIndex;
-  if (patch.notes !== undefined) updates.notes = patch.notes?.trim() || null;
-  if (patch.isWarmup !== undefined) updates.isWarmup = patch.isWarmup;
-  if (patch.restSeconds !== undefined) updates.restSeconds = patch.restSeconds;
-  if (patch.groupId !== undefined) {
-    updates.groupId = await resolveGroupForWorkout(db, s.workoutId, {
-      groupId: patch.groupId,
-      createGroup: false,
-    });
-  }
+    if (patch.setIndex !== undefined) {
+      await moveSetWithinWorkout(tx, s.workoutId, s.setId, patch.setIndex);
+    }
 
-  const [row] = await db
-    .update(workoutSets)
-    .set(updates)
-    .where(eq(workoutSets.setId, setId))
-    .returning();
-  if (!row) throw new ClientError(404, 'set not found');
-  return row;
+    const updates: Partial<typeof workoutSets.$inferInsert> = {};
+    if (patch.reps !== undefined) updates.reps = patch.reps;
+    if (patch.weight !== undefined) updates.weight = patch.weight;
+    if (patch.notes !== undefined) updates.notes = patch.notes?.trim() || null;
+    if (patch.isWarmup !== undefined) updates.isWarmup = patch.isWarmup;
+    if (patch.restSeconds !== undefined)
+      updates.restSeconds = patch.restSeconds;
+    if (patch.groupId !== undefined) {
+      updates.groupId = await resolveGroupForWorkout(tx, s.workoutId, {
+        groupId: patch.groupId,
+        createGroup: false,
+      });
+    }
+
+    if (Object.keys(updates).length > 0) {
+      const [row] = await tx
+        .update(workoutSets)
+        .set(updates)
+        .where(eq(workoutSets.setId, setId))
+        .returning();
+      if (!row) throw new ClientError(404, 'set not found');
+      return row;
+    }
+
+    const [row] = await tx
+      .select()
+      .from(workoutSets)
+      .where(eq(workoutSets.setId, setId))
+      .limit(1);
+    if (!row) throw new ClientError(404, 'set not found');
+    return row;
+  });
 }
 
 export async function deleteSetForUser(
@@ -392,4 +417,44 @@ async function resolveGroupForWorkout(
     .limit(1);
   if (!group) throw new ClientError(400, 'invalid superset group');
   return input.groupId;
+}
+
+async function moveSetWithinWorkout(
+  db: DbReorderExecutor,
+  workoutId: number,
+  setId: number,
+  targetIndex: number,
+): Promise<void> {
+  const rows = await db
+    .select({ setId: workoutSets.setId, setIndex: workoutSets.setIndex })
+    .from(workoutSets)
+    .where(eq(workoutSets.workoutId, workoutId))
+    .orderBy(asc(workoutSets.setIndex));
+  if (rows.length === 0) return;
+
+  const currentPos = rows.findIndex((r) => r.setId === setId);
+  if (currentPos < 0) {
+    throw new ClientError(404, 'set not found');
+  }
+
+  const boundedPos = Math.max(0, Math.min(targetIndex, rows.length - 1));
+  if (boundedPos === currentPos) return;
+
+  const orderedIds = rows.map((r) => r.setId);
+  orderedIds.splice(currentPos, 1);
+  orderedIds.splice(boundedPos, 0, setId);
+
+  // Step 1: shift away from the unique range, so final reindexing never collides.
+  await db
+    .update(workoutSets)
+    .set({ setIndex: sql`${workoutSets.setIndex} + ${SET_INDEX_SHIFT_OFFSET}` })
+    .where(eq(workoutSets.workoutId, workoutId));
+
+  // Step 2: write contiguous final positions.
+  for (const [idx, id] of orderedIds.entries()) {
+    await db
+      .update(workoutSets)
+      .set({ setIndex: idx })
+      .where(eq(workoutSets.setId, id));
+  }
 }

@@ -121,6 +121,7 @@ export async function patchSet(
     reps?: number;
     weight?: number;
     notes?: string | null;
+    setIndex?: number;
     isWarmup?: boolean;
     restSeconds?: number | null;
     groupId?: number | null;

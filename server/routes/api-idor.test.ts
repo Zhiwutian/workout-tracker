@@ -393,4 +393,49 @@ describe.skipIf(!hasTestDb)('api IDOR (integration)', () => {
       }),
     );
   });
+
+  it('reorders set indexes on PATCH without unique conflicts', async () => {
+    const t = suffix();
+    const token = await signUp(`superset-reorder-${t}`);
+    const exerciseTypeId = await firstExerciseTypeId(token);
+    const workoutId = await createWorkoutForToken(token);
+
+    const first = await request(app)
+      .post(`/api/workouts/${workoutId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ exerciseTypeId, reps: 8, weight: 100, setIndex: 0 })
+      .expect(201);
+    const second = await request(app)
+      .post(`/api/workouts/${workoutId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ exerciseTypeId, reps: 6, weight: 90, setIndex: 1 })
+      .expect(201);
+    const third = await request(app)
+      .post(`/api/workouts/${workoutId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ exerciseTypeId, reps: 5, weight: 80, setIndex: 2 })
+      .expect(201);
+
+    const moved = await request(app)
+      .patch(`/api/sets/${first.body.data.setId as number}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ setIndex: 2 })
+      .expect(200);
+    expect(moved.body.data.setIndex).toBe(2);
+
+    const detail = await request(app)
+      .get(`/api/workouts/${workoutId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    const ordered = detail.body.data.sets as Array<{
+      setId: number;
+      setIndex: number;
+    }>;
+    expect(ordered.map((s) => s.setId)).toEqual([
+      second.body.data.setId,
+      third.body.data.setId,
+      first.body.data.setId,
+    ]);
+    expect(ordered.map((s) => s.setIndex)).toEqual([0, 1, 2]);
+  });
 });

@@ -332,6 +332,7 @@ export const handlers = [
       reps?: number;
       weight?: number;
       notes?: string | null;
+      setIndex?: number;
       isWarmup?: boolean;
       restSeconds?: number | null;
       groupId?: number | null;
@@ -344,7 +345,7 @@ export const handlers = [
         workoutId: 1,
         exerciseTypeId: 1,
         groupId: body.groupId ?? null,
-        setIndex: 0,
+        setIndex: body.setIndex ?? 0,
         reps,
         weight,
         volume: reps * weight,

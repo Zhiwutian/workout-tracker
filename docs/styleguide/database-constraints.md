@@ -80,6 +80,7 @@ Service writes use upsert semantics on unique `(userId, scope)` so clear-recents
 - **`workout_sets.restSeconds`:** optional; seconds after the set (storage only).
 - **`workout_sets(workoutId, setIndex)`**: unique constraint prevents duplicate ordering within one workout; write path maps conflicts to **409** so clients can refresh/retry.
 - **`idx_workout_sets_workout_set_index`**: supports set-order scans and next-index aggregate lookups by workout.
+- **Set reorders (`PATCH /api/sets/:id` with `setIndex`)**: service applies a transactional full-workout reindex to keep positions contiguous (`0..n-1`) while avoiding intermediate unique collisions.
 
 ## Stats query
 

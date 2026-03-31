@@ -182,25 +182,7 @@ export function WorkoutDetailPage() {
 
   const exerciseName = (id: number) =>
     exercises.find((x) => x.exerciseTypeId === id)?.name ?? `Exercise ${id}`;
-  const groupedSetEntries = sets.reduce<
-    Array<{ key: string; groupId: number | null; rows: SetRow[] }>
-  >((acc, s) => {
-    if (s.groupId === null) {
-      acc.push({ key: `set-${s.setId}`, groupId: null, rows: [s] });
-      return acc;
-    }
-    const last = acc[acc.length - 1];
-    if (last && last.groupId === s.groupId) {
-      last.rows.push(s);
-      return acc;
-    }
-    acc.push({
-      key: `group-${s.groupId}-${s.setId}`,
-      groupId: s.groupId,
-      rows: [s],
-    });
-    return acc;
-  }, []);
+  const groupedSetEntries = buildGroupedSetEntries(sets);
 
   return (
     <div className="space-y-6">
@@ -454,4 +436,34 @@ export function WorkoutDetailPage() {
       </section>
     </div>
   );
+}
+
+function buildGroupedSetEntries(
+  sets: SetRow[],
+): Array<{ key: string; groupId: number | null; rows: SetRow[] }> {
+  const byGroup = new Map<number, SetRow[]>();
+  for (const s of sets) {
+    if (s.groupId === null) continue;
+    const list = byGroup.get(s.groupId);
+    if (list) list.push(s);
+    else byGroup.set(s.groupId, [s]);
+  }
+
+  const seenGroups = new Set<number>();
+  const out: Array<{ key: string; groupId: number | null; rows: SetRow[] }> =
+    [];
+  for (const s of sets) {
+    if (s.groupId === null) {
+      out.push({ key: `set-${s.setId}`, groupId: null, rows: [s] });
+      continue;
+    }
+    if (seenGroups.has(s.groupId)) continue;
+    seenGroups.add(s.groupId);
+    out.push({
+      key: `group-${s.groupId}`,
+      groupId: s.groupId,
+      rows: byGroup.get(s.groupId) ?? [s],
+    });
+  }
+  return out;
 }
