@@ -25,6 +25,7 @@ The format is inspired by Keep a Changelog and uses semantic-style version secti
 
 ### Changed
 
+- **Phase 1 UX cleanup (proposal `docs/proposals/phased-ux-and-supersets.md`):** removed top subheading copy on sign-in/workouts/exercises/dashboard and goals helper text; workouts start controls are full-width on mobile; workouts filters and CSV guidance/actions are consolidated in the filters modal; workouts page dashboard/tutorial links were removed; set form wording simplified (`Warm-up`, rest placeholder `e.g. 90 seconds`). Tests updated in `client/src/App.test.tsx`.
 - **Auth / database errors:** common Postgres failures (missing tables **`42P01`**, connection refused, bad host/credentials) from **`POST /api/auth/guest`** and demo sign-up/sign-in are mapped to **503** with a **`client_error`** message pointing at **`pnpm run db:migrate`** / **`DATABASE_URL`** instead of an opaque **500** (`getDbFailureHint` in **`server/lib/pg-errors.ts`**, used in **`auth-service.ts`**).
 - **Client API layout:** types and calls split under **`client/src/lib/api/`** (**`types`**, **`auth-api`**, **`exercise-api`**, **`workouts-api`**, **`stats-api`**); **`workout-api.ts`** re-exports for existing **`@/lib/workout-api`** imports.
 - **`useAbortableAsyncEffect`** (**`client/src/lib/use-abortable-async-effect.ts`**) — shared abort + error toast for data loads; used on **`DashboardPage`**, **`WorkoutsPage`**, **`ExercisesPage`** (refresh via **`loadKey`**), **`WorkoutDetailPage`**.

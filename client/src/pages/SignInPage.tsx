@@ -109,10 +109,6 @@ export function SignInPage() {
   return (
     <section className="mx-auto max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
       <h1 className="text-xl font-semibold text-slate-900">Workout Tracker</h1>
-      <p className="mt-2 text-sm text-slate-600">
-        Sign in with your course identity provider, use a demo display name, or
-        continue as a guest.
-      </p>
 
       {showOidc ? (
         <div className="mt-6 space-y-2">

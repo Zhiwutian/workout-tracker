@@ -11,7 +11,6 @@ import {
 import { useAuth } from '@/features/auth/AuthContext';
 import { cn } from '@/lib';
 import { effectiveDarkShell } from '@/lib/display-shell';
-import { mondayWeekStartISOInZoneNow } from '@/lib/week';
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion';
 import { useAbortableAsyncEffect } from '@/lib/use-abortable-async-effect';
 import { useSystemPrefersDark } from '@/lib/use-system-prefers-dark';
@@ -31,7 +30,6 @@ import {
 import { useAppState } from '@/state';
 import { WORKOUT_TYPE_LABELS, WORKOUT_TYPES } from '@shared/workout-types';
 import { type FormEvent, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Bar,
   BarChart,
@@ -93,10 +91,6 @@ export function DashboardPage() {
   const reducedMotion = usePrefersReducedMotion();
 
   const profileTz = me?.timezone?.trim() || 'UTC';
-  const weekStart = useMemo(
-    () => mondayWeekStartISOInZoneNow(profileTz),
-    [profileTz],
-  );
 
   const [summaryPack, setSummaryPack] = useState<StatsSummaryResponse | null>(
     null,
@@ -219,25 +213,12 @@ export function DashboardPage() {
     }
   }
 
-  const zoneLabel =
-    summary?.timezone ??
-    (profileTz !== 'UTC' && profileTz !== 'Etc/UTC' ? profileTz : 'UTC');
-
   return (
     <div className="space-y-8">
       <NavLinkButton to="/">← Workouts</NavLinkButton>
 
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-600">
-          Week starting <time dateTime={weekStart}>{weekStart}</time> (
-          {zoneLabel}
-          ). Timezone comes from{' '}
-          <Link to="/profile" className="text-indigo-600 underline">
-            Profile
-          </Link>
-          . Volume uses non-warmup sets only (same idea as CSV export).
-        </p>
       </header>
 
       {loading && <p className="text-sm text-slate-600">Loading…</p>}
@@ -474,13 +455,6 @@ export function DashboardPage() {
               className="text-lg font-semibold text-slate-900">
               Weekly goals
             </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Goals use your profile week (Monday start). Past weeks finalize as
-              met or missed when you open the dashboard.
-              {me?.isGuest
-                ? ' Guest data stays on this device until you sign out.'
-                : ''}
-            </p>
 
             <form
               className="mt-4 max-w-xl space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4"

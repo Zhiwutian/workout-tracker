@@ -11,6 +11,7 @@ Forward-looking plans for **workout-tracker** before or alongside implementation
 | [`display-and-accessibility-settings.md`](./display-and-accessibility-settings.md) | **Done** — display shell + `profiles.uiPreferences` + `PATCH`/`me` for cross-device sync                                                                                                                                                          |
 | [`nav-drawer-filters-modal-url-sync.md`](./nav-drawer-filters-modal-url-sync.md)   | **Done** — overlay nav (Support-style), workouts filters modal, URL query sync for list filters; `prefers-reduced-motion` on modal (see **`ui-styleguide.md`**)                                                                                   |
 | [`dashboard-goals-tutorial-exercises.md`](./dashboard-goals-tutorial-exercises.md) | **Proposed** — dashboard charts + stats API, richer goals (no email), achievements, chart **accessibility** (table fallback, ARIA, contrast, reduced motion), `/tutorial`, exercises catalog UX                                                   |
+| [`phased-ux-and-supersets.md`](./phased-ux-and-supersets.md)                       | **Proposed** — phased UX cleanup, exercises/catalog and validation upgrades, dashboard/tutorial refinements, and superset workflow with per-phase approval and commit gates                                                                       |
 
 ## When to add a proposal
 

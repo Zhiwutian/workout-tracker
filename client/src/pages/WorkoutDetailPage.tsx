@@ -277,20 +277,18 @@ export function WorkoutDetailPage() {
               onChange={(e) => setIsWarmup(e.target.checked)}
               className="rounded border-slate-300"
             />
-            <span className="text-sm text-slate-700">
-              Warm-up set (excluded from weekly volume)
-            </span>
+            <span className="text-sm text-slate-700">Warm-up</span>
           </label>
           <div>
             <FieldLabel
               className="text-sm font-medium text-slate-700"
               htmlFor="log-set-rest">
-              Rest after set (seconds, optional)
+              Rest after set
             </FieldLabel>
             <Input
               id="log-set-rest"
               inputMode="numeric"
-              placeholder="e.g. 90"
+              placeholder="e.g. 90 seconds"
               value={restSeconds}
               onChange={(e) => setRestSeconds(e.target.value)}
               aria-label="Rest seconds after set"

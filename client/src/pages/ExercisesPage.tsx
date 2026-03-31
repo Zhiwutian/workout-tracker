@@ -152,11 +152,6 @@ export function ExercisesPage() {
       <NavLinkButton to="/">← Workouts</NavLinkButton>
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Exercises</h1>
-        <p className="text-sm text-slate-600">
-          Browse the catalog first, then switch to yours or archived. Filters
-          apply to the active tab. Custom exercises match the workout type you
-          start so the set picker stays relevant.
-        </p>
       </header>
 
       {loading ? (
@@ -280,9 +275,6 @@ export function ExercisesPage() {
           {tab === 'catalog' ? (
             <section role="tabpanel" aria-label="Catalog">
               <h2 className="text-lg font-medium text-slate-900">Catalog</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Seeded exercises (read-only).
-              </p>
               {globalsFiltered.length === 0 ? (
                 <p className="mt-3 text-sm text-slate-600">
                   No exercises match these filters.

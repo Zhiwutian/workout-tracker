@@ -8,7 +8,6 @@ import {
   FieldLabel,
   Select,
 } from '@/components/ui';
-import { useAuth } from '@/features/auth/AuthContext';
 import {
   WorkoutListFilters,
   type WorkoutSortFilter,
@@ -37,7 +36,7 @@ import {
 import { useAbortableAsyncEffect } from '@/lib/use-abortable-async-effect';
 import { WORKOUT_TYPE_LABELS, WORKOUT_TYPES } from '@shared/workout-types';
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 function buildListParams(
   rangePreset: RangePreset,
@@ -56,7 +55,6 @@ function buildListParams(
  * List workouts with date range, status, and sort filters; resume banner for active session.
  */
 export function WorkoutsPage() {
-  const { me } = useAuth();
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
@@ -176,27 +174,13 @@ export function WorkoutsPage() {
             data-testid="workouts-page-heading">
             Workouts
           </h1>
-          <p className="text-sm text-slate-600">
-            {me?.isGuest ? (
-              <>
-                Guest session — workouts save on this device until you sign out.{' '}
-                <Link className="text-indigo-600 underline" to="/sign-in">
-                  Create an account
-                </Link>{' '}
-                to sign in by name later.
-              </>
-            ) : (
-              <>
-                Signed in as <strong>{me?.displayName}</strong>
-              </>
-            )}
-          </p>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <div>
+        <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-end">
+          <div className="min-w-0 sm:min-w-[11rem]">
             <FieldLabel htmlFor="new-workout-type">Workout type</FieldLabel>
             <Select
               id="new-workout-type"
+              className="w-full"
               value={newWorkoutType}
               onChange={(e) => setNewWorkoutType(e.target.value as WorkoutType)}
               aria-label="Workout type">
@@ -209,6 +193,7 @@ export function WorkoutsPage() {
           </div>
           <Button
             type="button"
+            className="w-full sm:w-auto"
             disabled={creating}
             onClick={() => void handleNewWorkout()}>
             Start workout
@@ -238,15 +223,8 @@ export function WorkoutsPage() {
           title={emptyTitle}
           description={emptyDescription}
           actions={
-            <div className="flex flex-wrap gap-3">
-              {!hasActiveFilters ? (
-                <NavLinkButton
-                  to="/tutorial"
-                  className="border border-slate-300 bg-white text-slate-800 hover:bg-slate-50">
-                  Open tutorial
-                </NavLinkButton>
-              ) : null}
-              {hasActiveFilters ? (
+            hasActiveFilters ? (
+              <div className="flex flex-wrap gap-3">
                 <Button
                   type="button"
                   variant="ghost"
@@ -255,8 +233,8 @@ export function WorkoutsPage() {
                   }}>
                   Clear filters
                 </Button>
-              ) : null}
-            </div>
+              </div>
+            ) : null
           }
         />
       )}
@@ -296,15 +274,6 @@ export function WorkoutsPage() {
           </li>
         ))}
       </ul>
-      <p className="text-sm text-slate-500">
-        <Link className="text-indigo-600 underline" to="/dashboard">
-          Weekly volume dashboard
-        </Link>
-        {' · '}
-        <Link className="text-indigo-600 underline" to="/tutorial">
-          Tutorial
-        </Link>
-      </p>
     </div>
   );
 }

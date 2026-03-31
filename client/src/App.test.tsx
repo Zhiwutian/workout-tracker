@@ -41,7 +41,9 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: 'Workouts' }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('Test Lifter')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Start workout' }),
+    ).toBeInTheDocument();
   });
 
   it('continues as guest and shows workouts (MSW)', async () => {
@@ -56,7 +58,7 @@ describe('App', () => {
       await screen.findByRole('heading', { name: 'Workouts' }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByText(/Guest session — workouts save on this device/),
+      await screen.findByRole('button', { name: 'Start workout' }),
     ).toBeInTheDocument();
   });
 
