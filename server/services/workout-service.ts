@@ -12,6 +12,7 @@ import {
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { workoutSetGroups, workoutSets, workouts } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
+import { isPgUniqueViolation } from '@server/lib/pg-errors.js';
 import { isWorkoutType, type WorkoutType } from '@shared/workout-types';
 
 function requireDb(): DbClient {
@@ -55,6 +56,10 @@ export type WorkoutSetWriteSession = {
   workoutType: string;
   nextSetIndex: number;
 };
+
+const WORKOUT_SET_INDEX_UNIQUE = 'workout_sets_workout_set_index_unique';
+type DbReadExecutor = Pick<DbClient, 'select'>;
+type DbWriteExecutor = Pick<DbClient, 'select' | 'insert'>;
 
 /** Optional filters for GET /api/workouts (date range uses `startedAt`). */
 export type ListWorkoutsFilters = {
@@ -209,33 +214,48 @@ export async function addSetToWorkout(
   },
 ): Promise<SetRecord> {
   const db = requireDb();
-  const session = await getWorkoutSessionForSetWrite(userId, workoutId);
-
-  const setIndex = input.setIndex ?? session.nextSetIndex;
-  const resolvedGroupId = await resolveGroupForWorkout(db, workoutId, {
-    groupId: input.groupId ?? null,
-    createGroup: input.createGroup ?? false,
-  });
-
-  const [row] = await db
-    .insert(workoutSets)
-    .values({
+  return db.transaction(async (tx) => {
+    const session = await getWorkoutSessionForSetWriteWithDb(
+      tx,
+      userId,
       workoutId,
-      exerciseTypeId: input.exerciseTypeId,
-      groupId: resolvedGroupId,
-      setIndex,
-      reps: input.reps,
-      weight: input.weight,
-      notes: input.notes?.trim() || null,
-      isWarmup: input.isWarmup ?? false,
-      restSeconds:
-        input.restSeconds === undefined || input.restSeconds === null
-          ? null
-          : input.restSeconds,
-    })
-    .returning();
-  if (!row) throw new ClientError(500, 'failed to add set');
-  return row;
+    );
+    const setIndex = input.setIndex ?? session.nextSetIndex;
+    const resolvedGroupId = await resolveGroupForWorkout(tx, workoutId, {
+      groupId: input.groupId ?? null,
+      createGroup: input.createGroup ?? false,
+    });
+
+    try {
+      const [row] = await tx
+        .insert(workoutSets)
+        .values({
+          workoutId,
+          exerciseTypeId: input.exerciseTypeId,
+          groupId: resolvedGroupId,
+          setIndex,
+          reps: input.reps,
+          weight: input.weight,
+          notes: input.notes?.trim() || null,
+          isWarmup: input.isWarmup ?? false,
+          restSeconds:
+            input.restSeconds === undefined || input.restSeconds === null
+              ? null
+              : input.restSeconds,
+        })
+        .returning();
+      if (!row) throw new ClientError(500, 'failed to add set');
+      return row;
+    } catch (err) {
+      if (isPgUniqueViolation(err, WORKOUT_SET_INDEX_UNIQUE)) {
+        throw new ClientError(
+          409,
+          'set index already exists for this workout. refresh and retry.',
+        );
+      }
+      throw err;
+    }
+  });
 }
 
 export async function updateSetForUser(
@@ -305,6 +325,14 @@ export async function getWorkoutSessionForSetWrite(
   workoutId: number,
 ): Promise<WorkoutSetWriteSession> {
   const db = requireDb();
+  return getWorkoutSessionForSetWriteWithDb(db, userId, workoutId);
+}
+
+async function getWorkoutSessionForSetWriteWithDb(
+  db: DbReadExecutor,
+  userId: number,
+  workoutId: number,
+): Promise<WorkoutSetWriteSession> {
   const [workout] = await db
     .select({
       workoutId: workouts.workoutId,
@@ -331,7 +359,7 @@ export async function getWorkoutSessionForSetWrite(
 }
 
 async function resolveGroupForWorkout(
-  db: DbClient,
+  db: DbWriteExecutor,
   workoutId: number,
   input: { groupId: number | null; createGroup: boolean },
 ): Promise<number | null> {

@@ -356,4 +356,41 @@ describe.skipIf(!hasTestDb)('api IDOR (integration)', () => {
       }),
     );
   });
+
+  it('returns 409 when two sets use the same setIndex in one workout', async () => {
+    const t = suffix();
+    const token = await signUp(`superset-index-${t}`);
+    const exerciseTypeId = await firstExerciseTypeId(token);
+    const workoutId = await createWorkoutForToken(token);
+
+    await request(app)
+      .post(`/api/workouts/${workoutId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        exerciseTypeId,
+        reps: 8,
+        weight: 100,
+        setIndex: 0,
+      })
+      .expect(201);
+
+    const conflict = await request(app)
+      .post(`/api/workouts/${workoutId}/sets`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        exerciseTypeId,
+        reps: 6,
+        weight: 90,
+        setIndex: 0,
+      })
+      .expect(409);
+
+    expect(conflict.body.error).toEqual(
+      expect.objectContaining({
+        code: 'client_error',
+        message:
+          'set index already exists for this workout. refresh and retry.',
+      }),
+    );
+  });
 });

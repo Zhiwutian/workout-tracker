@@ -1,0 +1,2 @@
+CREATE INDEX "idx_workout_sets_workout_set_index" ON "workout_sets" USING btree ("workoutId","setIndex");--> statement-breakpoint
+ALTER TABLE "workout_sets" ADD CONSTRAINT "workout_sets_workout_set_index_unique" UNIQUE("workoutId","setIndex");

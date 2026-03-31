@@ -66,7 +66,8 @@ create table "workout_sets" (
   "notes" text,
   "isWarmup" boolean not null default false,
   "restSeconds" integer,
-  "createdAt" timestamptz not null default now()
+  "createdAt" timestamptz not null default now(),
+  constraint "workout_sets_workout_set_index_unique" unique ("workoutId", "setIndex")
 );
 
 create table "goals" (
@@ -100,3 +101,4 @@ create table "user_achievements" (
 );
 
 create index "idx_workouts_user_started" on "workouts" ("userId", "startedAt");
+create index "idx_workout_sets_workout_set_index" on "workout_sets" ("workoutId", "setIndex");
