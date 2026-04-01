@@ -48,6 +48,7 @@ export {
   deleteSet,
   downloadWorkoutSetsCsv,
   patchSet,
+  patchWorkout,
   readWorkoutDetail,
   readWorkouts,
 } from '@/lib/api/workouts-api';

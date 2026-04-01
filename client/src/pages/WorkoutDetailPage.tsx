@@ -6,16 +6,19 @@ import {
   Card,
   FieldLabel,
   Input,
+  Modal,
   Select,
   Textarea,
 } from '@/components/ui';
 import { SetRowCard } from '@/features/workouts/SetRowCard';
 import { useSupersetComposer } from '@/features/workouts/useSupersetComposer';
+import { cn } from '@/lib';
 import { parseRestSecondsInput } from '@/lib/parse-rest-seconds';
 import { useAbortableAsyncEffect } from '@/lib/use-abortable-async-effect';
 import {
   addSet,
   clearExerciseRecents,
+  patchWorkout,
   readExercises,
   readExerciseRecents,
   readWorkoutDetail,
@@ -25,13 +28,14 @@ import {
 } from '@/lib/workout-api';
 import { WORKOUT_TYPE_LABELS } from '@shared/workout-types';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 
 /**
  * Log sets for one workout (pick exercise, reps/weight, optional notes, warm-up, rest).
  */
 export function WorkoutDetailPage() {
   const { workoutId: workoutIdParam } = useParams();
+  const location = useLocation();
   const workoutId = Number(workoutIdParam);
   const { showToast } = useToast();
   const [workout, setWorkout] = useState<WorkoutSummary | null>(null);
@@ -53,6 +57,9 @@ export function WorkoutDetailPage() {
     stopGrouping,
   } = useSupersetComposer();
   const [loading, setLoading] = useState(true);
+  const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);
+  const [patchBusy, setPatchBusy] = useState(false);
+  const finishSectionRef = useRef<HTMLDivElement>(null);
 
   const prevExerciseTypeId = useRef<string>('');
   const exerciseTypeIdRef = useRef(exerciseTypeId);
@@ -114,6 +121,58 @@ export function WorkoutDetailPage() {
     applyDefaultsForExercise(exerciseTypeId, sets);
   }, [exerciseTypeId, sets, applyDefaultsForExercise]);
 
+  useEffect(() => {
+    if (location.hash !== '#finish') return;
+    const el = finishSectionRef.current;
+    if (!el) return;
+    window.setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  }, [location.hash, workout?.endedAt]);
+
+  const logFormDisabled = Boolean(workout?.endedAt);
+
+  async function confirmFinishWorkout(): Promise<void> {
+    if (!workout) return;
+    setPatchBusy(true);
+    try {
+      const updated = await patchWorkout(workout.workoutId, {
+        endedAt: new Date().toISOString(),
+      });
+      setWorkout(updated);
+      setFinishConfirmOpen(false);
+      showToast({ title: 'Workout finished', variant: 'success' });
+    } catch (err) {
+      showToast({
+        title: 'Finish failed',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'error',
+      });
+    } finally {
+      setPatchBusy(false);
+    }
+  }
+
+  async function resumeWorkout(): Promise<void> {
+    if (!workout) return;
+    setPatchBusy(true);
+    try {
+      const updated = await patchWorkout(workout.workoutId, {
+        endedAt: null,
+      });
+      setWorkout(updated);
+      showToast({ title: 'Workout reopened', variant: 'success' });
+    } catch (err) {
+      showToast({
+        title: 'Reopen failed',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'error',
+      });
+    } finally {
+      setPatchBusy(false);
+    }
+  }
+
   function sameAsLast(): void {
     applyDefaultsForExercise(exerciseTypeId, sets);
   }
@@ -139,7 +198,7 @@ export function WorkoutDetailPage() {
     const r = Number(reps);
     const w = Number(weight);
     if (!Number.isFinite(et) || !Number.isFinite(r) || !Number.isFinite(w)) {
-      showToast({ title: 'Invalid numbers', variant: 'error' });
+      showToast({ title: 'Check reps and weight', variant: 'error' });
       return;
     }
     const rest = parseRestSecondsInput(restSeconds);
@@ -162,10 +221,10 @@ export function WorkoutDetailPage() {
       } catch {
         /* ignore recents refresh failure */
       }
-      showToast({ title: 'Set logged', variant: 'success' });
+      showToast({ title: 'Set saved', variant: 'success' });
     } catch (err) {
       showToast({
-        title: 'Could not log set',
+        title: 'Set not saved',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -203,170 +262,239 @@ export function WorkoutDetailPage() {
           {!workout.endedAt && (
             <Badge className="bg-amber-100 text-amber-900">Active</Badge>
           )}
+          {workout.endedAt && (
+            <Badge className="bg-emerald-100 text-emerald-900">Completed</Badge>
+          )}
+        </div>
+        {workout.endedAt ? (
+          <p className="mt-2 text-sm text-slate-600">
+            Finished {new Date(workout.endedAt).toLocaleString()}
+          </p>
+        ) : null}
+        <div
+          ref={finishSectionRef}
+          id="finish-workout"
+          className="mt-4 flex flex-wrap gap-2">
+          {!workout.endedAt ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="border border-slate-300 bg-white hover:bg-slate-50"
+              disabled={patchBusy}
+              onClick={() => setFinishConfirmOpen(true)}>
+              Finish workout
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              className="border border-slate-300 bg-white hover:bg-slate-50"
+              disabled={patchBusy}
+              onClick={() => void resumeWorkout()}>
+              Resume editing
+            </Button>
+          )}
         </div>
       </header>
 
+      <Modal
+        open={finishConfirmOpen}
+        title="Finish workout?"
+        onClose={() => setFinishConfirmOpen(false)}>
+        <p className="text-sm opacity-90">
+          You can reopen it later to add more sets. Volume and goals use the
+          time you finish.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            disabled={patchBusy}
+            onClick={() => void confirmFinishWorkout()}>
+            Confirm finish
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setFinishConfirmOpen(false)}>
+            Cancel
+          </Button>
+        </div>
+      </Modal>
+
       <Card className="p-4">
         <h2 className="text-lg font-medium text-slate-900">Log a set</h2>
-        <form
-          className="mt-4 grid gap-3 sm:grid-cols-2"
-          onSubmit={(e) => void handleAddSet(e)}>
-          <div className="sm:col-span-2">
-            <FieldLabel
-              className="text-sm font-medium text-slate-700"
-              htmlFor="log-set-exercise">
-              Exercise
-            </FieldLabel>
-            {recents.length > 0 ? (
-              <div className="mb-2">
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <p className="text-xs text-slate-500">Recent</p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => void clearRecents()}>
-                    Clear recents
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {recents.map((ex) => (
-                    <button
-                      key={ex.exerciseTypeId}
+        {logFormDisabled ? (
+          <p className="mt-2 text-sm text-slate-600">
+            This workout is finished. Use <strong>Resume editing</strong> above
+            to log more sets.
+          </p>
+        ) : null}
+        <fieldset
+          disabled={logFormDisabled}
+          className={cn(
+            logFormDisabled ? 'opacity-60' : '',
+            'mt-4 min-w-0 border-0 p-0',
+          )}>
+          <form
+            className="grid min-w-0 gap-3 sm:grid-cols-2"
+            onSubmit={(e) => void handleAddSet(e)}>
+            <div className="min-w-0 sm:col-span-2">
+              <FieldLabel
+                className="text-sm font-medium text-slate-700"
+                htmlFor="log-set-exercise">
+                Exercise
+              </FieldLabel>
+              {recents.length > 0 ? (
+                <div className="mb-2">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <p className="text-xs text-slate-500">Recent</p>
+                    <Button
                       type="button"
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-800 shadow-sm hover:bg-slate-50"
-                      onClick={() =>
-                        setExerciseTypeId(String(ex.exerciseTypeId))
-                      }>
-                      {ex.name}
-                    </button>
-                  ))}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void clearRecents()}>
+                      Clear recents
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {recents.map((ex) => (
+                      <button
+                        key={ex.exerciseTypeId}
+                        type="button"
+                        className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-800 shadow-sm hover:bg-slate-50"
+                        onClick={() =>
+                          setExerciseTypeId(String(ex.exerciseTypeId))
+                        }>
+                        {ex.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : null}
-            <Select
-              id="log-set-exercise"
-              className="w-full"
-              value={exerciseTypeId}
-              onChange={(e) => setExerciseTypeId(e.target.value)}
-              aria-label="Exercise">
-              {exercises.map((ex) => (
-                <option key={ex.exerciseTypeId} value={ex.exerciseTypeId}>
-                  {ex.name}
-                  {ex.userId ? ' (yours)' : ''}
-                </option>
-              ))}
-            </Select>
-            <div className="mt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => sameAsLast()}>
-                Same as last (this exercise)
-              </Button>
-            </div>
-          </div>
-          <div>
-            <FieldLabel
-              className="text-sm font-medium text-slate-700"
-              htmlFor="log-set-reps">
-              Reps
-            </FieldLabel>
-            <Input
-              id="log-set-reps"
-              inputMode="numeric"
-              value={reps}
-              onChange={(e) => setReps(e.target.value)}
-              aria-label="Reps"
-            />
-          </div>
-          <div>
-            <FieldLabel
-              className="text-sm font-medium text-slate-700"
-              htmlFor="log-set-weight">
-              Weight
-            </FieldLabel>
-            <Input
-              id="log-set-weight"
-              inputMode="decimal"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              aria-label="Weight"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <FieldLabel
-              className="text-sm font-medium text-slate-700"
-              htmlFor="log-set-notes">
-              Notes (optional)
-            </FieldLabel>
-            <Textarea
-              id="log-set-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              aria-label="Set notes"
-            />
-          </div>
-          <label className="flex cursor-pointer items-center gap-2 sm:col-span-2">
-            <input
-              type="checkbox"
-              checked={isWarmup}
-              onChange={(e) => setIsWarmup(e.target.checked)}
-              className="rounded border-slate-300"
-            />
-            <span className="text-sm text-slate-700">Warm-up</span>
-          </label>
-          <div>
-            <FieldLabel
-              className="text-sm font-medium text-slate-700"
-              htmlFor="log-set-rest">
-              Rest after set
-            </FieldLabel>
-            <Input
-              id="log-set-rest"
-              inputMode="numeric"
-              placeholder="e.g. 90 seconds"
-              value={restSeconds}
-              onChange={(e) => setRestSeconds(e.target.value)}
-              aria-label="Rest seconds after set"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <Button type="submit">Save set</Button>
-          </div>
-          <div className="sm:col-span-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={startNewSuperset}
-                  onChange={(e) =>
-                    handleStartNewSupersetChange(e.target.checked)
-                  }
-                  className="rounded border-slate-300"
-                />
-                <span className="text-sm text-slate-700">
-                  Start new superset group with this set
-                </span>
-              </label>
-              {pendingSupersetGroupId !== null ? (
-                <>
-                  <Badge className="bg-indigo-100 text-indigo-800">
-                    Adding to superset #{pendingSupersetGroupId}
-                  </Badge>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => stopGrouping()}>
-                    Stop grouping
-                  </Button>
-                </>
               ) : null}
+              <Select
+                id="log-set-exercise"
+                className="w-full"
+                value={exerciseTypeId}
+                onChange={(e) => setExerciseTypeId(e.target.value)}
+                aria-label="Exercise">
+                {exercises.map((ex) => (
+                  <option key={ex.exerciseTypeId} value={ex.exerciseTypeId}>
+                    {ex.name}
+                    {ex.userId ? ' (yours)' : ''}
+                  </option>
+                ))}
+              </Select>
+              <div className="mt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => sameAsLast()}>
+                  Same as last (this exercise)
+                </Button>
+              </div>
             </div>
-          </div>
-        </form>
+            <div className="min-w-0">
+              <FieldLabel
+                className="text-sm font-medium text-slate-700"
+                htmlFor="log-set-reps">
+                Reps
+              </FieldLabel>
+              <Input
+                id="log-set-reps"
+                inputMode="numeric"
+                value={reps}
+                onChange={(e) => setReps(e.target.value)}
+                aria-label="Reps"
+              />
+            </div>
+            <div className="min-w-0">
+              <FieldLabel
+                className="text-sm font-medium text-slate-700"
+                htmlFor="log-set-weight">
+                Weight
+              </FieldLabel>
+              <Input
+                id="log-set-weight"
+                inputMode="decimal"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                aria-label="Weight"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <FieldLabel
+                className="text-sm font-medium text-slate-700"
+                htmlFor="log-set-notes">
+                Notes (optional)
+              </FieldLabel>
+              <Textarea
+                id="log-set-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                aria-label="Set notes"
+              />
+            </div>
+            <label className="flex cursor-pointer items-center gap-2 sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={isWarmup}
+                onChange={(e) => setIsWarmup(e.target.checked)}
+                className="rounded border-slate-300"
+              />
+              <span className="text-sm text-slate-700">Warm-up</span>
+            </label>
+            <div className="min-w-0">
+              <FieldLabel
+                className="text-sm font-medium text-slate-700"
+                htmlFor="log-set-rest">
+                Rest after set
+              </FieldLabel>
+              <Input
+                id="log-set-rest"
+                inputMode="numeric"
+                placeholder="e.g. 90 seconds"
+                value={restSeconds}
+                onChange={(e) => setRestSeconds(e.target.value)}
+                aria-label="Rest seconds after set"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Button type="submit">Save set</Button>
+            </div>
+            <div className="sm:col-span-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={startNewSuperset}
+                    onChange={(e) =>
+                      handleStartNewSupersetChange(e.target.checked)
+                    }
+                    className="rounded border-slate-300"
+                  />
+                  <span className="text-sm text-slate-700">
+                    Start new superset group with this set
+                  </span>
+                </label>
+                {pendingSupersetGroupId !== null ? (
+                  <>
+                    <Badge className="bg-indigo-100 text-indigo-800">
+                      Adding to superset #{pendingSupersetGroupId}
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => stopGrouping()}>
+                      Stop grouping
+                    </Button>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          </form>
+        </fieldset>
       </Card>
 
       <section>

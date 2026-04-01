@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ToastProvider } from '@/components/app/ToastProvider';
+import { AppStateProvider } from '@/state';
 import { describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -12,9 +13,14 @@ function renderWorkoutDetailPage() {
   return render(
     <MemoryRouter initialEntries={['/workouts/1']}>
       <ToastProvider>
-        <Routes>
-          <Route path="/workouts/:workoutId" element={<WorkoutDetailPage />} />
-        </Routes>
+        <AppStateProvider>
+          <Routes>
+            <Route
+              path="/workouts/:workoutId"
+              element={<WorkoutDetailPage />}
+            />
+          </Routes>
+        </AppStateProvider>
       </ToastProvider>
     </MemoryRouter>,
   );

@@ -16,11 +16,18 @@ export function WorkoutResumeBanner({ workout }: { workout: WorkoutSummary }) {
             {new Date(workout.startedAt).toLocaleString()}
           </p>
         </div>
-        <NavLinkButton
-          to={`/workouts/${workout.workoutId}`}
-          className="bg-indigo-600 text-white hover:bg-indigo-500 hover:text-white">
-          Resume
-        </NavLinkButton>
+        <div className="flex flex-wrap gap-2">
+          <NavLinkButton
+            to={`/workouts/${workout.workoutId}`}
+            className="bg-indigo-600 text-white hover:bg-indigo-500 hover:text-white">
+            Continue
+          </NavLinkButton>
+          <NavLinkButton
+            to={`/workouts/${workout.workoutId}#finish`}
+            className="border border-indigo-400 bg-white text-indigo-900 hover:bg-indigo-100">
+            Finish
+          </NavLinkButton>
+        </div>
       </div>
     </Card>
   );

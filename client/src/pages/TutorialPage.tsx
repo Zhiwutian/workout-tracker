@@ -84,9 +84,13 @@ export function TutorialPage() {
           3. Start and finish workouts
         </h2>
         <p className="text-sm leading-relaxed">
-          From <Link to="/">Workouts</Link>, start a session with a workout type
-          (resistance, cardio, flexibility). Open the workout to add notes and
-          mark it complete when you are done.
+          From <Link to="/">Workouts</Link>, pick a type and{' '}
+          <strong>Start workout</strong>. Use <strong>Continue</strong> to log
+          sets; tap <strong>Finish workout</strong> when you are done, then{' '}
+          <strong>Confirm finish</strong> in the dialog (you can{' '}
+          <strong>Resume editing</strong> later to add sets). The shortcut
+          labeled <strong>Finish</strong> on the list jumps to the finish
+          action.
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed">
           <li>
@@ -119,9 +123,12 @@ export function TutorialPage() {
           5. Exercises catalog and custom moves
         </h2>
         <p className="text-sm leading-relaxed">
-          Use <Link to="/exercises">Exercises</Link> to browse the catalog,
-          filter by type, and add custom exercises. Picks in the set form
-          respect the workout type you started.
+          Use <Link to="/exercises">Exercises</Link> to open the catalog: pick{' '}
+          <strong>Resistance</strong>, <strong>Cardio</strong>, or{' '}
+          <strong>Flexibility</strong>, then a muscle group or cardio type (
+          <strong>Standard</strong> vs <strong>HIIT</strong>), then the move.
+          Add custom exercises from the same page; set pickers still follow the
+          workout type you started.
         </p>
         <p className="mt-2 text-sm leading-relaxed">
           Custom exercises require a muscle group and can be edited or archived
@@ -133,11 +140,12 @@ export function TutorialPage() {
           6. Dashboard, goals, and export
         </h2>
         <p className="text-sm leading-relaxed">
-          <Link to="/dashboard">Dashboard</Link> shows multi-week volume, this
-          week vs last week, streaks, and optional weekly goals. Achievements
-          unlock from your stats (no email). From the workouts list you can
-          download <strong>CSV</strong> of sets; week boundaries follow the same
-          rules as stats when you use date filters.
+          <Link to="/dashboard">Dashboard</Link> shows volume, streaks, goals,
+          and achievements. Use the <strong>?</strong> button there for how
+          weeks, timezone, and volume are calculated. From{' '}
+          <Link to="/">Workouts</Link> you can download <strong>CSV</strong> of
+          sets; the list’s <strong>?</strong> explains how the export relates to
+          filters.
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed">
           <li>

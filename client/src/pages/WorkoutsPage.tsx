@@ -120,7 +120,7 @@ export function WorkoutsPage() {
       showToast({ title: 'Workout started', variant: 'success' });
     } catch (err) {
       showToast({
-        title: 'Could not start workout',
+        title: 'Start failed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -134,10 +134,10 @@ export function WorkoutsPage() {
     try {
       const range = rangePresetToIsoRange(rangePreset);
       await downloadWorkoutSetsCsv(range);
-      showToast({ title: 'CSV downloaded', variant: 'success' });
+      showToast({ title: 'Export ready', variant: 'success' });
     } catch (err) {
       showToast({
-        title: 'Could not export CSV',
+        title: 'Export failed',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -263,10 +263,17 @@ export function WorkoutsPage() {
                       Active
                     </Badge>
                   )}
+                  {!w.endedAt ? (
+                    <NavLinkButton
+                      to={`/workouts/${w.workoutId}#finish`}
+                      className="border border-slate-300 bg-white text-slate-800 hover:bg-slate-50">
+                      Finish
+                    </NavLinkButton>
+                  ) : null}
                   <NavLinkButton
                     to={`/workouts/${w.workoutId}`}
                     className="bg-indigo-600 text-white hover:bg-indigo-500 hover:text-white">
-                    Open
+                    {w.endedAt ? 'Open' : 'Continue'}
                   </NavLinkButton>
                 </div>
               </div>

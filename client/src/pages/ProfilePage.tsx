@@ -1,6 +1,6 @@
 import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { useToast } from '@/components/app/toast-context';
-import { Button, FieldLabel, Select } from '@/components/ui';
+import { Button, ContextualHelp, FieldLabel, Select } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { UiPreferences } from '@/lib/api/types';
 import { patchProfile } from '@/lib/workout-api';
@@ -47,7 +47,7 @@ export function ProfilePage() {
         await refreshMe();
       } catch (err) {
         showToast({
-          title: 'Could not save display settings',
+          title: 'Display not saved',
           description: err instanceof Error ? err.message : undefined,
           variant: 'error',
         });
@@ -62,10 +62,10 @@ export function ProfilePage() {
     try {
       await patchProfile({ weightUnit });
       await refreshMe();
-      showToast({ title: 'Profile updated', variant: 'success' });
+      showToast({ title: 'Profile saved', variant: 'success' });
     } catch (err) {
       showToast({
-        title: 'Update failed',
+        title: 'Profile not saved',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -83,24 +83,33 @@ export function ProfilePage() {
       </p>
       {me?.isGuest ? (
         <p className="text-sm text-amber-800">
-          You are in a <strong>guest</strong> session. Sign out and create a
-          named account on the sign-in page if you want to log in from another
-          device.
+          Guest session — use <strong>Sign in</strong> from the menu for a named
+          account on other devices.
         </p>
       ) : null}
 
       <section
-        className="max-w-lg space-y-4 rounded-md border border-slate-200 bg-white p-4 shadow-sm"
+        className="max-w-lg min-w-0 space-y-4 rounded-md border border-slate-200 bg-white p-4 shadow-sm"
         aria-labelledby="profile-display-heading">
-        <h2
-          id="profile-display-heading"
-          className="text-lg font-medium text-slate-900">
-          Display and accessibility
-        </h2>
+        <div className="flex flex-wrap items-start gap-2">
+          <h2
+            id="profile-display-heading"
+            className="text-lg font-medium text-slate-900">
+            Display and accessibility
+          </h2>
+          <ContextualHelp
+            label="About display settings"
+            title="Display and accessibility">
+            <p>Choices save to your account and apply when you load the app.</p>
+            <p className="mt-2">
+              <strong>High contrast</strong> overrides light/dark for the page
+              shell. <strong>Match system</strong> follows your OS or browser
+              theme when high contrast is off.
+            </p>
+          </ContextualHelp>
+        </div>
         <p className="text-sm text-slate-600">
-          Changes save to your account. <strong>High contrast</strong> overrides
-          light/dark theme for the page shell. <strong>Match system</strong>{' '}
-          follows your OS/browser appearance when high contrast is off.
+          Theme, contrast, and text size — details in help (?).
         </p>
         <fieldset>
           <legend className="text-sm font-medium text-slate-700">Theme</legend>
@@ -190,9 +199,9 @@ export function ProfilePage() {
       </section>
 
       <form
-        className="max-w-sm space-y-4"
+        className="max-w-sm min-w-0 space-y-4"
         onSubmit={(e) => void handleSubmit(e)}>
-        <div>
+        <div className="min-w-0">
           <FieldLabel
             className="text-sm font-medium text-slate-700"
             htmlFor="profile-weight-unit">

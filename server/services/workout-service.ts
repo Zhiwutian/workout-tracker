@@ -14,6 +14,7 @@ import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
 import { workoutSetGroups, workoutSets, workouts } from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
 import { isPgUniqueViolation } from '@server/lib/pg-errors.js';
+import { assertWorkoutAcceptsNewSets } from '@server/lib/workout-logging-guards.js';
 import { isWorkoutType, type WorkoutType } from '@shared/workout-types';
 
 function requireDb(): DbClient {
@@ -55,6 +56,7 @@ export type WorkoutSetWriteSession = {
   workoutId: number;
   userId: number;
   workoutType: string;
+  endedAt: Date | null;
   nextSetIndex: number;
 };
 
@@ -223,6 +225,7 @@ export async function addSetToWorkout(
       userId,
       workoutId,
     );
+    assertWorkoutAcceptsNewSets(session.endedAt);
     const setIndex = input.setIndex ?? session.nextSetIndex;
     const resolvedGroupId = await resolveGroupForWorkout(tx, workoutId, {
       groupId: input.groupId ?? null,
@@ -363,6 +366,7 @@ async function getWorkoutSessionForSetWriteWithDb(
       workoutId: workouts.workoutId,
       userId: workouts.userId,
       workoutType: workouts.workoutType,
+      endedAt: workouts.endedAt,
     })
     .from(workouts)
     .where(and(eq(workouts.workoutId, workoutId), eq(workouts.userId, userId)))
@@ -379,6 +383,7 @@ async function getWorkoutSessionForSetWriteWithDb(
     workoutId: workout.workoutId,
     userId: workout.userId,
     workoutType: workout.workoutType,
+    endedAt: workout.endedAt,
     nextSetIndex: maxSetIndex === null ? 0 : maxSetIndex + 1,
   };
 }

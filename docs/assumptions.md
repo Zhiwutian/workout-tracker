@@ -28,6 +28,7 @@ Production-style **authorization rules** (ownership, no client-trusted `userId`)
 
 ## Exercises (custom)
 
+- **Catalog (UI):** Globals are grouped on **Exercises → Catalog** by **`category`** (resistance / cardio / flexibility), then by **`muscleGroup`** — for **cardio**, that field stores the catalog subgroup (**Standard** vs **HIIT**), not a muscle. Legacy globals with **`muscleGroup` null** appear under **Other** until updated (see **`database/update-cardio-catalog-subgroups.sql`**).
 - **Global** exercises (`userId` null) are read-only from the API.
 - **Custom** exercises can be renamed, archived, or restored. **Archived** rows have **`archivedAt`** set; they are omitted from **`GET /api/exercises`** and cannot be chosen for **new** sets until un-archived. Existing sets still reference the row (**`ON DELETE RESTRICT`**).
 - **Recents** are derived from the user’s logged sets (see **`docs/data-flow.md`**).
@@ -35,6 +36,11 @@ Production-style **authorization rules** (ownership, no client-trusted `userId`)
 ## Workout type vs exercise category
 
 Each **workout** has **`workoutType`**: **`resistance`**, **`cardio`**, or **`flexibility`** (default **`resistance`** for legacy rows). Each **exercise** has **`category`** with the same three values (default **`resistance`**). When logging a set, the exercise’s **`category`** must equal the workout’s **`workoutType`**; otherwise the API returns **400**. The client loads **`GET /api/exercises`** and **`GET /api/exercises/recents`** with an optional **`workoutType`** query so pickers only list matching exercises.
+
+## Workout lifecycle (active vs completed)
+
+- **`workouts.endedAt`** is **null** while a session is **active**. The client sets **`endedAt`** to an ISO timestamp via **`PATCH /api/workouts/:id`** when the user **finishes**; **`endedAt: null`** **reopens** the workout.
+- **`POST /api/workouts/:id/sets`** returns **400** if **`endedAt`** is set — add sets only after **resume**. **PATCH** / **DELETE** on existing sets remain allowed so history can be fixed on a completed workout.
 
 ## Sets (logging)
 

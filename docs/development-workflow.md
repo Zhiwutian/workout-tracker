@@ -99,7 +99,7 @@ This pushes `main` to `pub`, triggering **`/.github/workflows/main.yml`**.
 TEST_DATABASE_URL=postgres://dev:dev@localhost/workout-tracker pnpm run test:server
 ```
 
-- **Playwright** (`pnpm run test:e2e`): starts **`pnpm run dev:e2e`** (Vite on **5188**, API on **8080**). Requires a running database (**`DATABASE_URL`**) and OS browser deps (`pnpm exec playwright install chromium` and, on Linux, `sudo pnpm exec playwright install-deps chromium` if the runner prompts). CI runs migrate + seed + **`playwright install chromium --with-deps`** before E2E.
+- **Playwright** (`pnpm run test:e2e`): starts **`pnpm run dev:e2e`** (Vite on **5188** with **`--strictPort`**, API on **8080**). Requires a running database (**`DATABASE_URL`**) and OS browser deps (`pnpm exec playwright install chromium` and, on Linux, `sudo pnpm exec playwright install-deps chromium` if the runner prompts). CI runs migrate + seed + **`playwright install chromium --with-deps`** before E2E. **`dev:e2e`** sets **`E2E_RELAX_RATE_LIMIT=true`** so `/api` rate limiters are off for that API process (see **`docs/configuration.md`**). If **5188** or **8080** are taken by an old dev server, free them (**`pnpm run dev:clean`**) or E2E startup fails instead of silently proxying to the wrong stack — **`docs/troubleshooting.md`**. If you reuse an already-running server (**`reuseExistingServer`** locally), ensure it is the E2E stack on **5188**/**8080**.
 
 ## Styleguide and Cursor rules
 
