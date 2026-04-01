@@ -1,20 +1,24 @@
 import { randomBytes } from 'node:crypto';
+import { config as loadDotenv } from 'dotenv';
 import request from 'supertest';
 import type { Express } from 'express';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 /**
  * Cross-tenant / IDOR coverage. Requires PostgreSQL + migrated schema + seed (global exercises).
- * CI sets TEST_DATABASE_URL; locally: `TEST_DATABASE_URL=postgres://... pnpm run test:server`.
+ * Uses TEST_DATABASE_URL when provided; otherwise falls back to DATABASE_URL in local test runs.
  */
-const hasTestDb = Boolean(process.env.TEST_DATABASE_URL);
+loadDotenv({ override: true });
+const testDatabaseUrl =
+  process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+const hasTestDb = Boolean(testDatabaseUrl);
 
 describe.skipIf(!hasTestDb)('api IDOR (integration)', () => {
   let app: Express;
   const originalDatabaseUrl = process.env.DATABASE_URL;
 
   beforeAll(async () => {
-    process.env.DATABASE_URL = process.env.TEST_DATABASE_URL!;
+    process.env.DATABASE_URL = testDatabaseUrl!;
     process.env.TOKEN_SECRET = process.env.TOKEN_SECRET ?? 'test-token-secret';
     const { createApp } = await import('@server/app.js');
     app = createApp();
