@@ -1,4 +1,5 @@
 import { SectionHeader } from '@/components/ui';
+import { Link } from 'react-router-dom';
 
 /**
  * Course / product context for the workout tracker reference app.
@@ -8,18 +9,31 @@ export function AboutPage() {
     <>
       <SectionHeader
         title="Workout Tracker"
-        description="Educational full-stack app: workouts, sets, volume (reps × weight), weekly dashboard, and demo JWT auth (OIDC planned)."
+        description="Educational full-stack app for logging workouts, tracking weekly trends, and practicing accessible product workflows in a modern React plus Express stack."
       />
+      <p className="mt-3 text-sm text-slate-700">
+        Looking for step-by-step usage guidance? Open the{' '}
+        <Link to="/tutorial" className="text-indigo-600 underline">
+          Tutorial
+        </Link>{' '}
+        page for task-focused walkthroughs and FAQ troubleshooting.
+      </p>
       <ul className="mt-4 list-inside list-disc text-sm text-slate-700">
         <li>
-          PostgreSQL + Drizzle schema for users, profiles, exercises, workouts,
-          sets.
+          Tracks workouts, sets, exercise recents, and weekly summary stats
+          (volume, streaks, active days).
         </li>
         <li>
-          API uses a consistent JSON envelope and Zod validation on the server.
+          Supports custom exercises, workout-type filtering, and superset group
+          workflows in workout detail.
         </li>
         <li>
-          Weekly stats use a UTC week window — see server docs for assumptions.
+          Backend uses PostgreSQL plus Drizzle and a consistent JSON envelope
+          with Zod validation on API contracts.
+        </li>
+        <li>
+          Weekly analytics are timezone-aware and designed to match CSV/export
+          semantics for easier verification.
         </li>
       </ul>
     </>

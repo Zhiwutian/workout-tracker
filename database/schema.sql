@@ -30,6 +30,14 @@ create table "exercise_types" (
   "archivedAt" timestamptz
 );
 
+create table "exercise_recent_clears" (
+  "clearId" serial primary key,
+  "userId" integer not null references "users" ("userId") on delete cascade,
+  "scope" text not null,
+  "clearedAt" timestamptz not null default now(),
+  constraint "exercise_recent_clears_user_scope_unique" unique ("userId", "scope")
+);
+
 create table "workouts" (
   "workoutId" serial primary key,
   "userId" integer not null references "users" ("userId") on delete cascade,
@@ -40,17 +48,26 @@ create table "workouts" (
   "endedAt" timestamptz
 );
 
+create table "workout_set_groups" (
+  "groupId" serial primary key,
+  "workoutId" integer not null references "workouts" ("workoutId") on delete cascade,
+  "label" text,
+  "createdAt" timestamptz not null default now()
+);
+
 create table "workout_sets" (
   "setId" serial primary key,
   "workoutId" integer not null references "workouts" ("workoutId") on delete cascade,
   "exerciseTypeId" integer not null references "exercise_types" ("exerciseTypeId") on delete restrict,
+  "groupId" integer references "workout_set_groups" ("groupId") on delete set null,
   "setIndex" integer not null,
   "reps" integer not null,
   "weight" real not null,
   "notes" text,
   "isWarmup" boolean not null default false,
   "restSeconds" integer,
-  "createdAt" timestamptz not null default now()
+  "createdAt" timestamptz not null default now(),
+  constraint "workout_sets_workout_set_index_unique" unique ("workoutId", "setIndex")
 );
 
 create table "goals" (
@@ -84,3 +101,4 @@ create table "user_achievements" (
 );
 
 create index "idx_workouts_user_started" on "workouts" ("userId", "startedAt");
+create index "idx_workout_sets_workout_set_index" on "workout_sets" ("workoutId", "setIndex");

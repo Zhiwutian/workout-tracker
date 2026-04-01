@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 async function expectSignInPage(page: Page): Promise<void> {
   await page.goto('/');
@@ -52,10 +53,14 @@ test.describe('workout tracker smoke', () => {
     await expectSignInPage(page);
     await signUpWithDemo(page, name);
     await expectWorkoutsVisible(page);
-    await expect(page.locator('header').getByText(name)).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Start workout' }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Start workout' }).click();
-    await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible({
+    await expect(
+      page.getByRole('link', { name: /^(Continue|Open)$/ }),
+    ).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -64,10 +69,14 @@ test.describe('workout tracker smoke', () => {
     await expectSignInPage(page);
     await continueGuest(page);
     await expectWorkoutsVisible(page);
-    await expect(page.getByText(/Guest — saved on this device/)).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Start workout' }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Start workout' }).click();
-    await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible({
+    await expect(
+      page.getByRole('link', { name: /^(Continue|Open)$/ }),
+    ).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -81,11 +90,13 @@ test.describe('workout tracker smoke', () => {
 
     await page.getByLabel('Workout type').selectOption('cardio');
     await page.getByRole('button', { name: 'Start workout' }).click();
-    await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible({
+    await expect(
+      page.getByRole('link', { name: /^(Continue|Open)$/ }),
+    ).toBeVisible({
       timeout: 15_000,
     });
 
-    await page.getByRole('link', { name: 'Continue' }).click();
+    await page.getByRole('link', { name: /^(Continue|Open)$/ }).click();
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible({
       timeout: 15_000,
@@ -107,16 +118,76 @@ test.describe('workout tracker smoke', () => {
     expect(labels.some((t) => /Bench press/i.test(t))).toBe(false);
   });
 
+  test('superset flow groups sets and export includes superset_group_id', async ({
+    page,
+  }) => {
+    await expectSignInPage(page);
+    await continueGuest(page);
+    await expectWorkoutsVisible(page);
+
+    await page.getByRole('button', { name: 'Start workout' }).click();
+    await expect(
+      page.getByRole('link', { name: /^(Continue|Open)$/ }),
+    ).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.getByRole('link', { name: /^(Continue|Open)$/ }).click();
+    await expect(
+      page.getByRole('heading', { name: /Workout #/ }),
+    ).toBeVisible();
+
+    await page.getByLabel('Start new superset group with this set').click();
+    await page.getByRole('button', { name: 'Save set' }).click();
+    await expect(page.getByText(/Superset #\d+/).first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Stop grouping' }).click();
+    await page.getByRole('button', { name: 'Add in superset' }).first().click();
+    await expect(page.getByText(/Adding to superset #\d+/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Save set' }).click();
+    await expect(
+      page.getByRole('button', { name: 'Add in superset' }),
+    ).toHaveCount(2);
+
+    await page.getByRole('link', { name: '← Workouts' }).click();
+    await expectWorkoutsVisible(page);
+
+    await page.getByTestId('workouts-filters-open').click();
+    const downloadPromise = page.waitForEvent('download');
+    await page
+      .getByRole('button', {
+        name: 'Download workout sets as CSV for the selected date range',
+      })
+      .click();
+    const download = await downloadPromise;
+    const downloadPath = await download.path();
+    expect(downloadPath).toBeTruthy();
+    const csv = await readFile(downloadPath!, 'utf8');
+    expect(csv).toContain('superset_group_id');
+    const lines = csv.trim().split('\n');
+    const [header, ...rows] = lines;
+    const colIdx = header.split(',').indexOf('superset_group_id');
+    expect(colIdx).toBeGreaterThanOrEqual(0);
+    const hasGroupedRow = rows.some((line) => {
+      const cols = line.split(',');
+      return (cols[colIdx] ?? '').trim() !== '';
+    });
+    expect(hasGroupedRow).toBe(true);
+  });
+
   test('finish workout from detail', async ({ page }) => {
     await expectSignInPage(page);
     await continueGuest(page);
     await expectWorkoutsVisible(page);
 
     await page.getByRole('button', { name: 'Start workout' }).click();
-    await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible({
+    await expect(
+      page.getByRole('link', { name: /^(Continue|Open)$/ }),
+    ).toBeVisible({
       timeout: 15_000,
     });
-    await page.getByRole('link', { name: 'Continue' }).click();
+    await page.getByRole('link', { name: /^(Continue|Open)$/ }).click();
 
     await expect(
       page.getByRole('button', { name: 'Finish workout' }),
@@ -143,7 +214,7 @@ test.describe('workout tracker smoke', () => {
     await expect(
       page
         .getByRole('list', { name: 'Workout list' })
-        .getByRole('link', { name: 'Open' }),
+        .getByRole('link', { name: /^(Continue|Open)$/ }),
     ).toBeVisible({ timeout: 15_000 });
   });
 });

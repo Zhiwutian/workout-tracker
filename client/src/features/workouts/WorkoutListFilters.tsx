@@ -53,7 +53,7 @@ function filterSummary(
 }
 
 /**
- * Filters in a modal (opened from a summary button) plus CSV export on the page.
+ * Filters and CSV export controls inside a single modal.
  */
 export function WorkoutListFilters({
   rangePreset,
@@ -72,38 +72,18 @@ export function WorkoutListFilters({
   return (
     <>
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-slate-600">
-            List filters
-          </span>
-          <Button
-            ref={openButtonRef}
-            type="button"
-            variant="ghost"
-            data-testid="workouts-filters-open"
-            className="min-h-11 justify-start border border-slate-200 bg-slate-50/80 px-3 text-left text-sm font-medium text-slate-800"
-            aria-expanded={filtersOpen}
-            aria-haspopup="dialog"
-            onClick={() => setFiltersOpen(true)}>
-            {filterSummary(rangePreset, statusFilter, sortFilter)}
-          </Button>
-        </div>
-        <div className="ml-auto flex min-w-[9rem] flex-col gap-1">
-          <span className="text-xs font-medium text-slate-600">Export</span>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={exporting || loading}
-            onClick={() => void onExportCsv()}
-            aria-label="Download workout sets as CSV for the selected date range">
-            {exporting ? 'Exporting…' : 'Download CSV'}
-          </Button>
-        </div>
+        <Button
+          ref={openButtonRef}
+          type="button"
+          variant="ghost"
+          data-testid="workouts-filters-open"
+          className="min-h-11 w-full justify-start border border-slate-200 bg-slate-50/80 px-3 text-left text-sm font-medium text-slate-800 sm:w-auto"
+          aria-expanded={filtersOpen}
+          aria-haspopup="dialog"
+          onClick={() => setFiltersOpen(true)}>
+          {filterSummary(rangePreset, statusFilter, sortFilter)}
+        </Button>
       </div>
-      <p className="text-xs text-slate-500">
-        CSV uses workout <strong>start</strong> dates in this range (status
-        filters do not apply).
-      </p>
 
       <Modal
         open={filtersOpen}
@@ -115,6 +95,7 @@ export function WorkoutListFilters({
             <FieldLabel htmlFor="workouts-filter-range">Date range</FieldLabel>
             <Select
               id="workouts-filter-range"
+              className="w-full"
               value={rangePreset}
               onChange={(e) =>
                 onRangePresetChange(e.target.value as RangePreset)
@@ -129,6 +110,7 @@ export function WorkoutListFilters({
             <FieldLabel htmlFor="workouts-filter-status">Status</FieldLabel>
             <Select
               id="workouts-filter-status"
+              className="w-full"
               value={statusFilter}
               onChange={(e) =>
                 onStatusFilterChange(e.target.value as WorkoutStatusFilter)
@@ -143,6 +125,7 @@ export function WorkoutListFilters({
             <FieldLabel htmlFor="workouts-filter-sort">Sort</FieldLabel>
             <Select
               id="workouts-filter-sort"
+              className="w-full"
               value={sortFilter}
               onChange={(e) =>
                 onSortFilterChange(e.target.value as WorkoutSortFilter)
@@ -151,6 +134,21 @@ export function WorkoutListFilters({
               <option value="startedAt_desc">Newest first</option>
               <option value="startedAt_asc">Oldest first</option>
             </Select>
+          </div>
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs text-slate-600">
+              CSV includes every set for workouts that <strong>started</strong>{' '}
+              in the selected date range, independent of status filters.
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              className="mt-2 w-full justify-center"
+              disabled={exporting || loading}
+              onClick={() => void onExportCsv()}
+              aria-label="Download workout sets as CSV for the selected date range">
+              {exporting ? 'Exporting…' : 'Download CSV'}
+            </Button>
           </div>
           <Button type="button" onClick={() => setFiltersOpen(false)}>
             Done

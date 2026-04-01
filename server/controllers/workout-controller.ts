@@ -18,6 +18,7 @@ import {
   createWorkout,
   deleteSetForUser,
   deleteWorkoutForUser,
+  getWorkoutSessionForSetWrite,
   getWorkoutForUser,
   listWorkouts,
   type ListWorkoutsFilters,
@@ -38,15 +39,31 @@ const patchWorkoutBody = z.object({
   workoutType: workoutTypeSchema.optional(),
 });
 
-const postSetBody = z.object({
-  exerciseTypeId: z.coerce.number().int().positive(),
-  reps: z.coerce.number().int().min(1).max(9999),
-  weight: z.coerce.number().min(0).max(99999),
-  notes: z.string().trim().max(2000).nullable().optional(),
-  isWarmup: z.boolean().optional(),
-  restSeconds: z.coerce.number().int().min(0).max(86400).nullable().optional(),
-  setIndex: z.coerce.number().int().min(0).max(9999).optional(),
-});
+const postSetBody = z
+  .object({
+    exerciseTypeId: z.coerce.number().int().positive(),
+    reps: z.coerce.number().int().min(1).max(9999),
+    weight: z.coerce.number().min(0).max(99999),
+    notes: z.string().trim().max(2000).nullable().optional(),
+    isWarmup: z.boolean().optional(),
+    restSeconds: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(86400)
+      .nullable()
+      .optional(),
+    setIndex: z.coerce.number().int().min(0).max(9999).optional(),
+    groupId: z.coerce.number().int().positive().nullable().optional(),
+    createGroup: z.boolean().optional(),
+  })
+  .refine(
+    (o) => !(o.createGroup && o.groupId !== undefined && o.groupId !== null),
+    {
+      message: 'groupId cannot be sent when createGroup is true',
+      path: ['groupId'],
+    },
+  );
 
 const listWorkoutsQuery = z.object({
   from: z.string().datetime().optional(),
@@ -69,6 +86,7 @@ const patchSetBody = z
       .max(86400)
       .nullable()
       .optional(),
+    groupId: z.coerce.number().int().positive().nullable().optional(),
   })
   .refine((o) => Object.keys(o).length > 0, {
     message: 'at least one field required',
@@ -106,6 +124,7 @@ function serializeSet(s: {
   setId: number;
   workoutId: number;
   exerciseTypeId: number;
+  groupId: number | null;
   setIndex: number;
   reps: number;
   weight: number;
@@ -117,6 +136,7 @@ function serializeSet(s: {
   setId: number;
   workoutId: number;
   exerciseTypeId: number;
+  groupId: number | null;
   setIndex: number;
   reps: number;
   weight: number;
@@ -130,6 +150,7 @@ function serializeSet(s: {
     setId: s.setId,
     workoutId: s.workoutId,
     exerciseTypeId: s.exerciseTypeId,
+    groupId: s.groupId,
     setIndex: s.setIndex,
     reps: s.reps,
     weight: s.weight,
@@ -221,12 +242,11 @@ export async function postSet(
   const userId = requireUserId(req);
   const { workoutId } = workoutIdParams.parse(req.params);
   const body = postSetBody.parse(req.body);
-  const session = await getWorkoutForUser(userId, workoutId);
-  if (!session) throw new ClientError(404, 'workout not found');
+  const session = await getWorkoutSessionForSetWrite(userId, workoutId);
   await assertExerciseUsableForWorkout(
     userId,
     body.exerciseTypeId,
-    session.workout.workoutType,
+    session.workoutType,
   );
   const row = await addSetToWorkout(userId, workoutId, body);
   sendSuccess(res, serializeSet(row), 201);

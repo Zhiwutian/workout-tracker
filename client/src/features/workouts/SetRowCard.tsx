@@ -19,11 +19,13 @@ export function SetRowCard({
   exerciseLabel,
   onPatched,
   onRemoved,
+  onAddInSuperset,
 }: {
   s: SetRow;
   exerciseLabel: string;
   onPatched: (row: SetRow) => void;
   onRemoved: () => void;
+  onAddInSuperset?: (groupId: number) => void;
 }) {
   const { showToast } = useToast();
   const [editing, setEditing] = useState(false);
@@ -101,6 +103,11 @@ export function SetRowCard({
           {(s.isWarmup ?? false) ? (
             <Badge className="ml-2 bg-slate-200 text-slate-800">Warm-up</Badge>
           ) : null}
+          {s.groupId !== null ? (
+            <Badge className="ml-2 bg-indigo-100 text-indigo-800">
+              Superset #{s.groupId}
+            </Badge>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           {!editing ? (
@@ -121,6 +128,16 @@ export function SetRowCard({
                 onClick={() => void remove()}>
                 Delete
               </Button>
+              {s.groupId !== null && onAddInSuperset ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={saving}
+                  onClick={() => onAddInSuperset(s.groupId!)}>
+                  Add in superset
+                </Button>
+              ) : null}
             </>
           ) : (
             <>

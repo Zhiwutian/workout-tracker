@@ -27,6 +27,7 @@ export type WorkoutSetExportRow = {
   workoutEndedAt: Date | null;
   exerciseName: string;
   exerciseCategory: string;
+  groupId: number | null;
   setIndex: number;
   reps: number;
   weight: number;
@@ -63,6 +64,7 @@ export async function listWorkoutSetsForExport(
       workoutEndedAt: workouts.endedAt,
       exerciseName: exerciseTypes.name,
       exerciseCategory: exerciseTypes.category,
+      groupId: workoutSets.groupId,
       setIndex: workoutSets.setIndex,
       reps: workoutSets.reps,
       weight: workoutSets.weight,

@@ -17,6 +17,7 @@ import {
   postAuthLogout,
 } from '@server/controllers/oidc-auth-controller.js';
 import {
+  deleteExerciseRecents,
   getArchivedExercises,
   getExerciseRecents,
   getExercises,
@@ -76,6 +77,11 @@ apiRouter.get(
   '/exercises/recents',
   authMiddleware,
   asyncHandler(getExerciseRecents),
+);
+apiRouter.delete(
+  '/exercises/recents',
+  authMiddleware,
+  asyncHandler(deleteExerciseRecents),
 );
 apiRouter.get(
   '/exercises/archived',

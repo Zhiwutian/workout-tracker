@@ -33,6 +33,7 @@ export {
 } from '@/lib/api/auth-api';
 
 export {
+  clearExerciseRecents,
   createExercise,
   patchExercise,
   readArchivedExercises,

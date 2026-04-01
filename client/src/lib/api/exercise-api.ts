@@ -20,20 +20,31 @@ export async function readExerciseRecents(
   return fetchJson<Exercise[]>(`/api/exercises/recents?${q}`);
 }
 
+export async function clearExerciseRecents(
+  workoutType?: WorkoutType,
+): Promise<void> {
+  const q = new URLSearchParams();
+  if (workoutType) q.set('workoutType', workoutType);
+  const suffix = q.toString() ? `?${q}` : '';
+  await fetchJson<{ cleared: boolean }>(`/api/exercises/recents${suffix}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function readArchivedExercises(): Promise<Exercise[]> {
   return fetchJson<Exercise[]>('/api/exercises/archived');
 }
 
 export async function createExercise(
   name: string,
-  muscleGroup?: string | null,
+  muscleGroup: string,
   category?: WorkoutType,
 ): Promise<Exercise> {
   return fetchJson<Exercise>('/api/exercises', {
     method: 'POST',
     body: JSON.stringify({
       name,
-      muscleGroup: muscleGroup ?? null,
+      muscleGroup,
       ...(category ? { category } : {}),
     }),
   });

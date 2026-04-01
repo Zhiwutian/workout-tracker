@@ -1,13 +1,13 @@
-/** Inline editor for a user-owned exercise (name, muscle group, type, archive). */
+/** Catalog-style row for a user-owned exercise with modal edit and archive actions. */
 import { useToast } from '@/components/app/toast-context';
-import { Button, Card, FieldLabel, Input, Select } from '@/components/ui';
+import { Button, FieldLabel, Input, Modal, Select } from '@/components/ui';
 import {
   patchExercise,
   type Exercise,
   type WorkoutType,
 } from '@/lib/workout-api';
 import { WORKOUT_TYPE_LABELS, WORKOUT_TYPES } from '@shared/workout-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function CustomExerciseRow({
   ex,
@@ -23,6 +23,8 @@ export function CustomExerciseRow({
     ex.category ?? 'resistance',
   );
   const [busy, setBusy] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setName(ex.name);
@@ -30,22 +32,28 @@ export function CustomExerciseRow({
     setCategory(ex.category ?? 'resistance');
   }, [ex.exerciseTypeId, ex.name, ex.muscleGroup, ex.category]);
 
-  const muscleLabel =
-    category === 'cardio' ? 'Type (e.g. Standard, HIIT)' : 'Muscle group';
-
   async function save(): Promise<void> {
+    if (!name.trim()) {
+      showToast({ title: 'Name is required', variant: 'error' });
+      return;
+    }
+    if (!muscleGroup.trim()) {
+      showToast({ title: 'Muscle group is required', variant: 'error' });
+      return;
+    }
     setBusy(true);
     try {
       await patchExercise(ex.exerciseTypeId, {
         name,
-        muscleGroup: muscleGroup.trim() || null,
+        muscleGroup: muscleGroup.trim(),
         category,
       });
-      showToast({ title: 'Saved', variant: 'success' });
+      showToast({ title: 'Exercise updated', variant: 'success' });
+      setEditOpen(false);
       onChanged();
     } catch (err) {
       showToast({
-        title: 'Save failed',
+        title: 'Could not update',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -58,11 +66,11 @@ export function CustomExerciseRow({
     setBusy(true);
     try {
       await patchExercise(ex.exerciseTypeId, { archived: true });
-      showToast({ title: 'Archived', variant: 'success' });
+      showToast({ title: 'Exercise archived', variant: 'success' });
       onChanged();
     } catch (err) {
       showToast({
-        title: 'Archive failed',
+        title: 'Could not archive',
         description: err instanceof Error ? err.message : undefined,
         variant: 'error',
       });
@@ -72,35 +80,72 @@ export function CustomExerciseRow({
   }
 
   return (
-    <Card className="p-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <FieldLabel
-            className="text-sm font-medium text-slate-700"
-            htmlFor={`ex-${ex.exerciseTypeId}-name`}>
-            Name
-          </FieldLabel>
-          <Input
-            id={`ex-${ex.exerciseTypeId}-name`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            aria-label={`Name for ${ex.name}`}
-          />
+    <>
+      <div className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+        <div className="min-w-0">
+          <span className="font-medium text-slate-900">{ex.name}</span>
+          <span className="text-slate-500">
+            {' '}
+            · {WORKOUT_TYPE_LABELS[ex.category ?? 'resistance']}
+          </span>
+          {ex.muscleGroup ? (
+            <span className="text-slate-600"> · {ex.muscleGroup}</span>
+          ) : null}
+          <span className="text-slate-600"> · Yours</span>
         </div>
-        <div>
-          <FieldLabel
-            className="text-sm font-medium text-slate-700"
-            htmlFor={`ex-${ex.exerciseTypeId}-muscle`}>
-            {muscleLabel}
-          </FieldLabel>
-          <Input
-            id={`ex-${ex.exerciseTypeId}-muscle`}
-            value={muscleGroup}
-            onChange={(e) => setMuscleGroup(e.target.value)}
-            aria-label={`${muscleLabel} for ${ex.name}`}
-          />
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button
+            ref={editButtonRef}
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={() => setEditOpen(true)}>
+            Edit
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={() => void archive()}>
+            Archive
+          </Button>
         </div>
-        <div className="sm:col-span-2">
+      </div>
+
+      <Modal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit exercise"
+        initialFocusRef={editButtonRef}>
+        <div className="grid gap-3">
+          <div>
+            <FieldLabel
+              className="text-sm font-medium text-slate-700"
+              htmlFor={`ex-${ex.exerciseTypeId}-name`}>
+              Name
+            </FieldLabel>
+            <Input
+              id={`ex-${ex.exerciseTypeId}-name`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              aria-label={`Name for ${ex.name}`}
+            />
+          </div>
+          <div>
+            <FieldLabel
+              className="text-sm font-medium text-slate-700"
+              htmlFor={`ex-${ex.exerciseTypeId}-muscle`}>
+              Muscle group
+            </FieldLabel>
+            <Input
+              id={`ex-${ex.exerciseTypeId}-muscle`}
+              value={muscleGroup}
+              onChange={(e) => setMuscleGroup(e.target.value)}
+              aria-label={`Muscle group for ${ex.name}`}
+            />
+          </div>
           <FieldLabel
             className="text-sm font-medium text-slate-700"
             htmlFor={`ex-${ex.exerciseTypeId}-type`}>
@@ -118,20 +163,11 @@ export function CustomExerciseRow({
               </option>
             ))}
           </Select>
+          <Button type="button" disabled={busy} onClick={() => void save()}>
+            Save
+          </Button>
         </div>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button type="button" disabled={busy} onClick={() => void save()}>
-          Save
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={busy}
-          onClick={() => void archive()}>
-          Archive
-        </Button>
-      </div>
-    </Card>
+      </Modal>
+    </>
   );
 }

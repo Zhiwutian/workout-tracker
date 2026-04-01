@@ -2,12 +2,14 @@ import { NavLinkButton } from '@/components/app/NavLinkButton';
 import { Link } from 'react-router-dom';
 
 const sections = [
-  { id: 'start', title: '1. Sign in or continue as guest' },
-  { id: 'workouts', title: '2. Start and finish workouts' },
-  { id: 'sets', title: '3. Log sets' },
-  { id: 'exercises', title: '4. Exercises catalog and custom moves' },
-  { id: 'dashboard', title: '5. Dashboard, goals, and export' },
-  { id: 'profile', title: '6. Profile and display' },
+  { id: 'before-you-start', title: '1. Before you start' },
+  { id: 'start', title: '2. Sign in or continue as guest' },
+  { id: 'workouts', title: '3. Start and finish workouts' },
+  { id: 'sets', title: '4. Log sets' },
+  { id: 'exercises', title: '5. Exercises catalog and custom moves' },
+  { id: 'dashboard', title: '6. Dashboard, goals, and export' },
+  { id: 'profile', title: '7. Profile and display' },
+  { id: 'faq', title: '8. FAQ and troubleshooting' },
 ] as const;
 
 /**
@@ -21,12 +23,12 @@ export function TutorialPage() {
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Tutorial</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Follow these steps to get value from the app quickly. This page is
-          about <strong>tasks</strong>; see{' '}
+          Follow this end-to-end walkthrough to get value quickly. This page is
+          focused on <strong>how to do tasks</strong>; see{' '}
           <Link to="/about" className="text-indigo-600 underline">
             About
           </Link>{' '}
-          for what the project is for.
+          for app purpose and architecture context.
         </p>
       </header>
 
@@ -46,8 +48,31 @@ export function TutorialPage() {
       </nav>
 
       <article className="max-w-none text-slate-800">
+        <h2
+          id="before-you-start"
+          className="text-xl font-semibold scroll-mt-24">
+          1. Before you start
+        </h2>
+        <p className="text-sm leading-relaxed">
+          This app works best as a repeatable routine: create a workout, log
+          sets consistently, and review your dashboard weekly. If you are
+          exploring for the first time, complete steps 2 through 6 in order.
+        </p>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed">
+          <li>
+            Plan to log one full workout so dashboard metrics can populate.
+          </li>
+          <li>
+            Use realistic exercise names and muscle groups for custom entries.
+          </li>
+          <li>
+            If your week appears shifted, set timezone in Profile before
+            evaluating trends.
+          </li>
+        </ul>
+
         <h2 id="start" className="text-xl font-semibold scroll-mt-24">
-          1. Sign in or continue as guest
+          2. Sign in or continue as guest
         </h2>
         <p className="text-sm leading-relaxed">
           Open <Link to="/sign-in">Sign in</Link>. Use OIDC when configured, or
@@ -56,7 +81,7 @@ export function TutorialPage() {
         </p>
 
         <h2 id="workouts" className="mt-10 text-xl font-semibold scroll-mt-24">
-          2. Start and finish workouts
+          3. Start and finish workouts
         </h2>
         <p className="text-sm leading-relaxed">
           From <Link to="/">Workouts</Link>, pick a type and{' '}
@@ -67,9 +92,18 @@ export function TutorialPage() {
           labeled <strong>Finish</strong> on the list jumps to the finish
           action.
         </p>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed">
+          <li>
+            Keep one active workout at a time for cleaner recents behavior.
+          </li>
+          <li>
+            If you leave mid-session, use the workout list <strong>Open</strong>{' '}
+            action to continue.
+          </li>
+        </ul>
 
         <h2 id="sets" className="mt-10 text-xl font-semibold scroll-mt-24">
-          3. Log sets
+          4. Log sets
         </h2>
         <p className="text-sm leading-relaxed">
           Inside a workout, add sets with reps, weight, and optional warmup
@@ -77,9 +111,16 @@ export function TutorialPage() {
           <strong>non-warmup</strong> sets only, matching how weekly stats are
           aggregated on the server.
         </p>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed">
+          <li>Use recent chips to speed up repetitive logging.</li>
+          <li>
+            Use <strong>Same as last</strong> when repeating the same exercise.
+          </li>
+          <li>Use rest seconds when pacing is part of your program.</li>
+        </ul>
 
         <h2 id="exercises" className="mt-10 text-xl font-semibold scroll-mt-24">
-          4. Exercises catalog and custom moves
+          5. Exercises catalog and custom moves
         </h2>
         <p className="text-sm leading-relaxed">
           Use <Link to="/exercises">Exercises</Link> to open the catalog: pick{' '}
@@ -89,9 +130,14 @@ export function TutorialPage() {
           Add custom exercises from the same page; set pickers still follow the
           workout type you started.
         </p>
+        <p className="mt-2 text-sm leading-relaxed">
+          Custom exercises require a muscle group and can be edited or archived
+          later. Archived exercises are hidden from active pickers but remain in
+          historical logs.
+        </p>
 
         <h2 id="dashboard" className="mt-10 text-xl font-semibold scroll-mt-24">
-          5. Dashboard, goals, and export
+          6. Dashboard, goals, and export
         </h2>
         <p className="text-sm leading-relaxed">
           <Link to="/dashboard">Dashboard</Link> shows volume, streaks, goals,
@@ -101,9 +147,17 @@ export function TutorialPage() {
           sets; the list’s <strong>?</strong> explains how the export relates to
           filters.
         </p>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed">
+          <li>
+            Use goals to track either volume or count-based habits per week.
+          </li>
+          <li>
+            If chart values look off, confirm warm-up sets are marked correctly.
+          </li>
+        </ul>
 
         <h2 id="profile" className="mt-10 text-xl font-semibold scroll-mt-24">
-          6. Profile and display
+          7. Profile and display
         </h2>
         <p className="text-sm leading-relaxed">
           Set timezone and weight units under <Link to="/profile">Profile</Link>
@@ -111,6 +165,51 @@ export function TutorialPage() {
           display preferences (theme, contrast, text size) to match how you read
           the app.
         </p>
+
+        <h2 id="faq" className="mt-10 text-xl font-semibold scroll-mt-24">
+          8. FAQ and troubleshooting
+        </h2>
+        <div className="mt-3 space-y-3">
+          <details className="rounded-lg border border-slate-200 bg-white p-3">
+            <summary className="cursor-pointer font-medium text-slate-900">
+              Why is my dashboard empty?
+            </summary>
+            <p className="mt-2 text-sm text-slate-700">
+              You need at least one logged set in the selected week window.
+              Start a workout, add a few sets, finish it, then refresh the
+              dashboard.
+            </p>
+          </details>
+          <details className="rounded-lg border border-slate-200 bg-white p-3">
+            <summary className="cursor-pointer font-medium text-slate-900">
+              When should I clear recents?
+            </summary>
+            <p className="mt-2 text-sm text-slate-700">
+              Clear recents when switching program blocks or workout focus. The
+              clear action is now persisted, so it survives server restarts and
+              deploys.
+            </p>
+          </details>
+          <details className="rounded-lg border border-slate-200 bg-white p-3">
+            <summary className="cursor-pointer font-medium text-slate-900">
+              Do guest workouts sync across devices?
+            </summary>
+            <p className="mt-2 text-sm text-slate-700">
+              No. Guest sessions are for quick local use. Sign in with an
+              account to keep data portable and consistent.
+            </p>
+          </details>
+          <details className="rounded-lg border border-slate-200 bg-white p-3">
+            <summary className="cursor-pointer font-medium text-slate-900">
+              How do I validate filters and exports?
+            </summary>
+            <p className="mt-2 text-sm text-slate-700">
+              On Workouts, open the filters modal, apply a date/status range,
+              then download CSV from the same flow. Confirm row totals and week
+              labels align with dashboard ranges.
+            </p>
+          </details>
+        </div>
       </article>
     </div>
   );

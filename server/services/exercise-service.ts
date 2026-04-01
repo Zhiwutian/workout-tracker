@@ -3,6 +3,7 @@ import {
   asc,
   desc,
   eq,
+  gte,
   inArray,
   isNotNull,
   isNull,
@@ -10,7 +11,12 @@ import {
   or,
 } from 'drizzle-orm';
 import { DbClient, getDrizzleDb } from '@server/db/drizzle.js';
-import { exerciseTypes, workoutSets, workouts } from '@server/db/schema.js';
+import {
+  exerciseRecentClears,
+  exerciseTypes,
+  workoutSets,
+  workouts,
+} from '@server/db/schema.js';
 import { ClientError } from '@server/lib/client-error.js';
 import { isWorkoutType, type WorkoutType } from '@shared/workout-types';
 
@@ -34,6 +40,8 @@ export type ExerciseTypeRecord = {
   category: string;
   archivedAt: Date | null;
 };
+
+const RECENTS_SCOPE_ALL = 'all';
 
 function toRecord(row: typeof exerciseTypes.$inferSelect): ExerciseTypeRecord {
   return {
@@ -78,6 +86,7 @@ export async function listRecentExercisesForUser(
 ): Promise<ExerciseTypeRecord[]> {
   const db = requireDb();
   const lim = Math.min(Math.max(1, limit), 50);
+  const cutoff = await readRecentCutoff(userId, options?.workoutType);
   const exerciseScope = or(
     isNull(exerciseTypes.userId),
     and(eq(exerciseTypes.userId, userId), isNull(exerciseTypes.archivedAt)),
@@ -96,7 +105,13 @@ export async function listRecentExercisesForUser(
       exerciseTypes,
       eq(workoutSets.exerciseTypeId, exerciseTypes.exerciseTypeId),
     )
-    .where(and(eq(workouts.userId, userId), typeFilter))
+    .where(
+      and(
+        eq(workouts.userId, userId),
+        typeFilter,
+        cutoff ? gte(workoutSets.createdAt, cutoff) : undefined,
+      ),
+    )
     .groupBy(workoutSets.exerciseTypeId)
     .orderBy(desc(max(workoutSets.createdAt)))
     .limit(lim);
@@ -113,6 +128,48 @@ export async function listRecentExercisesForUser(
     .map((id) => byId.get(id))
     .filter((r): r is (typeof rows)[0] => r !== undefined)
     .map(toRecord);
+}
+
+async function readRecentCutoff(
+  userId: number,
+  workoutType?: WorkoutType,
+): Promise<Date | null> {
+  const db = requireDb();
+  const scopes = workoutType
+    ? [RECENTS_SCOPE_ALL, workoutType]
+    : [RECENTS_SCOPE_ALL];
+  const rows = await db
+    .select({ clearedAt: exerciseRecentClears.clearedAt })
+    .from(exerciseRecentClears)
+    .where(
+      and(
+        eq(exerciseRecentClears.userId, userId),
+        inArray(exerciseRecentClears.scope, scopes),
+      ),
+    )
+    .orderBy(desc(exerciseRecentClears.clearedAt))
+    .limit(1);
+  return rows[0]?.clearedAt ?? null;
+}
+
+export async function clearRecentExercisesForUser(
+  userId: number,
+  options?: { workoutType?: WorkoutType },
+): Promise<void> {
+  const db = requireDb();
+  const scope = options?.workoutType ?? RECENTS_SCOPE_ALL;
+  await db
+    .insert(exerciseRecentClears)
+    .values({
+      userId,
+      scope,
+    })
+    .onConflictDoUpdate({
+      target: [exerciseRecentClears.userId, exerciseRecentClears.scope],
+      set: {
+        clearedAt: new Date(),
+      },
+    });
 }
 
 /** User's archived custom exercises (newest archive first). */
@@ -145,6 +202,10 @@ export async function createCustomExercise(
   if (!isWorkoutType(category)) {
     throw new ClientError(400, 'invalid exercise category');
   }
+  const normalizedMuscle = muscleGroup?.trim() ?? '';
+  if (!normalizedMuscle) {
+    throw new ClientError(400, 'muscle group is required');
+  }
 
   const existing = await db
     .select({ exerciseTypeId: exerciseTypes.exerciseTypeId })
@@ -166,7 +227,7 @@ export async function createCustomExercise(
     .values({
       userId,
       name: trimmed,
-      muscleGroup: muscleGroup?.trim() || null,
+      muscleGroup: normalizedMuscle,
       category,
     })
     .returning();
@@ -177,7 +238,7 @@ export async function createCustomExercise(
 
 export type PatchCustomExerciseInput = {
   name?: string;
-  muscleGroup?: string | null;
+  muscleGroup?: string;
   category?: WorkoutType;
   archived?: boolean;
 };
@@ -235,7 +296,19 @@ export async function patchCustomExercise(
   }
 
   if (patch.muscleGroup !== undefined) {
-    muscleGroup = patch.muscleGroup?.trim() || null;
+    const normalizedMuscle = patch.muscleGroup.trim();
+    if (!normalizedMuscle) {
+      throw new ClientError(400, 'muscle group is required');
+    }
+    muscleGroup = normalizedMuscle;
+  }
+
+  const editingMetadata =
+    patch.name !== undefined ||
+    patch.category !== undefined ||
+    patch.muscleGroup !== undefined;
+  if (editingMetadata && !muscleGroup?.trim()) {
+    throw new ClientError(400, 'muscle group is required');
   }
 
   if (patch.archived === true) {

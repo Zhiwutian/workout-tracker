@@ -120,6 +120,8 @@ export async function addSet(
     notes?: string | null;
     isWarmup?: boolean;
     restSeconds?: number | null;
+    groupId?: number | null;
+    createGroup?: boolean;
   },
 ): Promise<SetRow> {
   return fetchJson<SetRow>(`/api/workouts/${workoutId}/sets`, {
@@ -134,8 +136,10 @@ export async function patchSet(
     reps?: number;
     weight?: number;
     notes?: string | null;
+    setIndex?: number;
     isWarmup?: boolean;
     restSeconds?: number | null;
+    groupId?: number | null;
   },
 ): Promise<SetRow> {
   return fetchJson<SetRow>(`/api/sets/${setId}`, {

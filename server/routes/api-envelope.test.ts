@@ -3,7 +3,12 @@ import { Express } from 'express';
 import jwt from 'jsonwebtoken';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-const { listWorkoutsMock } = vi.hoisted(() => {
+const {
+  listWorkoutsMock,
+  addSetToWorkoutMock,
+  getWorkoutSessionForSetWriteMock,
+  assertExerciseUsableForWorkoutMock,
+} = vi.hoisted(() => {
   const row = {
     workoutId: 1,
     userId: 1,
@@ -12,8 +17,36 @@ const { listWorkoutsMock } = vi.hoisted(() => {
     startedAt: new Date('2026-01-01T12:00:00.000Z'),
     endedAt: null,
   };
+  const setRow = {
+    setId: 10,
+    workoutId: 1,
+    exerciseTypeId: 1,
+    groupId: null as number | null,
+    setIndex: 0,
+    reps: 8,
+    weight: 100,
+    notes: null,
+    isWarmup: false,
+    restSeconds: null,
+    createdAt: new Date('2026-01-01T12:01:00.000Z'),
+  };
   return {
     listWorkoutsMock: vi.fn(async () => [row]),
+    addSetToWorkoutMock: vi.fn(async () => setRow),
+    getWorkoutSessionForSetWriteMock: vi.fn(async () => ({
+      workoutId: 1,
+      userId: 1,
+      workoutType: 'resistance',
+      nextSetIndex: 0,
+    })),
+    assertExerciseUsableForWorkoutMock: vi.fn(async () => ({
+      exerciseTypeId: 1,
+      userId: null,
+      name: 'Back squat',
+      muscleGroup: 'legs',
+      category: 'resistance',
+      archivedAt: null,
+    })),
   };
 });
 
@@ -21,11 +54,16 @@ vi.mock('@server/services/workout-service.js', () => ({
   listWorkouts: listWorkoutsMock,
   createWorkout: vi.fn(),
   getWorkoutForUser: vi.fn(),
+  getWorkoutSessionForSetWrite: getWorkoutSessionForSetWriteMock,
   updateWorkoutForUser: vi.fn(),
   deleteWorkoutForUser: vi.fn(),
-  addSetToWorkout: vi.fn(),
+  addSetToWorkout: addSetToWorkoutMock,
   updateSetForUser: vi.fn(),
   deleteSetForUser: vi.fn(),
+}));
+
+vi.mock('@server/services/exercise-service.js', () => ({
+  assertExerciseUsableForWorkout: assertExerciseUsableForWorkoutMock,
 }));
 
 describe('api envelope', () => {
@@ -121,4 +159,86 @@ describe('api envelope', () => {
       expect.objectContaining({ requestId: expect.any(String) }),
     );
   });
+
+  it.each([
+    {
+      name: 'createGroup true with groupId provided',
+      body: {
+        exerciseTypeId: 1,
+        reps: 8,
+        weight: 100,
+        createGroup: true,
+        groupId: 2,
+      },
+    },
+    {
+      name: 'createGroup true with nullable groupId provided',
+      body: {
+        exerciseTypeId: 1,
+        reps: 8,
+        weight: 100,
+        createGroup: true,
+        groupId: '3',
+      },
+    },
+  ])('validates superset set payload: $name', async ({ body }) => {
+    addSetToWorkoutMock.mockClear();
+    const token = jwt.sign({ userId: 1 }, process.env.TOKEN_SECRET!);
+    const res = await request(app)
+      .post('/api/workouts/1/sets')
+      .set('Authorization', `Bearer ${token}`)
+      .send(body)
+      .expect(400);
+
+    expect(res.body.error).toEqual(
+      expect.objectContaining({
+        code: 'validation_error',
+        message: 'request validation failed',
+      }),
+    );
+    expect(addSetToWorkoutMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      name: 'createGroup only',
+      body: { exerciseTypeId: 1, reps: 8, weight: 100, createGroup: true },
+      expectedGroupId: 22,
+    },
+    {
+      name: 'existing group id only',
+      body: { exerciseTypeId: 1, reps: 8, weight: 100, groupId: 7 },
+      expectedGroupId: 7,
+    },
+  ])(
+    'accepts superset payload variant: $name',
+    async ({ body, expectedGroupId }) => {
+      addSetToWorkoutMock.mockImplementationOnce(async () => ({
+        setId: 42,
+        workoutId: 1,
+        exerciseTypeId: 1,
+        groupId: expectedGroupId,
+        setIndex: 0,
+        reps: 8,
+        weight: 100,
+        notes: null,
+        isWarmup: false,
+        restSeconds: null,
+        createdAt: new Date('2026-01-01T12:01:00.000Z'),
+      }));
+      const token = jwt.sign({ userId: 1 }, process.env.TOKEN_SECRET!);
+      const res = await request(app)
+        .post('/api/workouts/1/sets')
+        .set('Authorization', `Bearer ${token}`)
+        .send(body)
+        .expect(201);
+
+      expect(res.body.data.groupId).toBe(expectedGroupId);
+      expect(addSetToWorkoutMock).toHaveBeenCalledWith(
+        1,
+        1,
+        expect.objectContaining(body),
+      );
+    },
+  );
 });

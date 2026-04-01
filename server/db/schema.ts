@@ -1,6 +1,7 @@
 import type { UiPreferences } from '@shared/ui-preferences.js';
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -62,6 +63,27 @@ export const exerciseTypes = pgTable('exercise_types', {
   archivedAt: timestamp('archivedAt', { withTimezone: true }),
 });
 
+/**
+ * "Clear recents" cutoffs per user and scope.
+ * scope: all | resistance | cardio | flexibility
+ */
+export const exerciseRecentClears = pgTable(
+  'exercise_recent_clears',
+  {
+    clearId: serial('clearId').primaryKey(),
+    userId: integer('userId')
+      .notNull()
+      .references(() => users.userId, { onDelete: 'cascade' }),
+    scope: text('scope').notNull(),
+    clearedAt: timestamp('clearedAt', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('exercise_recent_clears_user_scope_unique').on(t.userId, t.scope),
+  ],
+);
+
 export const workouts = pgTable('workouts', {
   workoutId: serial('workoutId').primaryKey(),
   userId: integer('userId')
@@ -77,26 +99,51 @@ export const workouts = pgTable('workouts', {
   endedAt: timestamp('endedAt', { withTimezone: true }),
 });
 
-export const workoutSets = pgTable('workout_sets', {
-  setId: serial('setId').primaryKey(),
+/**
+ * Optional grouping container for superset workflows inside one workout.
+ * Sets can reference a group via `workout_sets.groupId`.
+ */
+export const workoutSetGroups = pgTable('workout_set_groups', {
+  groupId: serial('groupId').primaryKey(),
   workoutId: integer('workoutId')
     .notNull()
     .references(() => workouts.workoutId, { onDelete: 'cascade' }),
-  exerciseTypeId: integer('exerciseTypeId')
-    .notNull()
-    .references(() => exerciseTypes.exerciseTypeId, { onDelete: 'restrict' }),
-  setIndex: integer('setIndex').notNull(),
-  reps: integer('reps').notNull(),
-  weight: real('weight').notNull(),
-  notes: text('notes'),
-  /** When true, excluded from weekly volume totals; still exported. */
-  isWarmup: boolean('isWarmup').notNull().default(false),
-  /** Optional rest taken after this set (seconds). */
-  restSeconds: integer('restSeconds'),
+  label: text('label'),
   createdAt: timestamp('createdAt', { withTimezone: true })
     .notNull()
     .defaultNow(),
 });
+
+export const workoutSets = pgTable(
+  'workout_sets',
+  {
+    setId: serial('setId').primaryKey(),
+    workoutId: integer('workoutId')
+      .notNull()
+      .references(() => workouts.workoutId, { onDelete: 'cascade' }),
+    exerciseTypeId: integer('exerciseTypeId')
+      .notNull()
+      .references(() => exerciseTypes.exerciseTypeId, { onDelete: 'restrict' }),
+    groupId: integer('groupId').references(() => workoutSetGroups.groupId, {
+      onDelete: 'set null',
+    }),
+    setIndex: integer('setIndex').notNull(),
+    reps: integer('reps').notNull(),
+    weight: real('weight').notNull(),
+    notes: text('notes'),
+    /** When true, excluded from weekly volume totals; still exported. */
+    isWarmup: boolean('isWarmup').notNull().default(false),
+    /** Optional rest taken after this set (seconds). */
+    restSeconds: integer('restSeconds'),
+    createdAt: timestamp('createdAt', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('workout_sets_workout_set_index_unique').on(t.workoutId, t.setIndex),
+    index('idx_workout_sets_workout_set_index').on(t.workoutId, t.setIndex),
+  ],
+);
 
 /** User-defined training goals (weekly periods; evaluated from workouts/sets). */
 export const goals = pgTable('goals', {
